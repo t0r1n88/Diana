@@ -8,6 +8,7 @@ import openpyxl
 from docxtpl import DocxTemplate
 import string
 import time
+import re
 
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.set_option('display.max_columns', None)  # Отображать все столбцы
@@ -47,6 +48,23 @@ def processing_punctuation_end_string(lst_phrase: list, sep_string: str, sep_beg
     temp_lst[-1] = temp_lst[-1] + sep_end  # добавляем конечный знак пунктуации
     temp_str = f'{sep_string}'.join(temp_lst)  # создаем строку с разделителями
     return temp_str
+
+def insert_type_source(lst_phrase:list)->list:
+    """
+    Вставка в строку слов [Электронный ресурс] Форма доступа:
+    :param lst_phrase:список строк
+    :return: список измененных строк
+    """
+    out_lst = []
+    pattern = r'(?=[A-Za-z])' # регулярка для разделения
+    for row in lst_phrase:
+        temp_lst = re.split(pattern,row,maxsplit=1) # делим по первой английской букве
+        temp_lst.insert(1,' [Электронный ресурс] Форма доступа:') # вставляем в середину списка нужную строку
+        temp_str = ' '.join(temp_lst)
+        out_lst.append(temp_str)
+    return out_lst
+
+
 
 
 template_work_program = 'data/Шаблон автозаполнения РП.docx'
@@ -115,22 +133,33 @@ name_kab = ','.join(name_kab)  # получаем все названия кот
 
 name_lab = df_mto['Наименование_лаборатории'].dropna().tolist()
 if len(name_lab) == 0:
-    name_lab = ['']
-name_lab = ','.join(name_lab)
+    name_lab = []
+else:
+    name_lab = ','.join(name_lab)
 
 # Списки кабинета и средств обучения
 lst_obor_cab = df_mto[
     'Оборудование_учебного_кабинета'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
 if len(lst_obor_cab) == 0:
     lst_obor_cab = ['На листе МТО НЕ заполнено оборудование учебного кабинета !!!']
-obor_cab = processing_punctuation_end_string(lst_obor_cab, ';\n', '- ',
-                                             '.')  # обрабатываем знаки пунктуации для каждой строки
+obor_cab = processing_punctuation_end_string(lst_obor_cab, ';\n', '- ','.')  # обрабатываем знаки пунктуации для каждой строки
 
-lst_tecn_educ = df_mto[
-    'Технические_средства_обучения'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
+lst_tecn_educ = df_mto['Технические_средства_обучения'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
 if len(lst_tecn_educ) == 0:
     lst_tecn_educ = ['На листе МТО НЕ заполнены технические средства обучения !!!']
 tecn_educ = processing_punctuation_end_string(lst_tecn_educ, ';\n', '- ', '.')
+
+# Оборудование лаборатории
+lst_obor_labor = df_mto[
+    'Оборудование_лаборатории'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
+if len(lst_obor_labor) == 0 and name_lab:
+    obor_labor = ['На листе МТО НЕ заполнено оборудование лаборатории !!!']
+elif len(lst_obor_labor) != 0 and not name_lab:
+    obor_labor = ['На листе МТО заполнено оборудование лаборатории но не заполнено наименование лаборатории !!!']
+else:
+    obor_labor = processing_punctuation_end_string(lst_obor_labor, ';\n', '- ','.')  # обрабатываем знаки пунктуации для каждой строки
+
+
 
 """
 Обрабатываем лист Учебные издания
@@ -152,12 +181,14 @@ if len(lst_slave_source) == 0:
 lst_inet_source = df_educ_publ['Интернет_ресурсы'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
 if len(lst_inet_source) == 0:
     lst_inet_source = ['На листе Учебные издания НЕ заполнены интернет источники !!!']
+lst_inet_source = insert_type_source(lst_inet_source)
+
 
 # Конвертируем датафрейм с описанием программы в список словарей и добавляем туда нужные элементы
 data_program = df_desc_rp.to_dict('records')
 context = data_program[0]
-context['lst_pers_result'] = df_pers_result.to_dict('records')  # добаввляем лист личностных результатов
-context['lst_up'] = df_structure.to_dict('records')
+context['Лич_результаты'] = df_pers_result.to_dict('records')  # добаввляем лист личностных результатов
+context['Учебная_работа'] = df_structure.to_dict('records')
 
 # добавляем единичные переменные
 context['Макс_нагрузка'] = max_load
@@ -168,12 +199,17 @@ context['Учебный_кабинет'] = name_kab
 context['Лаборатория'] = name_lab
 context['Список_оборудования'] = obor_cab
 context['Средства_обучения'] = tecn_educ
+context['Оборудование_лаборатории'] = obor_labor
 # лист Учебные издания
-context['lst_main_source'] = lst_main_source
-context['lst_slave_source'] = lst_slave_source
-context['lst_inet_source'] = lst_inet_source
+context['Основные_источники'] = lst_main_source
+context['Дополнительные_источники'] = lst_slave_source
+context['Интернет_источники'] = lst_inet_source
+
 
 doc = DocxTemplate(template_work_program)
+# Получаем ключи используемые в шаблоне
+set_of_variables = doc.get_undeclared_template_variables()
+
 # Создаем документ
 doc.render(context)
 # сохраняем документ
