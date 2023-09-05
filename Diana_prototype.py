@@ -73,7 +73,8 @@ data_work_program = 'data/Автозаполнение РП.xlsx'
 # названия листов
 desc_rp = 'Описание РП'
 pers_result = 'Лич_результаты'
-structure = 'Структура'
+structure = 'Объем УД'
+plan = 'План УД'
 mto = 'МТО'
 educ_publ = 'Учебные издания'
 
