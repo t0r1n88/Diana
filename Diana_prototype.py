@@ -97,7 +97,7 @@ target_value = 'итог'
 column_number = 1  # Номер столбца, в котором ищем значение (например, столбец A)
 target_row = None  # Номер строки с искомым значением
 
-for row in wb['Структура'].iter_rows(min_row=1, min_col=column_number, max_col=column_number):
+for row in wb['Объем УД'].iter_rows(min_row=1, min_col=column_number, max_col=column_number):
     cell_value = row[0].value
     if target_value in str(cell_value).lower():
         target_row = row[0].row
@@ -192,12 +192,31 @@ if len(lst_inet_source) == 0:
     lst_inet_source = ['На листе Учебные издания НЕ заполнены интернет источники !!!']
 lst_inet_source = insert_type_source(lst_inet_source)
 
+"""
+Обрабатываем лист Контроль и Оценка
+"""
+df_control = pd.read_excel(data_work_program,sheet_name='Контроль и оценка',usecols='A:B')
+df_control.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+df_control.columns = ['Результаты_обучения','Контроль_обучения']
+_lst_result_educ = df_control['Результаты_обучения'].dropna().tolist() # создаем список
+border_divide = _lst_result_educ.index('Знания:') # граница разделения
+lst_skill = _lst_result_educ[1:border_divide] # получаем список умений
+lst_knowledge = _lst_result_educ[border_divide+1:] # получаем список знаний
 
+lst_skill = processing_punctuation_end_string(lst_skill, ';\n', '- ','.') # форматируем выходную строку
+lst_knowledge = processing_punctuation_end_string(lst_knowledge, ';\n', '- ','.') # форматируем выходную строку
+
+
+df_control.fillna('',inplace=True)
 # Конвертируем датафрейм с описанием программы в список словарей и добавляем туда нужные элементы
 data_program = df_desc_rp.to_dict('records')
 context = data_program[0]
 context['Лич_результаты'] = df_pers_result.to_dict('records')  # добаввляем лист личностных результатов
 context['Учебная_работа'] = df_structure.to_dict('records')
+context['Контроль_оценка'] = df_control.to_dict('records')
+context['Знать'] = lst_knowledge
+context['Уметь'] = lst_skill
+
 
 # добавляем единичные переменные
 context['Макс_нагрузка'] = max_load
@@ -227,3 +246,5 @@ name_rp = df_desc_rp['Название_дисциплины'].tolist()[0]
 t = time.localtime()
 current_time = time.strftime('%H_%M_%S', t)
 doc.save(f'data/РП {name_rp[:40]} {current_time}.docx')
+
+print('Lindy Booth')
