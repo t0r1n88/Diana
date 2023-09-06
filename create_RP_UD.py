@@ -136,7 +136,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     """
     Обрабатываем лист План УД
     """
-    df_plan_ud = pd.read_excel('data/Автозаполнение РП.xlsx', sheet_name='План УД', usecols='A:F')
+    df_plan_ud = pd.read_excel(data_work_program, sheet_name='План УД', usecols='A:F')
     df_plan_ud.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
     df_plan_ud.columns = ['Раздел', 'Тема', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС']
