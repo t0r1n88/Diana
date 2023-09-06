@@ -27,10 +27,12 @@ def convert_to_int(cell):
     """
     if cell is np.nan:
         return ''
-    if cell.isdigit():
-        return int(cell)
-    else:
-        return ''
+    try:
+        value = float(cell)
+        return int(value)
+    except:
+        return cell
+
 
 
 def processing_punctuation_end_string(lst_phrase: list, sep_string: str, sep_begin: str, sep_end: str) -> str:
@@ -130,8 +132,83 @@ sam_load = sam_df.iloc[0, 1]
 """
 Обрабатываем лист План УД
 """
+df_plan_ud = pd.read_excel('data/Автозаполнение РП.xlsx', sheet_name='План УД', usecols='A:F')
+df_plan_ud.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
+df_plan_ud.columns = ['Раздел', 'Тема', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС']
 
+df_plan_ud['Раздел'].fillna('Пусто', inplace=True)
+
+borders = df_plan_ud[
+    df_plan_ud['Раздел'].str.contains('семестр')].index  # получаем индексы строк где есть слово семестр
+
+part_df = []  # список для хранения кусков датафрейма
+previos_border = -1
+# делим датафрем по границам
+for value_border in borders:
+    part = df_plan_ud.iloc[previos_border:value_border]
+    part_df.append(part)
+    previos_border = value_border
+
+# добавляем последнюю часть
+last_part = df_plan_ud.iloc[borders[-1]:]
+part_df.append(last_part)
+
+part_df.pop(0)  # удаляем нулевой элемент так как он пустой
+
+main_df = pd.DataFrame(
+    columns=['Раздел', 'Тема', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС'])  # создаем базовый датафрейм
+
+lst_type_lesson = ['урок', 'практическое занятие', 'лабораторное занятие',
+                   'курсовая работа (КП)']  # список типов занятий
+for df in part_df:
+    dct_sum_result = {key: 0 for key in lst_type_lesson}  # создаем словарь для подсчета значений
+    for type_lesson in lst_type_lesson:
+        _df = df[df['Вид_занятия'] == type_lesson]  # фильтруем датафрейм
+        _df['Количество_часов'].fillna(0, inplace=True)
+        _df['Количество_часов'] = _df['Количество_часов'].astype(int)
+        dct_sum_result[type_lesson] = _df['Количество_часов'].sum()
+    # создаем строку с описанием
+    margint_text = 'Итого часов за семестр:\nиз них\nтеория\nпрактические занятия\nлабораторные занятия\nкурсовая работа (КП)'
+
+    all_hours = sum(dct_sum_result.values())  # общая сумма часов
+
+    theory_hours = dct_sum_result['урок']  # часы теории
+    praktice_hours = dct_sum_result['практическое занятие']  # часы практики
+    lab_hours = dct_sum_result['лабораторное занятие']  # часы лабораторных
+    kurs_hours = dct_sum_result['курсовая работа (КП)']  # часы курсовых
+
+    value_text = f'{all_hours}\n \n{theory_hours}\n{praktice_hours}\n{lab_hours}\n{kurs_hours}'  # строка со значениями
+    # itog_row = {'Тема':margint_text,'Количество_часов':value_text} # создаем строку
+    temp_df = pd.DataFrame([{'Тема': margint_text, 'Количество_часов': value_text}])
+    df = pd.concat([df, temp_df], ignore_index=True)  # добаляем итоговую строку
+    main_df = pd.concat([main_df, df], ignore_index=True)  # добавляем в основной датафрейм
+
+main_df.insert(0, 'Номер', np.nan)  # добавляем колонку с номерами занятий
+
+main_df['Тема'] = main_df['Тема'].fillna('Пусто')  # заменяем наны на пусто
+
+count = 0  # счетчик
+for idx, row in enumerate(main_df.itertuples()):
+    if (row[3] == 'Пусто') | ('Итого часов' in row[3]):
+        main_df.iloc[idx, 0] = ''
+    else:
+        count += 1
+        main_df.iloc[idx, 0] = count
+
+# очищаем от пустых символов и строки Пусто
+main_df['Раздел'] = main_df['Раздел'].fillna('Пусто')
+main_df['Тема'] = main_df['Тема'].replace('Пусто', '')
+main_df['Раздел'] = main_df['Раздел'].replace('Пусто', '')
+main_df['Вид_занятия'] = main_df['Вид_занятия'].fillna('')
+
+main_df['Количество_часов'] = main_df['Количество_часов'].apply(convert_to_int)
+main_df['Количество_часов'] = main_df['Количество_часов'].fillna('')
+
+main_df['Практика'] = main_df['Практика'].apply(convert_to_int)
+main_df['СРС'] = main_df['СРС'].apply(convert_to_int)
+main_df['Тема'] = main_df['Раздел'] + main_df['Тема']
+main_df.drop(columns=['Раздел'],inplace=True)
 
 
 
@@ -229,6 +306,7 @@ lst_pk = processing_punctuation_end_string(lst_pk, ';\n', '- ','.')
 data_program = df_desc_rp.to_dict('records')
 context = data_program[0]
 context['Лич_результаты'] = df_pers_result.to_dict('records')  # добаввляем лист личностных результатов
+context['План_УД'] = main_df.to_dict('records') # содержание учебной дисциплины
 context['Учебная_работа'] = df_structure.to_dict('records')
 context['Контроль_оценка'] = df_control.to_dict('records')
 context['Знать'] = lst_knowledge
