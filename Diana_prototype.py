@@ -44,6 +44,7 @@ def processing_punctuation_end_string(lst_phrase: list, sep_string: str, sep_beg
     :return: строку с разделителями и переносами строки
     """
     temp_lst = list(map(lambda x: sep_begin + x, lst_phrase))
+    temp_lst = list(map(lambda x: x.strip(), temp_lst)) # очищаем от прбельных символов в начале и конце
     temp_lst = list(map(lambda x: x.rstrip(string.punctuation), temp_lst))  # очищаем от знаков пунктуации
     temp_lst[-1] = temp_lst[-1] + sep_end  # добавляем конечный знак пунктуации
     temp_str = f'{sep_string}'.join(temp_lst)  # создаем строку с разделителями
@@ -77,6 +78,8 @@ structure = 'Объем УД'
 plan = 'План УД'
 mto = 'МТО'
 educ_publ = 'Учебные издания'
+ok = 'Данные для ОК'
+pk = 'Данные для ПК'
 
 # Обрабатываем лист Описание РП
 df_desc_rp = pd.read_excel(data_work_program, sheet_name=desc_rp, nrows=1, usecols='A:E')  # загружаем датафрейм
@@ -205,9 +208,23 @@ lst_knowledge = _lst_result_educ[border_divide+1:] # получаем списо
 
 lst_skill = processing_punctuation_end_string(lst_skill, ';\n', '- ','.') # форматируем выходную строку
 lst_knowledge = processing_punctuation_end_string(lst_knowledge, ';\n', '- ','.') # форматируем выходную строку
-
-
 df_control.fillna('',inplace=True)
+
+"""
+Обрабатываем лист Данные для ОК
+"""
+df_ok = pd.read_excel(data_work_program,sheet_name=ok,usecols='A')
+lst_ok = df_ok['Наименование'].dropna().tolist()
+lst_ok = processing_punctuation_end_string(lst_ok, ';\n', '- ','.')
+
+"""
+Обрабатываем лист Данные для ПК
+"""
+df_pk = pd.read_excel(data_work_program,sheet_name=pk,usecols='A')
+lst_pk = df_pk['Наименование'].dropna().tolist()
+lst_pk = processing_punctuation_end_string(lst_pk, ';\n', '- ','.')
+
+
 # Конвертируем датафрейм с описанием программы в список словарей и добавляем туда нужные элементы
 data_program = df_desc_rp.to_dict('records')
 context = data_program[0]
@@ -232,6 +249,10 @@ context['Оборудование_лаборатории'] = obor_labor
 context['Основные_источники'] = lst_main_source
 context['Дополнительные_источники'] = lst_slave_source
 context['Интернет_источники'] = lst_inet_source
+# Листы данные ОК и  данные ПК
+context['ОК'] = lst_ok
+context['ПК'] = lst_pk
+
 
 
 doc = DocxTemplate(template_work_program)
