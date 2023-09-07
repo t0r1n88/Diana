@@ -88,7 +88,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     pk = 'Данные для ПК'
 
     # Обрабатываем лист Описание РП
-    df_desc_rp = pd.read_excel(data_work_program, sheet_name=desc_rp, nrows=1, usecols='A:E')  # загружаем датафрейм
+    df_desc_rp = pd.read_excel(data_work_program, sheet_name=desc_rp, nrows=1, usecols='A:G')  # загружаем датафрейм
     df_desc_rp.fillna('НЕ ЗАПОЛНЕНО !!!', inplace=True)  # заполняем не заполненные разделы
 
     # Обрабатываем лист Лич_результаты
