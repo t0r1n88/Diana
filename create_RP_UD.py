@@ -364,7 +364,7 @@ if __name__=='__main__':
     pk = 'Данные для ПК'
 
     # Обрабатываем лист Описание РП
-    df_desc_rp = pd.read_excel(data_work_program, sheet_name=desc_rp, nrows=1, usecols='A:E')  # загружаем датафрейм
+    df_desc_rp = pd.read_excel(data_work_program, sheet_name=desc_rp, nrows=1, usecols='A:G')  # загружаем датафрейм
     df_desc_rp.fillna('НЕ ЗАПОЛНЕНО !!!', inplace=True)  # заполняем не заполненные разделы
 
     # Обрабатываем лист Лич_результаты
@@ -625,3 +625,4 @@ if __name__=='__main__':
     t = time.localtime()
     current_time = time.strftime('%H_%M_%S', t)
     doc.save(f'{end_folder}/РП {name_rp[:40]} {current_time}.docx')
+    print('Lindy Booth!')
