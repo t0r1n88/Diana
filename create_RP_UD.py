@@ -437,8 +437,10 @@ if __name__=='__main__':
     pk = 'Данные для ПК'
 
     # Обрабатываем лист Описание РП
-    df_desc_rp = pd.read_excel(data_work_program, sheet_name=desc_rp, nrows=1, usecols='A:G')  # загружаем датафрейм
+    df_desc_rp = pd.read_excel(data_work_program, sheet_name=desc_rp, nrows=1, usecols='A:L')  # загружаем датафрейм
     df_desc_rp.fillna('НЕ ЗАПОЛНЕНО !!!', inplace=True)  # заполняем не заполненные разделы
+    df_desc_rp.columns = ['Тип_программы','Название_дисциплины','Цикл','Перечень','Код_специальность_профессия',
+                          'Год','Разработчик','Методист','ПЦК','Пред_ПЦК','Должность','Утверждающий']
 
     # Обрабатываем лист Лич_результаты
 
@@ -487,12 +489,13 @@ if __name__=='__main__':
     """
     Обрабатываем лист План УД
     """
-    df_plan_ud = pd.read_excel(data_work_program, sheet_name=plan, usecols='A:G')
+    df_plan_ud = pd.read_excel(data_work_program, sheet_name=plan, usecols='A:H')
     df_plan_ud.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
-    df_plan_ud.columns = ['Курс_семестр','Раздел', 'Тема', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС']
+    df_plan_ud.columns = ['Курс_семестр','Раздел', 'Тема', 'Содержание','Количество_часов', 'Практика', 'Вид_занятия', 'СРС']
     df_plan_ud['Курс_семестр'].fillna('Пусто', inplace=True)
     df_plan_ud['Раздел'].fillna('Пусто', inplace=True)
+    df_plan_ud['Тема'].fillna('Пусто', inplace=True)
 
     borders = df_plan_ud[
         df_plan_ud['Курс_семестр'].str.contains('семестр')].index  # получаем индексы строк где есть слово семестр
@@ -512,7 +515,7 @@ if __name__=='__main__':
     part_df.pop(0)  # удаляем нулевой элемент так как он пустой
 
     main_df = pd.DataFrame(
-        columns=['Курс_семестр','Раздел', 'Тема', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС'])  # создаем базовый датафрейм
+        columns=['Курс_семестр','Раздел', 'Тема','Содержание', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС'])  # создаем базовый датафрейм
 
     lst_type_lesson = ['урок', 'практическое занятие', 'лабораторное занятие',
                        'курсовая работа (КП)']  # список типов занятий
@@ -540,11 +543,11 @@ if __name__=='__main__':
 
     main_df.insert(0, 'Номер', np.nan)  # добавляем колонку с номерами занятий
 
-    main_df['Тема'] = main_df['Тема'].fillna('Пусто')  # заменяем наны на пусто
+    main_df['Содержание'] = main_df['Содержание'].fillna('Пусто')  # заменяем наны на пусто
 
     count = 0  # счетчик
     for idx, row in enumerate(main_df.itertuples()):
-        if (row[4] == 'Пусто') | ('Итого часов' in row[4]):
+        if (row[5] == 'Пусто') | ('Итого часов' in row[5]):
             main_df.iloc[idx, 0] = ''
         else:
             count += 1
@@ -553,9 +556,12 @@ if __name__=='__main__':
     # очищаем от пустых символов и строки Пусто
     main_df['Курс_семестр'] = main_df['Курс_семестр'].fillna('Пусто')
     main_df['Раздел'] = main_df['Раздел'].fillna('Пусто')
+
     main_df['Курс_семестр'] = main_df['Курс_семестр'].replace('Пусто', '')
     main_df['Тема'] = main_df['Тема'].replace('Пусто', '')
     main_df['Раздел'] = main_df['Раздел'].replace('Пусто', '')
+    main_df['Содержание'] = main_df['Содержание'].replace('Пусто', '')
+
     main_df['Вид_занятия'] = main_df['Вид_занятия'].fillna('')
 
     main_df['Количество_часов'] = main_df['Количество_часов'].apply(convert_to_int)
@@ -563,8 +569,8 @@ if __name__=='__main__':
 
     main_df['Практика'] = main_df['Практика'].apply(convert_to_int)
     main_df['СРС'] = main_df['СРС'].apply(convert_to_int)
-    main_df['Тема'] = main_df['Курс_семестр']+main_df['Раздел'] + main_df['Тема']
-    main_df.drop(columns=['Курс_семестр','Раздел'],inplace=True)
+    main_df['Содержание'] = main_df['Курс_семестр']+main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
+    main_df.drop(columns=['Курс_семестр','Раздел','Тема'],inplace=True)
 
 
 
