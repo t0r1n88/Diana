@@ -67,6 +67,45 @@ def insert_type_source(lst_phrase:list)->list:
         out_lst.append(temp_str)
     return out_lst
 
+def processing_publ(row):
+    """
+    Функция для генерации строки с литературой в нужном формате
+    :param row: строка датафрейма
+    :return: сумма строк датафрейма в нужном формате
+    """
+    author = row[0] # автор(ы)
+    name_book = row[1] # название
+    full_city = row[2] # полное название города
+    short_city = row[3] # краткое название города
+    publ_house = row[4] # издательство
+    year = row[5] # год издания
+    quan_pages = row[6] # число страниц
+    author = author.rstrip(string.punctuation) # очищаем от символа пунктуации в конце
+    name_book = name_book.rstrip(string.punctuation) # очищаем от символа пунктуации в конце
+    short_city = short_city.rstrip(string.punctuation)  # очищаем от символа пунктуации в конце
+    publ_house = publ_house.rstrip(string.punctuation)  # очищаем от символа пунктуации в конце
+    # извлекаем год
+    result = re.search(r'\d{4}',year)
+    if result:
+        clean_year = result.group()
+    else:
+        clean_year = 'Неправильно заполнен год издания, введите год в формате 4 цифры без букв'
+
+    # извлекаем количество страниц
+    result = re.search(r'\d+',quan_pages)
+    if result:
+        clean_quan_pages = result.group()
+    else:
+        clean_quan_pages = 'Неправильно заполнено количество страниц, введите количество в виде числа без букв'
+    # Формируем итоговую строку
+    out_str = f'{author}. {name_book}.- {short_city}.: {publ_house}, {clean_year}.- {clean_quan_pages} c.'
+
+    return out_str
+
+
+
+
+
 def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:str):
     """
     Скрипт для генерации рабочей програамы для учебной дисциплины с помощью DocxTemplate
@@ -78,14 +117,19 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     :type end_folder: str
     """
     # названия листов
+    # названия листов
     desc_rp = 'Описание РП'
     pers_result = 'Лич_результаты'
     structure = 'Объем УД'
     plan = 'План УД'
     mto = 'МТО'
-    educ_publ = 'Учебные издания'
+    main_publ = 'ОИ'
+    second_publ = 'ДИ'
+    ii_publ = 'ИИ'
+    control = 'Контроль'
     ok = 'Данные для ОК'
     pk = 'Данные для ПК'
+
     # Обрабатываем лист Описание РП
     df_desc_rp = pd.read_excel(data_work_program, sheet_name=desc_rp, nrows=1, usecols='A:G')  # загружаем датафрейм
     df_desc_rp.fillna('НЕ ЗАПОЛНЕНО !!!', inplace=True)  # заполняем не заполненные разделы
@@ -126,6 +170,8 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     df_structure.fillna('', inplace=True)
     max_load = df_structure.loc[0, 'Всего']  # максимальная учебная нагрузка
     mand_load = df_structure.loc[1, 'Всего']  # обязательная нагрузка
+    practice_load = df_structure.loc[0, 'Практика']  # практическая нагрузка
+
     sam_df = df_structure[
         df_structure['Вид'] == 'Самостоятельная работа обучающегося (всего)']  # получаем часы самостоятельной работы
     if len(sam_df) == 0:
@@ -135,7 +181,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     """
     Обрабатываем лист План УД
     """
-    df_plan_ud = pd.read_excel(data_work_program, sheet_name='План УД', usecols='A:G')
+    df_plan_ud = pd.read_excel(data_work_program, sheet_name=plan, usecols='A:G')
     df_plan_ud.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
     df_plan_ud.columns = ['Курс_семестр','Раздел', 'Тема', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС']
@@ -214,6 +260,8 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     main_df['Тема'] = main_df['Курс_семестр']+main_df['Раздел'] + main_df['Тема']
     main_df.drop(columns=['Курс_семестр','Раздел'],inplace=True)
 
+
+
     """
     Обрабатываем лист МТО
     """
@@ -253,31 +301,46 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
 
 
     """
-    Обрабатываем лист Учебные издания
+    Обрабатываем лист Основные источники
     """
-    df_educ_publ = pd.read_excel(data_work_program, sheet_name=educ_publ, usecols='A:C')
-    df_educ_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
-    lst_main_source = df_educ_publ['Основные_источники'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
-    if len(lst_main_source) == 0:
-        lst_main_source = ['На листе Учебные издания НЕ заполнены основные источники !!!']
+    df_main_publ = pd.read_excel(data_work_program, sheet_name=main_publ, usecols='A:G')
+    df_main_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    df_main_publ.fillna('Не заполнено !!!',inplace=True)
+    df_main_publ = df_main_publ.applymap(str) # приводим к строковому виду
+    df_main_publ = df_main_publ.applymap(str.strip) # очищаем от пробелов в начале и конце
 
-    # Дополнительные источники
-    lst_slave_source = df_educ_publ[
-        'Дополнительные_источники'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
-    if len(lst_slave_source) == 0:
-        lst_slave_source = ['На листе Учебные издания НЕ заполнены дополнительные источники !!!']
+    df_main_publ['Основной_источник'] = df_main_publ.apply(processing_publ,axis=1) # формируем строку
+    df_main_publ.sort_values(by='Основной_источник',inplace=True)
+    lst_main_source = df_main_publ['Основной_источник'].tolist()
 
-    # Интернет -источники
-    lst_inet_source = df_educ_publ['Интернет_ресурсы'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
-    if len(lst_inet_source) == 0:
-        lst_inet_source = ['На листе Учебные издания НЕ заполнены интернет источники !!!']
+
+    """
+    Обрабатываем лист дополнительные источники
+    """
+    df_second_publ = pd.read_excel(data_work_program, sheet_name=second_publ, usecols='A:G')
+    df_second_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    df_second_publ.fillna('Не заполнено !!!',inplace=True)
+    df_second_publ = df_second_publ.applymap(str) # приводим к строковому виду
+    df_second_publ = df_second_publ.applymap(str.strip) # очищаем от пробелов в начале и конце
+
+    df_second_publ['Основной_источник'] = df_second_publ.apply(processing_publ,axis=1) # формируем строку
+    df_second_publ.sort_values(by='Основной_источник', inplace=True)
+    lst_slave_source = df_second_publ['Основной_источник'].tolist()
+
+    """
+    Обрабатываем лист интернет источники
+    """
+    df_ii_publ = pd.read_excel(data_work_program, sheet_name=ii_publ, usecols='A')
+    df_ii_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    lst_inet_source = df_ii_publ['Интернет_ресурсы'].tolist()
+    df_ii_publ.sort_values(by='Интернет_ресурсы', inplace=True)
     lst_inet_source = insert_type_source(lst_inet_source)
 
     """
     Обрабатываем лист Контроль и Оценка
     """
-    df_control = pd.read_excel(data_work_program,sheet_name='Контроль и оценка',usecols='A:B')
+    df_control = pd.read_excel(data_work_program,sheet_name=control,usecols='A:B')
     df_control.dropna(inplace=True, thresh=1)  # удаляем пустые строки
     df_control.columns = ['Результаты_обучения','Контроль_обучения']
     _lst_result_educ = df_control['Результаты_обучения'].dropna().tolist() # создаем список
@@ -318,7 +381,9 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     # добавляем единичные переменные
     context['Макс_нагрузка'] = max_load
     context['Обяз_нагрузка'] = mand_load
+    context['Практ_подготовка'] = practice_load
     context['Сам_работа'] = sam_load
+
     # лист МТО
     context['Учебный_кабинет'] = name_kab
     context['Лаборатория'] = name_lab
@@ -350,6 +415,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
 
 
 
+
 if __name__=='__main__':
     template_work_program = 'data/Шаблон автозаполнения РП.docx'
     data_work_program = 'data/Автозаполнение РП.xlsx'
@@ -361,7 +427,10 @@ if __name__=='__main__':
     structure = 'Объем УД'
     plan = 'План УД'
     mto = 'МТО'
-    educ_publ = 'Учебные издания'
+    main_publ = 'ОИ'
+    second_publ = 'ДИ'
+    ii_publ = 'ИИ'
+    control = 'Контроль'
     ok = 'Данные для ОК'
     pk = 'Данные для ПК'
 
@@ -405,6 +474,8 @@ if __name__=='__main__':
     df_structure.fillna('', inplace=True)
     max_load = df_structure.loc[0, 'Всего']  # максимальная учебная нагрузка
     mand_load = df_structure.loc[1, 'Всего']  # обязательная нагрузка
+    practice_load = df_structure.loc[0, 'Практика']  # практическая нагрузка
+
     sam_df = df_structure[
         df_structure['Вид'] == 'Самостоятельная работа обучающегося (всего)']  # получаем часы самостоятельной работы
     if len(sam_df) == 0:
@@ -414,7 +485,7 @@ if __name__=='__main__':
     """
     Обрабатываем лист План УД
     """
-    df_plan_ud = pd.read_excel(data_work_program, sheet_name='План УД', usecols='A:G')
+    df_plan_ud = pd.read_excel(data_work_program, sheet_name=plan, usecols='A:G')
     df_plan_ud.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
     df_plan_ud.columns = ['Курс_семестр','Раздел', 'Тема', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС']
@@ -534,31 +605,46 @@ if __name__=='__main__':
 
 
     """
-    Обрабатываем лист Учебные издания
+    Обрабатываем лист Основные источники
     """
-    df_educ_publ = pd.read_excel(data_work_program, sheet_name=educ_publ, usecols='A:C')
-    df_educ_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
-    lst_main_source = df_educ_publ['Основные_источники'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
-    if len(lst_main_source) == 0:
-        lst_main_source = ['На листе Учебные издания НЕ заполнены основные источники !!!']
+    df_main_publ = pd.read_excel(data_work_program, sheet_name=main_publ, usecols='A:G')
+    df_main_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    df_main_publ.fillna('Не заполнено !!!',inplace=True)
+    df_main_publ = df_main_publ.applymap(str) # приводим к строковому виду
+    df_main_publ = df_main_publ.applymap(str.strip) # очищаем от пробелов в начале и конце
 
-    # Дополнительные источники
-    lst_slave_source = df_educ_publ[
-        'Дополнительные_источники'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
-    if len(lst_slave_source) == 0:
-        lst_slave_source = ['На листе Учебные издания НЕ заполнены дополнительные источники !!!']
+    df_main_publ['Основной_источник'] = df_main_publ.apply(processing_publ,axis=1) # формируем строку
+    df_main_publ.sort_values(by='Основной_источник',inplace=True)
+    lst_main_source = df_main_publ['Основной_источник'].tolist()
 
-    # Интернет -источники
-    lst_inet_source = df_educ_publ['Интернет_ресурсы'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
-    if len(lst_inet_source) == 0:
-        lst_inet_source = ['На листе Учебные издания НЕ заполнены интернет источники !!!']
+
+    """
+    Обрабатываем лист дополнительные источники
+    """
+    df_second_publ = pd.read_excel(data_work_program, sheet_name=second_publ, usecols='A:G')
+    df_second_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    df_second_publ.fillna('Не заполнено !!!',inplace=True)
+    df_second_publ = df_second_publ.applymap(str) # приводим к строковому виду
+    df_second_publ = df_second_publ.applymap(str.strip) # очищаем от пробелов в начале и конце
+
+    df_second_publ['Основной_источник'] = df_second_publ.apply(processing_publ,axis=1) # формируем строку
+    df_second_publ.sort_values(by='Основной_источник', inplace=True)
+    lst_slave_source = df_second_publ['Основной_источник'].tolist()
+
+    """
+    Обрабатываем лист интернет источники
+    """
+    df_ii_publ = pd.read_excel(data_work_program, sheet_name=ii_publ, usecols='A')
+    df_ii_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    df_ii_publ.sort_values(by='Интернет_ресурсы', inplace=True)
+    lst_inet_source = df_ii_publ['Интернет_ресурсы'].tolist()
     lst_inet_source = insert_type_source(lst_inet_source)
 
     """
     Обрабатываем лист Контроль и Оценка
     """
-    df_control = pd.read_excel(data_work_program,sheet_name='Контроль и оценка',usecols='A:B')
+    df_control = pd.read_excel(data_work_program,sheet_name=control,usecols='A:B')
     df_control.dropna(inplace=True, thresh=1)  # удаляем пустые строки
     df_control.columns = ['Результаты_обучения','Контроль_обучения']
     _lst_result_educ = df_control['Результаты_обучения'].dropna().tolist() # создаем список
@@ -599,7 +685,9 @@ if __name__=='__main__':
     # добавляем единичные переменные
     context['Макс_нагрузка'] = max_load
     context['Обяз_нагрузка'] = mand_load
+    context['Практ_подготовка'] = practice_load
     context['Сам_работа'] = sam_load
+
     # лист МТО
     context['Учебный_кабинет'] = name_kab
     context['Лаборатория'] = name_lab
