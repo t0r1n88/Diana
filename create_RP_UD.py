@@ -45,6 +45,8 @@ def processing_punctuation_end_string(lst_phrase: list, sep_string: str, sep_beg
     :param sep_end: знак пунктуации в конце
     :return: строку с разделителями и переносами строки
     """
+    if len(lst_phrase) == 0:
+        return ''
     temp_lst = list(map(lambda x: sep_begin + x, lst_phrase))
     temp_lst = list(map(lambda x: x.strip(), temp_lst)) # очищаем от прбельных символов в начале и конце
     temp_lst = list(map(lambda x: x.rstrip(string.punctuation), temp_lst))  # очищаем от знаков пунктуации

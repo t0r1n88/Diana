@@ -98,7 +98,7 @@ def processing_create_RP_for_UD():
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('Диана Создание рабочих программ ver 1.0')
+    window.title('Диана Создание рабочих программ ver 1.1 x64')
     window.geometry('700x860')
     window.resizable(False, False)
 
