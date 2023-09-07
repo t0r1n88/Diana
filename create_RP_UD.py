@@ -86,7 +86,6 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     educ_publ = 'Учебные издания'
     ok = 'Данные для ОК'
     pk = 'Данные для ПК'
-
     # Обрабатываем лист Описание РП
     df_desc_rp = pd.read_excel(data_work_program, sheet_name=desc_rp, nrows=1, usecols='A:G')  # загружаем датафрейм
     df_desc_rp.fillna('НЕ ЗАПОЛНЕНО !!!', inplace=True)  # заполняем не заполненные разделы
@@ -136,15 +135,15 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     """
     Обрабатываем лист План УД
     """
-    df_plan_ud = pd.read_excel(data_work_program, sheet_name='План УД', usecols='A:F')
+    df_plan_ud = pd.read_excel(data_work_program, sheet_name='План УД', usecols='A:G')
     df_plan_ud.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
-    df_plan_ud.columns = ['Раздел', 'Тема', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС']
-
+    df_plan_ud.columns = ['Курс_семестр','Раздел', 'Тема', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС']
+    df_plan_ud['Курс_семестр'].fillna('Пусто', inplace=True)
     df_plan_ud['Раздел'].fillna('Пусто', inplace=True)
 
     borders = df_plan_ud[
-        df_plan_ud['Раздел'].str.contains('семестр')].index  # получаем индексы строк где есть слово семестр
+        df_plan_ud['Курс_семестр'].str.contains('семестр')].index  # получаем индексы строк где есть слово семестр
 
     part_df = []  # список для хранения кусков датафрейма
     previos_border = -1
@@ -161,7 +160,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     part_df.pop(0)  # удаляем нулевой элемент так как он пустой
 
     main_df = pd.DataFrame(
-        columns=['Раздел', 'Тема', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС'])  # создаем базовый датафрейм
+        columns=['Курс_семестр','Раздел', 'Тема', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС'])  # создаем базовый датафрейм
 
     lst_type_lesson = ['урок', 'практическое занятие', 'лабораторное занятие',
                        'курсовая работа (КП)']  # список типов занятий
@@ -183,7 +182,6 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
         kurs_hours = dct_sum_result['курсовая работа (КП)']  # часы курсовых
 
         value_text = f'{all_hours}\n \n{theory_hours}\n{praktice_hours}\n{lab_hours}\n{kurs_hours}'  # строка со значениями
-        # itog_row = {'Тема':margint_text,'Количество_часов':value_text} # создаем строку
         temp_df = pd.DataFrame([{'Тема': margint_text, 'Количество_часов': value_text}])
         df = pd.concat([df, temp_df], ignore_index=True)  # добаляем итоговую строку
         main_df = pd.concat([main_df, df], ignore_index=True)  # добавляем в основной датафрейм
@@ -194,14 +192,16 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
 
     count = 0  # счетчик
     for idx, row in enumerate(main_df.itertuples()):
-        if (row[3] == 'Пусто') | ('Итого часов' in row[3]):
+        if (row[4] == 'Пусто') | ('Итого часов' in row[4]):
             main_df.iloc[idx, 0] = ''
         else:
             count += 1
             main_df.iloc[idx, 0] = count
 
     # очищаем от пустых символов и строки Пусто
+    main_df['Курс_семестр'] = main_df['Курс_семестр'].fillna('Пусто')
     main_df['Раздел'] = main_df['Раздел'].fillna('Пусто')
+    main_df['Курс_семестр'] = main_df['Курс_семестр'].replace('Пусто', '')
     main_df['Тема'] = main_df['Тема'].replace('Пусто', '')
     main_df['Раздел'] = main_df['Раздел'].replace('Пусто', '')
     main_df['Вид_занятия'] = main_df['Вид_занятия'].fillna('')
@@ -211,8 +211,8 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
 
     main_df['Практика'] = main_df['Практика'].apply(convert_to_int)
     main_df['СРС'] = main_df['СРС'].apply(convert_to_int)
-    main_df['Тема'] = main_df['Раздел'] + main_df['Тема']
-    main_df.drop(columns=['Раздел'], inplace=True)
+    main_df['Тема'] = main_df['Курс_семестр']+main_df['Раздел'] + main_df['Тема']
+    main_df.drop(columns=['Курс_семестр','Раздел'],inplace=True)
 
     """
     Обрабатываем лист МТО
@@ -233,11 +233,9 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
         'Оборудование_учебного_кабинета'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
     if len(lst_obor_cab) == 0:
         lst_obor_cab = ['На листе МТО НЕ заполнено оборудование учебного кабинета !!!']
-    obor_cab = processing_punctuation_end_string(lst_obor_cab, ';\n', '- ',
-                                                 '.')  # обрабатываем знаки пунктуации для каждой строки
+    obor_cab = processing_punctuation_end_string(lst_obor_cab, ';\n', '- ','.')  # обрабатываем знаки пунктуации для каждой строки
 
-    lst_tecn_educ = df_mto[
-        'Технические_средства_обучения'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
+    lst_tecn_educ = df_mto['Технические_средства_обучения'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
     if len(lst_tecn_educ) == 0:
         lst_tecn_educ = ['На листе МТО НЕ заполнены технические средства обучения !!!']
     tecn_educ = processing_punctuation_end_string(lst_tecn_educ, ';\n', '- ', '.')
@@ -250,8 +248,9 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     elif len(lst_obor_labor) != 0 and not name_lab:
         obor_labor = ['На листе МТО заполнено оборудование лаборатории но не заполнено наименование лаборатории !!!']
     else:
-        obor_labor = processing_punctuation_end_string(lst_obor_labor, ';\n', '- ',
-                                                       '.')  # обрабатываем знаки пунктуации для каждой строки
+        obor_labor = processing_punctuation_end_string(lst_obor_labor, ';\n', '- ','.')  # обрабатываем знаки пунктуации для каждой строки
+
+
 
     """
     Обрабатываем лист Учебные издания
@@ -259,8 +258,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     df_educ_publ = pd.read_excel(data_work_program, sheet_name=educ_publ, usecols='A:C')
     df_educ_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
-    lst_main_source = df_educ_publ[
-        'Основные_источники'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
+    lst_main_source = df_educ_publ['Основные_источники'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
     if len(lst_main_source) == 0:
         lst_main_source = ['На листе Учебные издания НЕ заполнены основные источники !!!']
 
@@ -271,8 +269,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
         lst_slave_source = ['На листе Учебные издания НЕ заполнены дополнительные источники !!!']
 
     # Интернет -источники
-    lst_inet_source = df_educ_publ[
-        'Интернет_ресурсы'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
+    lst_inet_source = df_educ_publ['Интернет_ресурсы'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
     if len(lst_inet_source) == 0:
         lst_inet_source = ['На листе Учебные издания НЕ заполнены интернет источники !!!']
     lst_inet_source = insert_type_source(lst_inet_source)
@@ -280,41 +277,43 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     """
     Обрабатываем лист Контроль и Оценка
     """
-    df_control = pd.read_excel(data_work_program, sheet_name='Контроль и оценка', usecols='A:B')
+    df_control = pd.read_excel(data_work_program,sheet_name='Контроль и оценка',usecols='A:B')
     df_control.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-    df_control.columns = ['Результаты_обучения', 'Контроль_обучения']
-    _lst_result_educ = df_control['Результаты_обучения'].dropna().tolist()  # создаем список
-    border_divide = _lst_result_educ.index('Знания:')  # граница разделения
-    lst_skill = _lst_result_educ[1:border_divide]  # получаем список умений
-    lst_knowledge = _lst_result_educ[border_divide + 1:]  # получаем список знаний
+    df_control.columns = ['Результаты_обучения','Контроль_обучения']
+    _lst_result_educ = df_control['Результаты_обучения'].dropna().tolist() # создаем список
+    border_divide = _lst_result_educ.index('Знания:') # граница разделения
+    lst_skill = _lst_result_educ[1:border_divide] # получаем список умений
+    lst_knowledge = _lst_result_educ[border_divide+1:] # получаем список знаний
 
-    lst_skill = processing_punctuation_end_string(lst_skill, ';\n', '- ', '.')  # форматируем выходную строку
-    lst_knowledge = processing_punctuation_end_string(lst_knowledge, ';\n', '- ', '.')  # форматируем выходную строку
-    df_control.fillna('', inplace=True)
+    lst_skill = processing_punctuation_end_string(lst_skill, ';\n', '- ','.') # форматируем выходную строку
+    lst_knowledge = processing_punctuation_end_string(lst_knowledge, ';\n', '- ','.') # форматируем выходную строку
+    df_control.fillna('',inplace=True)
 
     """
     Обрабатываем лист Данные для ОК
     """
-    df_ok = pd.read_excel(data_work_program, sheet_name=ok, usecols='A')
+    df_ok = pd.read_excel(data_work_program,sheet_name=ok,usecols='A')
     lst_ok = df_ok['Наименование'].dropna().tolist()
-    lst_ok = processing_punctuation_end_string(lst_ok, ';\n', '- ', '.')
+    lst_ok = processing_punctuation_end_string(lst_ok, ';\n', '- ','.')
 
     """
     Обрабатываем лист Данные для ПК
     """
-    df_pk = pd.read_excel(data_work_program, sheet_name=pk, usecols='A')
+    df_pk = pd.read_excel(data_work_program,sheet_name=pk,usecols='A')
     lst_pk = df_pk['Наименование'].dropna().tolist()
-    lst_pk = processing_punctuation_end_string(lst_pk, ';\n', '- ', '.')
+    lst_pk = processing_punctuation_end_string(lst_pk, ';\n', '- ','.')
+
 
     # Конвертируем датафрейм с описанием программы в список словарей и добавляем туда нужные элементы
     data_program = df_desc_rp.to_dict('records')
     context = data_program[0]
     context['Лич_результаты'] = df_pers_result.to_dict('records')  # добаввляем лист личностных результатов
-    context['План_УД'] = main_df.to_dict('records')  # содержание учебной дисциплины
+    context['План_УД'] = main_df.to_dict('records') # содержание учебной дисциплины
     context['Учебная_работа'] = df_structure.to_dict('records')
     context['Контроль_оценка'] = df_control.to_dict('records')
     context['Знать'] = lst_knowledge
     context['Уметь'] = lst_skill
+
 
     # добавляем единичные переменные
     context['Макс_нагрузка'] = max_load
@@ -334,6 +333,8 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     context['ОК'] = lst_ok
     context['ПК'] = lst_pk
 
+
+
     doc = DocxTemplate(template_work_program)
     # Получаем ключи используемые в шаблоне
     set_of_variables = doc.get_undeclared_template_variables()
@@ -346,6 +347,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     t = time.localtime()
     current_time = time.strftime('%H_%M_%S', t)
     doc.save(f'{end_folder}/РП {name_rp[:40]} {current_time}.docx')
+
 
 
 if __name__=='__main__':
@@ -412,15 +414,15 @@ if __name__=='__main__':
     """
     Обрабатываем лист План УД
     """
-    df_plan_ud = pd.read_excel('data/Автозаполнение РП.xlsx', sheet_name='План УД', usecols='A:F')
+    df_plan_ud = pd.read_excel(data_work_program, sheet_name='План УД', usecols='A:G')
     df_plan_ud.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
-    df_plan_ud.columns = ['Раздел', 'Тема', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС']
-
+    df_plan_ud.columns = ['Курс_семестр','Раздел', 'Тема', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС']
+    df_plan_ud['Курс_семестр'].fillna('Пусто', inplace=True)
     df_plan_ud['Раздел'].fillna('Пусто', inplace=True)
 
     borders = df_plan_ud[
-        df_plan_ud['Раздел'].str.contains('семестр')].index  # получаем индексы строк где есть слово семестр
+        df_plan_ud['Курс_семестр'].str.contains('семестр')].index  # получаем индексы строк где есть слово семестр
 
     part_df = []  # список для хранения кусков датафрейма
     previos_border = -1
@@ -437,7 +439,7 @@ if __name__=='__main__':
     part_df.pop(0)  # удаляем нулевой элемент так как он пустой
 
     main_df = pd.DataFrame(
-        columns=['Раздел', 'Тема', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС'])  # создаем базовый датафрейм
+        columns=['Курс_семестр','Раздел', 'Тема', 'Количество_часов', 'Практика', 'Вид_занятия', 'СРС'])  # создаем базовый датафрейм
 
     lst_type_lesson = ['урок', 'практическое занятие', 'лабораторное занятие',
                        'курсовая работа (КП)']  # список типов занятий
@@ -459,7 +461,6 @@ if __name__=='__main__':
         kurs_hours = dct_sum_result['курсовая работа (КП)']  # часы курсовых
 
         value_text = f'{all_hours}\n \n{theory_hours}\n{praktice_hours}\n{lab_hours}\n{kurs_hours}'  # строка со значениями
-        # itog_row = {'Тема':margint_text,'Количество_часов':value_text} # создаем строку
         temp_df = pd.DataFrame([{'Тема': margint_text, 'Количество_часов': value_text}])
         df = pd.concat([df, temp_df], ignore_index=True)  # добаляем итоговую строку
         main_df = pd.concat([main_df, df], ignore_index=True)  # добавляем в основной датафрейм
@@ -470,14 +471,16 @@ if __name__=='__main__':
 
     count = 0  # счетчик
     for idx, row in enumerate(main_df.itertuples()):
-        if (row[3] == 'Пусто') | ('Итого часов' in row[3]):
+        if (row[4] == 'Пусто') | ('Итого часов' in row[4]):
             main_df.iloc[idx, 0] = ''
         else:
             count += 1
             main_df.iloc[idx, 0] = count
 
     # очищаем от пустых символов и строки Пусто
+    main_df['Курс_семестр'] = main_df['Курс_семестр'].fillna('Пусто')
     main_df['Раздел'] = main_df['Раздел'].fillna('Пусто')
+    main_df['Курс_семестр'] = main_df['Курс_семестр'].replace('Пусто', '')
     main_df['Тема'] = main_df['Тема'].replace('Пусто', '')
     main_df['Раздел'] = main_df['Раздел'].replace('Пусто', '')
     main_df['Вид_занятия'] = main_df['Вид_занятия'].fillna('')
@@ -487,8 +490,8 @@ if __name__=='__main__':
 
     main_df['Практика'] = main_df['Практика'].apply(convert_to_int)
     main_df['СРС'] = main_df['СРС'].apply(convert_to_int)
-    main_df['Тема'] = main_df['Раздел'] + main_df['Тема']
-    main_df.drop(columns=['Раздел'],inplace=True)
+    main_df['Тема'] = main_df['Курс_семестр']+main_df['Раздел'] + main_df['Тема']
+    main_df.drop(columns=['Курс_семестр','Раздел'],inplace=True)
 
 
 
