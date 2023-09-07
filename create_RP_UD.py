@@ -478,7 +478,7 @@ if __name__=='__main__':
     df_structure.fillna('', inplace=True)
     max_load = df_structure.loc[0, 'Всего']  # максимальная учебная нагрузка
     mand_load = df_structure.loc[1, 'Всего']  # обязательная нагрузка
-    practice_load = df_structure.loc[0, 'Практика']  # практическая нагрузка
+    practice_load = df_structure.loc[1, 'Практика']  # практическая нагрузка
 
     sam_df = df_structure[
         df_structure['Вид'] == 'Самостоятельная работа обучающегося (всего)']  # получаем часы самостоятельной работы
