@@ -119,25 +119,21 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
     pers_result = 'Лич_результаты'
     structure = 'Объем УД'
     plan = 'План УД'
-    mto = 'МТО'
+    content = 'Содержание'
+    target = 'Цели'
+    result = 'Результаты'
+    uupd = 'УУПД'
     main_publ = 'ОИ'
     second_publ = 'ДИ'
     ii_publ = 'ИИ'
     control = 'Контроль'
-    pk_ok = 'ПК и ОК'
     # Обрабатываем лист Описание РП
     df_desc_rp = pd.read_excel(data_work_program, sheet_name=desc_rp, nrows=1, usecols='A:L')  # загружаем датафрейм
     df_desc_rp.fillna('НЕ ЗАПОЛНЕНО !!!', inplace=True)  # заполняем не заполненные разделы
     df_desc_rp.columns = ['Тип_программы', 'Название_дисциплины', 'Цикл', 'Перечень', 'Код_специальность_профессия',
                           'Год', 'Разработчик', 'Методист', 'ПЦК', 'Пред_ПЦК', 'Должность', 'Утверждающий']
 
-    # Обрабатываем лист Лич_результаты
-
-    df_pers_result = pd.read_excel(data_work_program, sheet_name=pers_result, usecols='A:B')
-    df_pers_result.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-    df_pers_result.columns = ['Код', 'Результат']
-
-    # Обрабатываем лист Структура
+    # Обрабатываем лист Объем УД
     # Открываем файл
     wb = openpyxl.load_workbook(data_work_program, read_only=True)
     target_value = 'итог'
@@ -167,7 +163,7 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
     df_structure.fillna('', inplace=True)
     max_load = df_structure.loc[0, 'Всего']  # максимальная учебная нагрузка
     mand_load = df_structure.loc[1, 'Всего']  # обязательная нагрузка
-    practice_load = df_structure.loc[1, 'Практика']  # практическая нагрузка
+    prof_load = df_structure.loc[1, 'Практика']  # практическая нагрузка
 
     sam_df = df_structure[
         df_structure['Вид'] == 'Самостоятельная работа обучающегося (всего)']  # получаем часы самостоятельной работы
@@ -264,47 +260,44 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
     main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
 
     """
-    Обрабатываем лист МТО
+    Обрабатываем лист Содержание
     """
-    df_mto = pd.read_excel(data_work_program, sheet_name=mto, usecols='A:E')
-    df_mto.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-    name_kab = df_mto['Наименование_учебного_кабинета'].dropna().tolist()  #
-    name_kab = ','.join(name_kab)  # получаем все названия которые есть в колонке Наименование учебного кабинета
+    df_content = pd.read_excel(data_work_program, sheet_name=content, usecols='A',nrows=1,dtype=str)
+    df_content = df_content.applymap(str.strip) # очищаем от пробелов
 
-    name_lab = df_mto['Наименование_лаборатории'].dropna().tolist()
-    if len(name_lab) == 0:
-        name_lab = []
-    else:
-        name_lab = ','.join(name_lab)
+    """
+    Обрабатываем листы Цели,Результаты, УУПД
+    """
+    #Цели
+    df_target = pd.read_excel(data_work_program, sheet_name=target, usecols='A')
+    lst_target = df_target['Цели'].dropna().tolist()
+    lst_target = processing_punctuation_end_string(lst_target, ';\n', '- ', '.')
+    # Результаты
+    # Личностные результаты
+    df_result = pd.read_excel(data_work_program, sheet_name=result, usecols='A:C')
+    lst_perconal_result = df_result['Личностные_результаты'].dropna().tolist()
+    lst_perconal_result = processing_punctuation_end_string(lst_perconal_result, ';\n', '- ', '.')
+    # Метапредметные результаты
+    lst_meta_result = df_result['Метапредметные_результаты'].dropna().tolist()
+    lst_meta_result = processing_punctuation_end_string(lst_meta_result, ';\n', '- ', '.')
+    # Предметные результаты
+    lst_predmet_result = df_result['Предметные_результаты'].dropna().tolist()
+    lst_predmet_result = processing_punctuation_end_string(lst_predmet_result, ';\n', '- ', '.')
+    # УУПД
+    df_uupd = pd.read_excel(data_work_program, sheet_name=uupd, usecols='A')
+    lst_uupd = df_target.iloc[:,0].dropna().tolist()
+    lst_uupd = processing_punctuation_end_string(lst_uupd, ';\n', '- ', '.')
 
-    # Списки кабинета и средств обучения
-    lst_obor_cab = df_mto[
-        'Оборудование_учебного_кабинета'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
-    if len(lst_obor_cab) == 0:
-        lst_obor_cab = ['На листе МТО НЕ заполнено оборудование учебного кабинета !!!']
-    obor_cab = processing_punctuation_end_string(lst_obor_cab, ';\n', '- ',
-                                                 '.')  # обрабатываем знаки пунктуации для каждой строки
 
-    lst_tecn_educ = df_mto[
-        'Технические_средства_обучения'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
-    if len(lst_tecn_educ) == 0:
-        lst_tecn_educ = ['На листе МТО НЕ заполнены технические средства обучения !!!']
-    tecn_educ = processing_punctuation_end_string(lst_tecn_educ, ';\n', '- ', '.')
 
-    # Оборудование лаборатории
-    lst_obor_labor = df_mto[
-        'Оборудование_лаборатории'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
-    if len(lst_obor_labor) == 0 and name_lab:
-        obor_labor = ['На листе МТО НЕ заполнено оборудование лаборатории !!!']
-    elif len(lst_obor_labor) != 0 and not name_lab:
-        obor_labor = ['На листе МТО заполнено оборудование лаборатории но не заполнено наименование лаборатории !!!']
-    else:
-        obor_labor = processing_punctuation_end_string(lst_obor_labor, ';\n', '- ',
-                                                       '.')  # обрабатываем знаки пунктуации для каждой строки
+
+
+
 
     """
     Обрабатываем лист Основные источники
     """
+
 
     df_main_publ = pd.read_excel(data_work_program, sheet_name=main_publ, usecols='A:G')
     df_main_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
@@ -353,24 +346,10 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
     lst_knowledge = processing_punctuation_end_string(lst_knowledge, ';\n', '- ', '.')  # форматируем выходную строку
     df_control.fillna('', inplace=True)
 
-    """
-    Обрабатываем лист ПК и ОК
-
-    """
-    df_pk_ok = pd.read_excel(data_work_program, sheet_name=pk_ok, usecols='A:B')
-    df_pk_ok.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-    # Обработка ПК
-    lst_pk = df_pk_ok['Наименование ПК'].dropna().tolist()
-    lst_pk = processing_punctuation_end_string(lst_pk, ';\n', '- ', '.')
-
-    # Обработка ОК
-    lst_ok = df_pk_ok['Наименование ОК'].dropna().tolist()
-    lst_ok = processing_punctuation_end_string(lst_ok, ';\n', '- ', '.')
 
     # Конвертируем датафрейм с описанием программы в список словарей и добавляем туда нужные элементы
     data_program = df_desc_rp.to_dict('records')
     context = data_program[0]
-    context['Лич_результаты'] = df_pers_result.to_dict('records')  # добаввляем лист личностных результатов
     context['План_УД'] = main_df.to_dict('records')  # содержание учебной дисциплины
     context['Учебная_работа'] = df_structure.to_dict('records')
     context['Контроль_оценка'] = df_control.to_dict('records')
@@ -380,22 +359,24 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
     # добавляем единичные переменные
     context['Макс_нагрузка'] = max_load
     context['Обяз_нагрузка'] = mand_load
-    context['Практ_подготовка'] = practice_load
+    context['Проф_направленность'] = prof_load
     context['Сам_работа'] = sam_load
 
-    # лист МТО
-    context['Учебный_кабинет'] = name_kab
-    context['Лаборатория'] = name_lab
-    context['Список_оборудования'] = obor_cab
-    context['Средства_обучения'] = tecn_educ
-    context['Оборудование_лаборатории'] = obor_labor
+    # Листы Цели,результаты,УУПД
+    context['Цели'] = lst_target
+    context['Личностные_результаты'] =lst_perconal_result
+    context['Метапредметные_результаты'] =lst_meta_result
+    context['Предметные_результаты'] =lst_predmet_result
+    context['УУПД'] =lst_uupd
+
+
+
+    # Лист Содержание
+    context['Содержание_дисциплины'] = df_content.iloc[0,0]
     # лист Учебные издания
     context['Основные_источники'] = lst_main_source
     context['Дополнительные_источники'] = lst_slave_source
     context['Интернет_источники'] = lst_inet_source
-    # Листы данные ОК и  данные ПК
-    context['ОК'] = lst_ok
-    context['ПК'] = lst_pk
 
     doc = DocxTemplate(template_work_program)
     # Получаем ключи используемые в шаблоне
