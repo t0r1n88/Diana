@@ -119,7 +119,6 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     :type end_folder: str
     """
     # названия листов
-    # названия листов
     desc_rp = 'Описание РП'
     pers_result = 'Лич_результаты'
     structure = 'Объем УД'
@@ -173,7 +172,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     df_structure.fillna('', inplace=True)
     max_load = df_structure.loc[0, 'Всего']  # максимальная учебная нагрузка
     mand_load = df_structure.loc[1, 'Всего']  # обязательная нагрузка
-    practice_load = df_structure.loc[0, 'Практика']  # практическая нагрузка
+    practice_load = df_structure.loc[1, 'Практика']  # практическая нагрузка
 
     sam_df = df_structure[
         df_structure['Вид'] == 'Самостоятельная работа обучающегося (всего)']  # получаем часы самостоятельной работы
