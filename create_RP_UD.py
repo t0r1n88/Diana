@@ -55,19 +55,25 @@ def processing_punctuation_end_string(lst_phrase: list, sep_string: str, sep_beg
     temp_str = f'{sep_string}'.join(temp_lst)  # создаем строку с разделителями
     return temp_str
 
-def insert_type_source(lst_phrase:list)->list:
+def insert_type_source(df:pd.DataFrame)->list:
     """
     Вставка в строку слов [Электронный ресурс] Форма доступа:
-    :param lst_phrase:список строк
+    :param lst_phrase:датафрейм
     :return: список измененных строк
     """
-    out_lst = []
-    pattern = r'(?=[A-Za-z])' # регулярка для разделения
-    for row in lst_phrase:
-        temp_lst = re.split(pattern,row,maxsplit=1) # делим по первой английской букве
-        temp_lst.insert(1,' [Электронный ресурс] Форма доступа:') # вставляем в середину списка нужную строку
-        temp_str = ' '.join(temp_lst)
+    out_lst = [] # список для хранения строк
+    for row in df.itertuples():
+        name = str(row[1])
+        url_ii = str(row[2])
+        name = name.strip() # очищаем от пробельных символов
+        name = name.rstrip(string.punctuation) # очищаем от знаков препинания
+        name = name.strip()
+        url_ii = url_ii.strip() # очищаем от пробельных символов
+        url_ii = url_ii.rstrip(string.punctuation) # очищаем от знаков препинания
+        url_ii = url_ii.strip()
+        temp_str = f'{name} [Электронный ресурс] Форма доступа:{url_ii}'
         out_lst.append(temp_str)
+
     return out_lst
 
 def processing_publ(row):
@@ -338,11 +344,12 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     """
     Обрабатываем лист интернет источники
     """
-    df_ii_publ = pd.read_excel(data_work_program, sheet_name=ii_publ, usecols='A')
+    df_ii_publ = pd.read_excel(data_work_program, sheet_name=ii_publ, usecols='A:B')
     df_ii_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-    df_ii_publ.sort_values(by='Интернет_ресурсы', inplace=True)
-    lst_inet_source = df_ii_publ['Интернет_ресурсы'].tolist()
-    lst_inet_source = insert_type_source(lst_inet_source)
+
+    df_ii_publ.sort_values(by='Название', inplace=True)
+
+    lst_inet_source = insert_type_source(df_ii_publ.copy())
 
     """
     Обрабатываем лист Контроль и Оценка
@@ -421,7 +428,8 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
 
 if __name__=='__main__':
     template_work_program = 'data/Шаблон автозаполнения РП.docx'
-    data_work_program = 'data/Автозаполнение РП.xlsx'
+    # data_work_program = 'data/Автозаполнение РП.xlsx'
+    data_work_program = 'data/ПРИМЕР заполнения таблицы для автозаполнения РП.xlsx'
     end_folder = 'data'
 
     # названия листов
@@ -643,11 +651,12 @@ if __name__=='__main__':
     """
     Обрабатываем лист интернет источники
     """
-    df_ii_publ = pd.read_excel(data_work_program, sheet_name=ii_publ, usecols='A')
+    df_ii_publ = pd.read_excel(data_work_program, sheet_name=ii_publ, usecols='A:B')
     df_ii_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-    df_ii_publ.sort_values(by='Интернет_ресурсы', inplace=True)
-    lst_inet_source = df_ii_publ['Интернет_ресурсы'].tolist()
-    lst_inet_source = insert_type_source(lst_inet_source)
+
+    df_ii_publ.sort_values(by='Название', inplace=True)
+
+    lst_inet_source = insert_type_source(df_ii_publ.copy())
 
     """
     Обрабатываем лист Контроль и Оценка
