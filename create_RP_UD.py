@@ -9,6 +9,7 @@ from docxtpl import DocxTemplate
 import string
 import time
 import re
+from tkinter import messagebox
 
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.set_option('display.max_columns', None)  # Отображать все столбцы
@@ -358,6 +359,10 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     df_control.dropna(inplace=True, thresh=1)  # удаляем пустые строки
     df_control.columns = ['Результаты_обучения', 'Контроль_обучения']
     _lst_result_educ = df_control['Результаты_обучения'].dropna().tolist()  # создаем список
+    if 'Знания:' not in _lst_result_educ:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             'На листе Контроль в первой колонке должно быть слово Знание:\n'
+                             'Посмотрите пример в исходном шаблоне')
     border_divide = _lst_result_educ.index('Знания:')  # граница разделения
     lst_skill = _lst_result_educ[1:border_divide]  # получаем список умений
     lst_knowledge = _lst_result_educ[border_divide + 1:]  # получаем список знаний
@@ -665,6 +670,9 @@ if __name__=='__main__':
     df_control.dropna(inplace=True, thresh=1)  # удаляем пустые строки
     df_control.columns = ['Результаты_обучения','Контроль_обучения']
     _lst_result_educ = df_control['Результаты_обучения'].dropna().tolist() # создаем список
+    if 'Знания:' not in _lst_result_educ:
+        messagebox.showerror('Диана Создание рабочих программ','На листе Контроль в первой колонке должно быть слово Знание:\n'
+                                                               'Посмотрите пример в исходном шаблоне')
     border_divide = _lst_result_educ.index('Знания:') # граница разделения
     lst_skill = _lst_result_educ[1:border_divide] # получаем список умений
     lst_knowledge = _lst_result_educ[border_divide+1:] # получаем список знаний
