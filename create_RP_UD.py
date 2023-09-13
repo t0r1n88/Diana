@@ -34,6 +34,17 @@ def convert_to_int(cell):
     except:
         return cell
 
+def extract_lr(df:pd.DataFrame):
+    """
+    Функция для создания 2 списков из данных одной колонки
+    первая колонка это код личностного результата а вторая колонка  это описание
+    извлечение будет с помощью регулярок
+    :param df: датафрем из одной колонки
+    :return:
+    """
+    pass
+
+
 
 
 def processing_punctuation_end_string(lst_phrase: list, sep_string: str, sep_begin: str, sep_end: str) -> str:
@@ -432,7 +443,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
 
 
 if __name__=='__main__':
-    template_work_program = 'data/Шаблон автозаполнения РП.docx'
+    template_work_program = 'data/Шаблон автозаполнения РП 08_09_23.docx'
     # data_work_program = 'data/Автозаполнение РП.xlsx'
     data_work_program = 'data/ПРИМЕР заполнения таблицы для автозаполнения РП.xlsx'
     end_folder = 'data'
@@ -457,9 +468,12 @@ if __name__=='__main__':
 
     # Обрабатываем лист Лич_результаты
 
-    df_pers_result = pd.read_excel(data_work_program, sheet_name=pers_result, usecols='A:B')
-    df_pers_result.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-    df_pers_result.columns = ['Код', 'Результат']
+    df_pers_result = pd.read_excel(data_work_program, sheet_name=pers_result, usecols='A')
+    df_pers_result.dropna(inplace=True)  # удаляем пустые строки
+    df_pers_result.columns = ['Описание']
+    df_pers_result['Код'] =  df_pers_result['Описание'].str.split(r'(ЛР\s*?\d+)',expand=True)[0]
+    print(df_pers_result['Код'])
+
 
     # Обрабатываем лист Структура
     # Открываем файл
@@ -581,7 +595,9 @@ if __name__=='__main__':
     main_df['Количество_часов'] = main_df['Количество_часов'].fillna('')
 
     main_df['Практика'] = main_df['Практика'].apply(convert_to_int)
+    main_df['Практика'] = main_df['Практика'].fillna('')
     main_df['СРС'] = main_df['СРС'].apply(convert_to_int)
+    main_df['СРС'] = main_df['СРС'].fillna('')
     main_df['Содержание'] = main_df['Курс_семестр']+main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
     main_df.drop(columns=['Курс_семестр','Раздел','Тема'],inplace=True)
 
@@ -622,9 +638,6 @@ if __name__=='__main__':
         obor_labor = ['На листе МТО заполнено оборудование лаборатории но не заполнено наименование лаборатории !!!']
     else:
         obor_labor = processing_punctuation_end_string(lst_obor_labor, ';\n', '- ','.')  # обрабатываем знаки пунктуации для каждой строки
-
-
-
     """
     Обрабатываем лист Основные источники
     """
