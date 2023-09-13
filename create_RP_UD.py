@@ -34,7 +34,7 @@ def convert_to_int(cell):
     except:
         return cell
 
-def extract_lr(df:pd.DataFrame):
+def extract_lr(cell):
     """
     Функция для создания 2 списков из данных одной колонки
     первая колонка это код личностного результата а вторая колонка  это описание
@@ -42,7 +42,31 @@ def extract_lr(df:pd.DataFrame):
     :param df: датафрем из одной колонки
     :return:
     """
-    pass
+    value = str(cell) # делаем строковй
+    result = re.split(r'(ЛР\s*\d+)',value)
+    result = [value for value in result if value ]
+    out_str = result[0].strip()
+    return out_str.rstrip(string.punctuation)
+
+def extract_descr_lr(cell):
+    """
+    Функция для создания 2 списков из данных одной колонки
+    первая колонка это код личностного результата а вторая колонка  это описание
+    извлечение будет с помощью регулярок
+    :param df: датафрем из одной колонки
+    :return:
+    """
+    value = str(cell) # делаем строковй
+    result = re.split(r'(ЛР\s*\d+)',value)
+    result = [value for value in result if value]
+    if len(result) == 1:
+        result.insert(1,'')
+        return result[1]
+    out_str = result[1].strip()
+    out_str = out_str.lstrip(string.punctuation)
+    out_str = out_str.strip()
+
+    return out_str
 
 
 
@@ -471,8 +495,8 @@ if __name__=='__main__':
     df_pers_result = pd.read_excel(data_work_program, sheet_name=pers_result, usecols='A')
     df_pers_result.dropna(inplace=True)  # удаляем пустые строки
     df_pers_result.columns = ['Описание']
-    df_pers_result['Код'] =  df_pers_result['Описание'].str.split(r'(ЛР\s*?\d+)',expand=True)[0]
-    print(df_pers_result['Код'])
+    df_pers_result['Код'] =  df_pers_result['Описание'].apply(extract_lr)
+    df_pers_result['Результат'] = df_pers_result['Описание'].apply(extract_descr_lr)
 
 
     # Обрабатываем лист Структура

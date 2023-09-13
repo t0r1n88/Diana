@@ -34,7 +34,6 @@ def convert_to_int(cell):
         return cell
 
 
-
 def processing_punctuation_end_string(lst_phrase: list, sep_string: str, sep_begin: str, sep_end: str) -> str:
     """
     Очистка каждого элемента списка от знаков пунктации в конце,
