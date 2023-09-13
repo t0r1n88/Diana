@@ -617,11 +617,13 @@ if __name__=='__main__':
 
     main_df['Количество_часов'] = main_df['Количество_часов'].apply(convert_to_int)
     main_df['Количество_часов'] = main_df['Количество_часов'].fillna('')
+    main_df['Практика'] = main_df['Практика'].fillna(0)
+    main_df['Практика'] = main_df['Практика'].astype(int,errors='ignore')
+    main_df['Практика'] = main_df['Практика'].apply(lambda x:'' if x == 0 else x)
 
-    main_df['Практика'] = main_df['Практика'].apply(convert_to_int)
-    main_df['Практика'] = main_df['Практика'].fillna('')
-    main_df['СРС'] = main_df['СРС'].apply(convert_to_int)
-    main_df['СРС'] = main_df['СРС'].fillna('')
+    main_df['СРС'] = main_df['СРС'].fillna(0)
+    main_df['СРС'] = main_df['СРС'].astype(int,errors='ignore')
+    main_df['СРС'] = main_df['СРС'].apply(lambda x:'' if x == 0 else x)
     main_df['Содержание'] = main_df['Курс_семестр']+main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
     main_df.drop(columns=['Курс_семестр','Раздел','Тема'],inplace=True)
 

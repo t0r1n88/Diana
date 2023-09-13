@@ -403,7 +403,7 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
 
 if __name__ == '__main__':
 
-    template_work_program = 'data/Шаблон автозаполнения ООД.docx'
+    template_work_program = 'data/Шаблон автозаполнения ООД 08_09_23.docx'
     data_work_program = 'data/Автозаполнение ООД.xlsx'
     end_folder = 'data'
 
@@ -547,8 +547,13 @@ if __name__ == '__main__':
     main_df['Количество_часов'] = main_df['Количество_часов'].apply(convert_to_int)
     main_df['Количество_часов'] = main_df['Количество_часов'].fillna('')
 
-    main_df['Практика'] = main_df['Практика'].apply(convert_to_int)
-    main_df['СРС'] = main_df['СРС'].apply(convert_to_int)
+    main_df['Практика'] = main_df['Практика'].fillna(0)
+    main_df['Практика'] = main_df['Практика'].astype(int,errors='ignore')
+    main_df['Практика'] = main_df['Практика'].apply(lambda x:'' if x == 0 else x)
+
+    main_df['СРС'] = main_df['СРС'].fillna(0)
+    main_df['СРС'] = main_df['СРС'].astype(int,errors='ignore')
+    main_df['СРС'] = main_df['СРС'].apply(lambda x:'' if x == 0 else x)
     main_df['Содержание'] = main_df['Курс_семестр'] + main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
     main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
 
