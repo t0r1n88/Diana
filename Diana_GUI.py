@@ -15,6 +15,8 @@ import time
 import warnings
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 
+from jinja2 import exceptions
+
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller
@@ -123,6 +125,17 @@ def processing_create_RP_for_UD():
         messagebox.showerror('Диана Создание рабочих программ',
                              f'Перенесите файлы которые вы хотите обработать в корень диска. Проблема может быть\n '
                              f'в слишком длинном пути к обрабатываемым файлам')
+    except exceptions.TemplateSyntaxError:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'Ошибка в оформлении вставляемых значений в шаблоне\n'
+                             f'Проверьте свой шаблон на наличие следующих ошибок:\n'
+                             f'1) Вставляемые значения должны быть оформлены двойными фигурными скобками\n'
+                             f'{{{{Вставляемое_значение}}}}\n'
+                             f'2) В названии колонки в таблице откуда берутся данные - есть пробелы,цифры,знаки пунктуации и т.п.\n'
+                             f'в названии колонки должны быть только буквы и нижнее подчеркивание.\n'
+                             f'{{{{Дата_рождения}}}}')
+
+
     else:
         messagebox.showinfo('Диана Создание рабочих программ', 'Данные успешно обработаны')
 

@@ -11,6 +11,7 @@ import time
 import re
 from tkinter import messagebox
 
+
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.set_option('display.max_columns', None)  # Отображать все столбцы
 pd.set_option('display.expand_frame_repr', False)  # Не переносить строки
