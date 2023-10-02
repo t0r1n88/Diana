@@ -11,7 +11,6 @@ import time
 import re
 from tkinter import messagebox
 
-
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.set_option('display.max_columns', None)  # Отображать все столбцы
 pd.set_option('display.expand_frame_repr', False)  # Не переносить строки
@@ -72,7 +71,6 @@ def extract_descr_lr(cell):
         return f'{descr_lr}.'
     else:
         return ''
-
 
 
 
@@ -189,14 +187,10 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     # Обрабатываем лист Лич_результаты
 
     df_pers_result = pd.read_excel(data_work_program, sheet_name=pers_result, usecols='A')
-    df_pers_result.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-    df_pers_result.columns = ['Общее']
-    df_pers_result['Код'] = df_pers_result['Общее'].apply(extract_lr)
-    df_pers_result['Результат'] = df_pers_result['Общее'].apply(extract_descr_lr)
-    df_pers_result.drop(columns=['Общее'],inplace=True)
-
-
-
+    df_pers_result.dropna(inplace=True)  # удаляем пустые строки
+    df_pers_result.columns = ['Описание']
+    df_pers_result['Код'] = df_pers_result['Описание'].apply(extract_lr)
+    df_pers_result['Результат'] = df_pers_result['Описание'].apply(extract_descr_lr)
 
     # Обрабатываем лист Структура
     # Открываем файл
@@ -215,7 +209,8 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
 
     if not target_row:
         # если не находим строку в которой есть слово итог то выдаем исключение
-        print('Не найдена строка с названием Итоговая аттестация в форме ...')
+        messagebox.showerror('Диана Создание рабочих программ',
+                             'Не найдена строка с названием Итоговая аттестация в листе Объем УД')
 
     wb.close()  # закрываем файл
 
@@ -233,7 +228,8 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     sam_df = df_structure[
         df_structure['Вид'] == 'Самостоятельная работа обучающегося (всего)']  # получаем часы самостоятельной работы
     if len(sam_df) == 0:
-        print('Проверьте наличие строки Самостоятельная работа обучающегося (всего)')
+        messagebox.showerror('Диана Создание рабочих программ',
+                             'Проверьте наличие строки Самостоятельная работа обучающегося (всего) в листе Объем УД')
     sam_load = sam_df.iloc[0, 1]
 
     """
@@ -318,9 +314,13 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
 
     main_df['Количество_часов'] = main_df['Количество_часов'].apply(convert_to_int)
     main_df['Количество_часов'] = main_df['Количество_часов'].fillna('')
+    main_df['Практика'] = main_df['Практика'].fillna(0)
+    main_df['Практика'] = main_df['Практика'].astype(int, errors='ignore')
+    main_df['Практика'] = main_df['Практика'].apply(lambda x: '' if x == 0 else x)
 
-    main_df['Практика'] = main_df['Практика'].apply(convert_to_int)
-    main_df['СРС'] = main_df['СРС'].apply(convert_to_int)
+    main_df['СРС'] = main_df['СРС'].fillna(0)
+    main_df['СРС'] = main_df['СРС'].astype(int, errors='ignore')
+    main_df['СРС'] = main_df['СРС'].apply(lambda x: '' if x == 0 else x)
     main_df['Содержание'] = main_df['Курс_семестр'] + main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
     main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
 
@@ -362,7 +362,6 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     else:
         obor_labor = processing_punctuation_end_string(lst_obor_labor, ';\n', '- ',
                                                        '.')  # обрабатываем знаки пунктуации для каждой строки
-
     """
     Обрабатываем лист Основные источники
     """
@@ -421,6 +420,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
 
     """
     Обрабатываем лист ПК и ОК
+
     """
     df_pk_ok = pd.read_excel(data_work_program, sheet_name=pk_ok, usecols='A:B')
     df_pk_ok.dropna(inplace=True, thresh=1)  # удаляем пустые строки
@@ -477,24 +477,23 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
 
 
 
-
 if __name__=='__main__':
     template_work_program = 'data/Шаблон автозаполнения РП 08_09_23.docx'
     # data_work_program = 'data/Автозаполнение РП.xlsx'
     data_work_program = 'data/ПРИМЕР заполнения таблицы  РП 13_09.xlsx'
     end_folder = 'data'
 
-    # названия листов
-    desc_rp = 'Описание РП'
-    pers_result = 'Лич_результаты'
-    structure = 'Объем УД'
-    plan = 'План УД'
-    mto = 'МТО'
-    main_publ = 'ОИ'
-    second_publ = 'ДИ'
-    ii_publ = 'ИИ'
-    control = 'Контроль'
-    pk_ok = 'ПК и ОК'
+    # # названия листов
+    # desc_rp = 'Описание РП'
+    # pers_result = 'Лич_результаты'
+    # structure = 'Объем УД'
+    # plan = 'План УД'
+    # mto = 'МТО'
+    # main_publ = 'ОИ'
+    # second_publ = 'ДИ'
+    # ii_publ = 'ИИ'
+    # control = 'Контроль'
+    # pk_ok = 'ПК и ОК'
 
     create_RP_for_UD(template_work_program, data_work_program, end_folder)
 
