@@ -256,7 +256,7 @@ def extract_data_mdk(data_pm,sheet_name)->pd.DataFrame:
 
 
 
-def processing_mdk(data_pm) -> list:
+def processing_mdk(data_pm) -> dict:
     """
     Функция для обработки листов с названием МДК
     :param data_pm: путь к файлу
@@ -265,7 +265,7 @@ def processing_mdk(data_pm) -> list:
     # Получаем список листов
 
     dct_mdk = dict()
-    wb = openpyxl.load_workbook(data_pm,read_only=True)
+    wb = openpyxl.load_workbook(data_pm,read_only=True) # получаем названия листов содержащих МДК
     for sheet_name in wb.sheetnames:
         if 'МДК' in sheet_name:
             name_mdk = str(wb[sheet_name]['D1'].value) # получаем название МДК, делаем строковыми на случай нан
@@ -273,8 +273,7 @@ def processing_mdk(data_pm) -> list:
                 temp_mdk_df = extract_data_mdk(data_pm,sheet_name) # извлекаем данные из датафрейма
                 dct_mdk[name_mdk] = temp_mdk_df
     wb.close()
-    print(dct_mdk['МДК 02.03 Организация и контроль безопасности на железнодорожном транспорте и в пунктах прибытия (отправления) поездов'])
-
+    return dct_mdk
 
 
 
@@ -288,7 +287,123 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     :param end_folder: конечная папка
     :return:
     """
-    lst_mdk_df = processing_mdk(data_pm)
+    # названия листов
+    desc_rp = 'Описание ПМ'
+    pers_result = 'Лич_результаты'
+    structure = 'Объем УД'
+    mto = 'МТО'
+    main_publ = 'ОИ'
+    second_publ = 'ДИ'
+    ii_publ = 'ИИ'
+    control = 'Контроль'
+    pk_ok = 'ПК и ОК'
+
+    # Обрабатываем лист Описание ПМ
+    df_desc_rp = pd.read_excel(data_pm, sheet_name=desc_rp, nrows=1, usecols='A:L')  # загружаем датафрейм
+    df_desc_rp.fillna('НЕ ЗАПОЛНЕНО !!!', inplace=True)  # заполняем не заполненные разделы
+    df_desc_rp.columns = ['Тип_программы', 'Название_дисциплины', 'Цикл', 'Перечень', 'Код_специальность_профессия',
+                          'Год', 'Разработчик', 'Методист', 'ПЦК', 'Пред_ПЦК', 'Должность', 'Утверждающий']
+
+    # Обрабатываем лист Лич_результаты
+
+    df_pers_result = pd.read_excel(data_pm, sheet_name=pers_result, usecols='A')
+    df_pers_result.dropna(inplace=True)  # удаляем пустые строки
+    df_pers_result.columns = ['Описание']
+    df_pers_result['Код'] = df_pers_result['Описание'].apply(extract_lr)
+    df_pers_result['Результат'] = df_pers_result['Описание'].apply(extract_descr_lr)
+
+    # Обрабатываем лист Структура
+    # Открываем файл
+    wb = openpyxl.load_workbook(data_pm, read_only=True)
+    target_value = 'итог'
+
+    # Поиск значения в выбранном столбце
+    column_number = 1  # Номер столбца, в котором ищем значение (например, столбец A)
+    target_row = None  # Номер строки с искомым значением
+
+    for row in wb['Объем УД'].iter_rows(min_row=1, min_col=column_number, max_col=column_number):
+        cell_value = row[0].value
+        if target_value in str(cell_value).lower():
+            target_row = row[0].row
+            break
+
+    if not target_row:
+        # если не находим строку в которой есть слово итог то выдаем исключение
+        messagebox.showerror('Диана Создание рабочих программ',
+                             'Не найдена строка с названием Итоговая аттестация в листе Объем УД')
+
+    wb.close()  # закрываем файл
+
+    # если значение найдено то считываем нужное количество строк и  7 колонок
+    df_structure = pd.read_excel(data_pm, sheet_name=structure, nrows=target_row,
+                                 usecols='A:C', dtype=str)
+
+    df_structure.iloc[:-1, 1:3] = df_structure.iloc[:-1, 1:3].applymap(convert_to_int)
+    df_structure.columns = ['Вид', 'Всего', 'Практика']
+    df_structure.fillna('', inplace=True)
+    max_load = df_structure.loc[0, 'Всего']  # максимальная учебная нагрузка
+    mand_load = df_structure.loc[1, 'Всего']  # обязательная нагрузка
+    practice_load = df_structure.loc[1, 'Практика']  # практическая нагрузка
+
+    sam_df = df_structure[
+        df_structure['Вид'] == 'Самостоятельная работа обучающегося (всего)']  # получаем часы самостоятельной работы
+    if len(sam_df) == 0:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             'Проверьте наличие строки Самостоятельная работа обучающегося (всего) в листе Объем УД')
+    sam_load = sam_df.iloc[0, 1]
+
+
+
+    dct_mdk_df = processing_mdk(data_pm)
+
+
+
+    doc = DocxTemplate(template_pm)
+
+
+
+    # Конвертируем датафрейм с описанием программы в список словарей и добавляем туда нужные элементы
+    data_program = df_desc_rp.to_dict('records')
+    context = data_program[0]
+    context['Лич_результаты'] = df_pers_result.to_dict('records')  # добаввляем лист личностных результатов
+    # context['План_УД'] = main_df.to_dict('records')  # содержание учебной дисциплины
+    context['Учебная_работа'] = df_structure.to_dict('records')
+    # context['Контроль_оценка'] = df_control.to_dict('records')
+    # context['Знать'] = lst_knowledge
+    # context['Уметь'] = lst_skill
+
+    # добавляем единичные переменные
+    context['Макс_нагрузка'] = max_load
+    context['Обяз_нагрузка'] = mand_load
+    context['Практ_подготовка'] = practice_load
+    context['Сам_работа'] = sam_load
+
+
+    for idx,tpl_dct in enumerate(dct_mdk_df.items(),start=1):
+        key,value = tpl_dct # распаковываем кортеж
+        # делаем переменные для названий МДК
+        name_var = f'МДК_{idx}'
+        context[name_var] = key
+        # создаем переменные датафреймов
+        name_mdk_table = f'План_МДК_{idx}'
+        context[name_mdk_table] = value.to_dict('records')
+
+
+
+    # for idx,name in enumerate(dct_mdk_df.keys(),start=1):
+    #     name_var = f'МДК_{idx}'
+    #     context[name_var] = name
+    print(context.keys())
+    # Создаем документ
+    doc.render(context)
+    # сохраняем документ
+    # название программы
+    # name_rp = df_desc_rp['Название_дисциплины'].tolist()[0]
+    name_rp = 'Тест'
+    t = time.localtime()
+    current_time = time.strftime('%H_%M_%S', t)
+    doc.save(f'{end_folder}/РП {name_rp[:40]} {current_time}.docx')
+
 
 
 if __name__ == '__main__':
@@ -297,3 +412,4 @@ if __name__ == '__main__':
     end_folder_main = 'data'
 
     create_pm(template_pm_main, data_pm_main, end_folder_main)
+
