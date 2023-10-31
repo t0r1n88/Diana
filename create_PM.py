@@ -301,7 +301,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     # Обрабатываем лист Описание ПМ
     df_desc_rp = pd.read_excel(data_pm, sheet_name=desc_rp, nrows=1, usecols='A:L')  # загружаем датафрейм
     df_desc_rp.fillna('НЕ ЗАПОЛНЕНО !!!', inplace=True)  # заполняем не заполненные разделы
-    df_desc_rp.columns = ['Тип_программы', 'Название_дисциплины', 'Цикл', 'Перечень', 'Код_специальность_профессия',
+    df_desc_rp.columns = ['Тип_программы', 'Название_модуля', 'Цикл', 'Перечень', 'Код_специальность_профессия',
                           'Год', 'Разработчик', 'Методист', 'ПЦК', 'Пред_ПЦК', 'Должность', 'Утверждающий']
 
     # Обрабатываем лист Лич_результаты
@@ -353,8 +353,124 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     sam_load = sam_df.iloc[0, 1]
 
 
+    """
+    Обрабатываем листы с МДК
+    """
+    dct_mdk_df = processing_mdk(data_pm) # получам словарь где ключ это название МДК а значение это датафрейм с данными
+    """Обрабатываем лист ПК и ОК
 
-    dct_mdk_df = processing_mdk(data_pm)
+       """
+    df_pk_ok = pd.read_excel(data_pm, sheet_name=pk_ok, usecols='A:B')
+    df_pk_ok.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    # Обработка ПК
+    lst_pk = df_pk_ok['Наименование ПК'].dropna().tolist()
+    lst_pk = processing_punctuation_end_string(lst_pk, ';\n', '- ', '.')
+
+    # Обработка ОК
+    lst_ok = df_pk_ok['Наименование ОК'].dropna().tolist()
+    lst_ok = processing_punctuation_end_string(lst_ok, ';\n', '- ', '.')
+
+    # Разворачиваем ОК в две колонки
+    df_flat_ok = df_pk_ok['Наименование ОК'].to_frame()
+    df_flat_ok.dropna(inplace=True)
+
+    df_flat_ok.columns = ['Описание']
+    df_flat_ok['Код'] = df_flat_ok['Описание'].apply(extract_lr)
+    df_flat_ok['Результат'] = df_flat_ok['Описание'].apply(extract_descr_lr)
+
+    """
+    Обрабатываем лист Контроль и Оценка
+    """
+    df_control = pd.read_excel(data_pm, sheet_name=control, usecols='A:B')
+    df_control.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    df_control.columns = ['Результаты_обучения', 'Контроль_обучения']
+    _lst_result_educ = df_control['Результаты_обучения'].dropna().tolist()  # создаем список
+    if 'Знания:' not in _lst_result_educ:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             'На листе Контроль в первой колонке должно быть слово Знание:\n'
+                             'Посмотрите пример в исходном шаблоне')
+    border_divide = _lst_result_educ.index('Знания:')  # граница разделения
+    lst_skill = _lst_result_educ[1:border_divide]  # получаем список умений
+    lst_knowledge = _lst_result_educ[border_divide + 1:]  # получаем список знаний
+
+    lst_skill = processing_punctuation_end_string(lst_skill, ';\n', '- ', '.')  # форматируем выходную строку
+    lst_knowledge = processing_punctuation_end_string(lst_knowledge, ';\n', '- ', '.')  # форматируем выходную строку
+    df_control.fillna('', inplace=True)
+
+    """
+    Обрабатываем лист МТО
+    """
+    df_mto = pd.read_excel(data_pm, sheet_name=mto, usecols='A:E')
+    df_mto.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    name_kab = df_mto['Наименование_учебного_кабинета'].dropna().tolist()  #
+    name_kab = ','.join(name_kab)  # получаем все названия которые есть в колонке Наименование учебного кабинета
+
+    name_lab = df_mto['Наименование_лаборатории'].dropna().tolist()
+    if len(name_lab) == 0:
+        name_lab = []
+    else:
+        name_lab = ','.join(name_lab)
+
+    # Списки кабинета и средств обучения
+    lst_obor_cab = df_mto[
+        'Оборудование_учебного_кабинета'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
+    if len(lst_obor_cab) == 0:
+        lst_obor_cab = ['На листе МТО НЕ заполнено оборудование учебного кабинета !!!']
+    obor_cab = processing_punctuation_end_string(lst_obor_cab, ';\n', '- ',
+                                                 '.')  # обрабатываем знаки пунктуации для каждой строки
+
+    lst_tecn_educ = df_mto[
+        'Технические_средства_обучения'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
+    if len(lst_tecn_educ) == 0:
+        lst_tecn_educ = ['На листе МТО НЕ заполнены технические средства обучения !!!']
+    tecn_educ = processing_punctuation_end_string(lst_tecn_educ, ';\n', '- ', '.')
+
+    # Оборудование лаборатории
+    lst_obor_labor = df_mto[
+        'Оборудование_лаборатории'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
+    if len(lst_obor_labor) == 0 and name_lab:
+        obor_labor = ['На листе МТО НЕ заполнено оборудование лаборатории !!!']
+    elif len(lst_obor_labor) != 0 and not name_lab:
+        obor_labor = ['На листе МТО заполнено оборудование лаборатории но не заполнено наименование лаборатории !!!']
+    else:
+        obor_labor = processing_punctuation_end_string(lst_obor_labor, ';\n', '- ',
+                                                       '.')  # обрабатываем знаки пунктуации для каждой строки
+    """
+    Обрабатываем лист Основные источники
+    """
+
+    df_main_publ = pd.read_excel(data_pm, sheet_name=main_publ, usecols='A:G')
+    df_main_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    df_main_publ.fillna('Не заполнено !!!', inplace=True)
+    df_main_publ = df_main_publ.applymap(str)  # приводим к строковому виду
+    df_main_publ = df_main_publ.applymap(str.strip)  # очищаем от пробелов в начале и конце
+
+    df_main_publ['Основной_источник'] = df_main_publ.apply(processing_publ, axis=1)  # формируем строку
+    df_main_publ.sort_values(by='Основной_источник', inplace=True)
+    lst_main_source = df_main_publ['Основной_источник'].tolist()
+
+    """
+    Обрабатываем лист дополнительные источники
+    """
+    df_second_publ = pd.read_excel(data_pm, sheet_name=second_publ, usecols='A:G')
+    df_second_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    df_second_publ.fillna('Не заполнено !!!', inplace=True)
+    df_second_publ = df_second_publ.applymap(str)  # приводим к строковому виду
+    df_second_publ = df_second_publ.applymap(str.strip)  # очищаем от пробелов в начале и конце
+
+    df_second_publ['Основной_источник'] = df_second_publ.apply(processing_publ, axis=1)  # формируем строку
+    df_second_publ.sort_values(by='Основной_источник', inplace=True)
+    lst_slave_source = df_second_publ['Основной_источник'].tolist()
+
+    """
+    Обрабатываем лист интернет источники
+    """
+    df_ii_publ = pd.read_excel(data_pm, sheet_name=ii_publ, usecols='A:B')
+    df_ii_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+
+    df_ii_publ.sort_values(by='Название', inplace=True)
+
+    lst_inet_source = insert_type_source(df_ii_publ.copy())
 
 
 
@@ -368,15 +484,30 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     context['Лич_результаты'] = df_pers_result.to_dict('records')  # добаввляем лист личностных результатов
     # context['План_УД'] = main_df.to_dict('records')  # содержание учебной дисциплины
     context['Учебная_работа'] = df_structure.to_dict('records')
-    # context['Контроль_оценка'] = df_control.to_dict('records')
-    # context['Знать'] = lst_knowledge
-    # context['Уметь'] = lst_skill
+    context['Контроль_оценка'] = df_control.to_dict('records')
+    context['Знать'] = lst_knowledge
+    context['Уметь'] = lst_skill
 
     # добавляем единичные переменные
     context['Макс_нагрузка'] = max_load
     context['Обяз_нагрузка'] = mand_load
     context['Практ_подготовка'] = practice_load
     context['Сам_работа'] = sam_load
+
+    #лист МТО
+    context['Учебный_кабинет'] = name_kab
+    context['Лаборатория'] = name_lab
+    context['Список_оборудования'] = obor_cab
+    context['Средства_обучения'] = tecn_educ
+    context['Оборудование_лаборатории'] = obor_labor
+    # лист Учебные издания
+    context['Основные_источники'] = lst_main_source
+    context['Дополнительные_источники'] = lst_slave_source
+    context['Интернет_источники'] = lst_inet_source
+    # Листы данные ОК и  данные ПК
+    context['ОК'] = lst_ok
+    context['ПК'] = lst_pk
+    context['Общ_компетенции'] = df_flat_ok.to_dict('records')
 
 
     for idx,tpl_dct in enumerate(dct_mdk_df.items(),start=1):
@@ -393,7 +524,6 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     # for idx,name in enumerate(dct_mdk_df.keys(),start=1):
     #     name_var = f'МДК_{idx}'
     #     context[name_var] = name
-    print(context.keys())
     # Создаем документ
     doc.render(context)
     # сохраняем документ
@@ -412,4 +542,5 @@ if __name__ == '__main__':
     end_folder_main = 'data'
 
     create_pm(template_pm_main, data_pm_main, end_folder_main)
+    print('Lindy Booth')
 
