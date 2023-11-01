@@ -162,7 +162,7 @@ def extract_data_mdk(data_pm,sheet_name)->pd.DataFrame:
     :return: датафрейм
     """
 
-    df_plan_pm = pd.read_excel(data_pm, sheet_name=sheet_name, usecols='A:H')
+    df_plan_pm = pd.read_excel(data_pm,sheet_name=sheet_name, usecols='A:H')
     df_plan_pm.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
     df_plan_pm.columns = ['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Практика', 'Вид_занятия',
@@ -250,6 +250,7 @@ def extract_data_mdk(data_pm,sheet_name)->pd.DataFrame:
     main_df['СРС'] = main_df['СРС'].apply(lambda x: '' if x == 0 else x)
     main_df['Содержание'] = main_df['Курс_семестр'] + main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
     main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
+    main_df.to_excel('dsds.xlsx')
 
     return main_df
 
