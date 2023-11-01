@@ -290,7 +290,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     # названия листов
     desc_rp = 'Описание ПМ'
     pers_result = 'Лич_результаты'
-    structure = 'Объем ПМ'
+    volume_pm = 'Объем ПМ'
     mto = 'МТО'
     main_publ = 'ОИ'
     second_publ = 'ДИ'
@@ -319,6 +319,13 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     df_pers_result['Результат'] = df_pers_result['Описание'].apply(extract_descr_lr)
 
     # # Обрабатываем лист Объем ПМ
+    df_volume_pm = pd.read_excel(data_pm,sheet_name=volume_pm,usecols='A:B')
+    df_volume_pm.dropna(inplace=True) # удаляем пустые строки
+    df_volume_pm.columns = ['Наименование', 'Объем']
+
+
+
+
     # # Открываем файл
     # wb = openpyxl.load_workbook(data_pm, read_only=True)
     # target_value = 'итог'
@@ -362,6 +369,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     """
     Обрабатываем листы с МДК
     """
+
     dct_mdk_df = processing_mdk(data_pm) # получам словарь где ключ это название МДК а значение это датафрейм с данными
     """Обрабатываем лист ПК и ОК
 
@@ -491,7 +499,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     context['ФИО_ПР'] = accept_PR
 
     context['Лич_результаты'] = df_pers_result.to_dict('records')  # добаввляем лист личностных результатов
-    # context['План_УД'] = main_df.to_dict('records')  # содержание учебной дисциплины
+    context['Объем_ПМ'] = df_volume_pm.to_dict('records')  # объем ПМ
     # context['Учебная_работа'] = df_structure.to_dict('records')
     context['Контроль_оценка'] = df_control.to_dict('records')
     context['Знать'] = lst_knowledge
