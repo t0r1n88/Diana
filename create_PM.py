@@ -374,7 +374,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     """Обрабатываем лист ПК и ОК
 
        """
-    df_pk_ok = pd.read_excel(data_pm, sheet_name=pk_ok_vpd, usecols='A:B')
+    df_pk_ok = pd.read_excel(data_pm, sheet_name=pk_ok_vpd, usecols='A:C')
     df_pk_ok.dropna(inplace=True, thresh=1)  # удаляем пустые строки
     # Обработка ПК
     lst_pk = df_pk_ok['Наименование ПК'].dropna().tolist()
@@ -391,6 +391,10 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     df_flat_ok.columns = ['Описание']
     df_flat_ok['Код'] = df_flat_ok['Описание'].apply(extract_lr)
     df_flat_ok['Результат'] = df_flat_ok['Описание'].apply(extract_descr_lr)
+
+    # Обработка ВПД
+    lst_vpd = df_pk_ok['Виды профессиональной деятельности'].dropna().tolist()
+    lst_vpd = processing_punctuation_end_string(lst_vpd, ';\n', '- ', '.')
 
     """
     Обрабатываем лист Контроль и Оценка
@@ -521,9 +525,10 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     context['Основные_источники'] = lst_main_source
     context['Дополнительные_источники'] = lst_slave_source
     context['Интернет_источники'] = lst_inet_source
-    # Листы данные ОК и  данные ПК
+    # Листы данные ОК и  данные ПК,ВПД
     context['ОК'] = lst_ok
     context['ПК'] = lst_pk
+    context['ВПД'] = lst_vpd
     context['Общ_компетенции'] = df_flat_ok.to_dict('records')
 
 
