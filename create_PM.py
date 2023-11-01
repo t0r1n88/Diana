@@ -290,19 +290,25 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     # названия листов
     desc_rp = 'Описание ПМ'
     pers_result = 'Лич_результаты'
-    structure = 'Объем УД'
+    structure = 'Объем ПМ'
     mto = 'МТО'
     main_publ = 'ОИ'
     second_publ = 'ДИ'
     ii_publ = 'ИИ'
     control = 'Контроль'
-    pk_ok = 'ПК и ОК'
+    pk_ok_vpd = 'ПК,ОК,ВПД'
 
     # Обрабатываем лист Описание ПМ
-    df_desc_rp = pd.read_excel(data_pm, sheet_name=desc_rp, nrows=1, usecols='A:L')  # загружаем датафрейм
+    df_desc_rp = pd.read_excel(data_pm, sheet_name=desc_rp, nrows=1, usecols='A:J')  # загружаем датафрейм
     df_desc_rp.fillna('НЕ ЗАПОЛНЕНО !!!', inplace=True)  # заполняем не заполненные разделы
     df_desc_rp.columns = ['Тип_программы', 'Название_модуля', 'Цикл', 'Перечень', 'Код_специальность_профессия',
-                          'Год', 'Разработчик', 'Методист', 'ПЦК', 'Пред_ПЦК', 'Должность', 'Утверждающий']
+                          'Год', 'Разработчик', 'Методист', 'Название_ПЦК', 'Пред_ПЦК']
+
+    # Создаем переменные для ФИО утверждающих
+    df_accept_fio = pd.read_excel(data_pm, sheet_name=desc_rp, nrows=2, usecols='K:L')  # загружаем датафрейм
+    accept_UR = df_accept_fio.iloc[0,1]
+    accept_PR = df_accept_fio.iloc[1,1]
+
 
     # Обрабатываем лист Лич_результаты
 
@@ -312,45 +318,45 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     df_pers_result['Код'] = df_pers_result['Описание'].apply(extract_lr)
     df_pers_result['Результат'] = df_pers_result['Описание'].apply(extract_descr_lr)
 
-    # Обрабатываем лист Структура
-    # Открываем файл
-    wb = openpyxl.load_workbook(data_pm, read_only=True)
-    target_value = 'итог'
-
-    # Поиск значения в выбранном столбце
-    column_number = 1  # Номер столбца, в котором ищем значение (например, столбец A)
-    target_row = None  # Номер строки с искомым значением
-
-    for row in wb['Объем УД'].iter_rows(min_row=1, min_col=column_number, max_col=column_number):
-        cell_value = row[0].value
-        if target_value in str(cell_value).lower():
-            target_row = row[0].row
-            break
-
-    if not target_row:
-        # если не находим строку в которой есть слово итог то выдаем исключение
-        messagebox.showerror('Диана Создание рабочих программ',
-                             'Не найдена строка с названием Итоговая аттестация в листе Объем УД')
-
-    wb.close()  # закрываем файл
-
-    # если значение найдено то считываем нужное количество строк и  7 колонок
-    df_structure = pd.read_excel(data_pm, sheet_name=structure, nrows=target_row,
-                                 usecols='A:C', dtype=str)
-
-    df_structure.iloc[:-1, 1:3] = df_structure.iloc[:-1, 1:3].applymap(convert_to_int)
-    df_structure.columns = ['Вид', 'Всего', 'Практика']
-    df_structure.fillna('', inplace=True)
-    max_load = df_structure.loc[0, 'Всего']  # максимальная учебная нагрузка
-    mand_load = df_structure.loc[1, 'Всего']  # обязательная нагрузка
-    practice_load = df_structure.loc[1, 'Практика']  # практическая нагрузка
-
-    sam_df = df_structure[
-        df_structure['Вид'] == 'Самостоятельная работа обучающегося (всего)']  # получаем часы самостоятельной работы
-    if len(sam_df) == 0:
-        messagebox.showerror('Диана Создание рабочих программ',
-                             'Проверьте наличие строки Самостоятельная работа обучающегося (всего) в листе Объем УД')
-    sam_load = sam_df.iloc[0, 1]
+    # # Обрабатываем лист Объем ПМ
+    # # Открываем файл
+    # wb = openpyxl.load_workbook(data_pm, read_only=True)
+    # target_value = 'итог'
+    #
+    # # Поиск значения в выбранном столбце
+    # column_number = 1  # Номер столбца, в котором ищем значение (например, столбец A)
+    # target_row = None  # Номер строки с искомым значением
+    #
+    # for row in wb['Объем УД'].iter_rows(min_row=1, min_col=column_number, max_col=column_number):
+    #     cell_value = row[0].value
+    #     if target_value in str(cell_value).lower():
+    #         target_row = row[0].row
+    #         break
+    #
+    # if not target_row:
+    #     # если не находим строку в которой есть слово итог то выдаем исключение
+    #     messagebox.showerror('Диана Создание рабочих программ',
+    #                          'Не найдена строка с названием Итоговая аттестация в листе Объем УД')
+    #
+    # wb.close()  # закрываем файл
+    #
+    # # если значение найдено то считываем нужное количество строк и  7 колонок
+    # df_structure = pd.read_excel(data_pm, sheet_name=structure, nrows=target_row,
+    #                              usecols='A:C', dtype=str)
+    #
+    # df_structure.iloc[:-1, 1:3] = df_structure.iloc[:-1, 1:3].applymap(convert_to_int)
+    # df_structure.columns = ['Вид', 'Всего', 'Практика']
+    # df_structure.fillna('', inplace=True)
+    # max_load = df_structure.loc[0, 'Всего']  # максимальная учебная нагрузка
+    # mand_load = df_structure.loc[1, 'Всего']  # обязательная нагрузка
+    # practice_load = df_structure.loc[1, 'Практика']  # практическая нагрузка
+    #
+    # sam_df = df_structure[
+    #     df_structure['Вид'] == 'Самостоятельная работа обучающегося (всего)']  # получаем часы самостоятельной работы
+    # if len(sam_df) == 0:
+    #     messagebox.showerror('Диана Создание рабочих программ',
+    #                          'Проверьте наличие строки Самостоятельная работа обучающегося (всего) в листе Объем УД')
+    # sam_load = sam_df.iloc[0, 1]
 
 
     """
@@ -360,7 +366,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     """Обрабатываем лист ПК и ОК
 
        """
-    df_pk_ok = pd.read_excel(data_pm, sheet_name=pk_ok, usecols='A:B')
+    df_pk_ok = pd.read_excel(data_pm, sheet_name=pk_ok_vpd, usecols='A:B')
     df_pk_ok.dropna(inplace=True, thresh=1)  # удаляем пустые строки
     # Обработка ПК
     lst_pk = df_pk_ok['Наименование ПК'].dropna().tolist()
@@ -481,20 +487,23 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     # Конвертируем датафрейм с описанием программы в список словарей и добавляем туда нужные элементы
     data_program = df_desc_rp.to_dict('records')
     context = data_program[0]
+    context['ФИО_УР'] = accept_UR # Переменные для ФИО утверждающих УР и ПР
+    context['ФИО_ПР'] = accept_PR
+
     context['Лич_результаты'] = df_pers_result.to_dict('records')  # добаввляем лист личностных результатов
     # context['План_УД'] = main_df.to_dict('records')  # содержание учебной дисциплины
-    context['Учебная_работа'] = df_structure.to_dict('records')
+    # context['Учебная_работа'] = df_structure.to_dict('records')
     context['Контроль_оценка'] = df_control.to_dict('records')
     context['Знать'] = lst_knowledge
     context['Уметь'] = lst_skill
 
-    # добавляем единичные переменные
-    context['Макс_нагрузка'] = max_load
-    context['Обяз_нагрузка'] = mand_load
-    context['Практ_подготовка'] = practice_load
-    context['Сам_работа'] = sam_load
-
-    #лист МТО
+    # # добавляем единичные переменные
+    # context['Макс_нагрузка'] = max_load
+    # context['Обяз_нагрузка'] = mand_load
+    # context['Практ_подготовка'] = practice_load
+    # context['Сам_работа'] = sam_load
+    #
+    # #лист МТО
     context['Учебный_кабинет'] = name_kab
     context['Лаборатория'] = name_lab
     context['Список_оборудования'] = obor_cab
