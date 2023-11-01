@@ -291,6 +291,8 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     desc_rp = 'Описание ПМ'
     pers_result = 'Лич_результаты'
     volume_pm = 'Объем ПМ'
+    up = 'УП'
+    pp = 'ПП'
     mto = 'МТО'
     main_publ = 'ОИ'
     second_publ = 'ДИ'
@@ -415,6 +417,28 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     lst_knowledge = processing_punctuation_end_string(lst_knowledge, ';\n', '- ', '.')  # форматируем выходную строку
     df_control.fillna('', inplace=True)
 
+
+    """
+    Обрабатываем лист УП (Учебная практика)
+    """
+    df_up = pd.read_excel(data_pm, sheet_name=up, usecols='A:C')
+    df_up.columns = ['Вид','Содержание','Объем']
+    df_up.fillna(0,inplace=True)
+    df_up = df_up.applymap(lambda x:int(x) if isinstance(x,float) else x)
+    df_up = df_up.applymap(lambda x: '' if x ==0 else x)
+
+    """
+    Обрабатываем лист ПП (Производственная практика)
+    """
+    df_pp = pd.read_excel(data_pm, sheet_name=pp, usecols='A:C')
+    df_pp.columns = ['Вид','Содержание','Объем']
+    df_pp.fillna(0,inplace=True)
+    df_pp = df_pp.applymap(lambda x:int(x) if isinstance(x,float) else x)
+    df_pp = df_pp.applymap(lambda x: '' if x ==0 else x)
+
+
+
+
     """
     Обрабатываем лист МТО
     """
@@ -515,6 +539,9 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     # context['Практ_подготовка'] = practice_load
     # context['Сам_работа'] = sam_load
     #
+    context['УП'] = df_up.to_dict('records')
+    context['ПП'] = df_pp.to_dict('records')
+
     # #лист МТО
     context['Учебный_кабинет'] = name_kab
     context['Лаборатория'] = name_lab
