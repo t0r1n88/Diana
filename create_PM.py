@@ -315,6 +315,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     desc_rp = 'Описание ПМ'
     pers_result = 'Лич_результаты'
     volume_pm = 'Объем ПМ'
+    volume_all_mdk = 'Объем МДК'
     up = 'УП'
     pp = 'ПП'
     mto = 'МТО'
@@ -348,6 +349,26 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     df_volume_pm = pd.read_excel(data_pm,sheet_name=volume_pm,usecols='A:B')
     df_volume_pm.dropna(inplace=True) # удаляем пустые строки
     df_volume_pm.columns = ['Наименование', 'Объем']
+
+
+    """
+    Обрабатываем лист Объем МДК
+    """
+    df_volume_all_mdk = pd.read_excel(data_pm,sheet_name=volume_all_mdk,usecols='A:J')
+    df_volume_all_mdk.columns = ['Наименование','Всего','Прак_под','Обяз','Прак_зан','КР','СРС','УП','ПП','КА']
+    df_volume_all_mdk.dropna(inplace=True,thresh=1) # удаляем пустые строки
+    df_volume_all_mdk.fillna(0,inplace=True)  # заполняем наны
+    df_volume_all_mdk.iloc[:,1:] = df_volume_all_mdk.iloc[:,1:].applymap(lambda x: int(x) if isinstance(x,(int,float)) else 0) # приводим к инту
+    sum_row = df_volume_all_mdk.sum() # получаем строку общей суммы
+    df_volume_all_mdk.loc['Сумма'] = sum_row # добавляем строку в датафрейм
+    df_volume_all_mdk.at['Сумма','Наименование'] = 'Итого'
+    df_volume_all_mdk = df_volume_all_mdk.astype(int,errors='ignore') # делай интовыми
+    df_volume_all_mdk = df_volume_all_mdk.applymap(lambda x:'' if x ==0 else x)
+
+
+    print(df_volume_all_mdk)
+
+
 
 
 
@@ -568,6 +589,9 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     context['Контроль_оценка'] = df_control.to_dict('records')
     context['Знать'] = lst_knowledge
     context['Уметь'] = lst_skill
+
+    # Объем МДК
+    context['Объем_МДК'] = df_volume_all_mdk.to_dict('records')
 
     # # добавляем единичные переменные
     # context['Макс_нагрузка'] = max_load
