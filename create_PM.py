@@ -19,6 +19,13 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 warnings.filterwarnings('ignore', category=FutureWarning, module='openpyxl')
 
+class ControlWord_PM(Exception):
+    """
+    Исключение для случая когда на листе Контроль шаблона ПМ пропущены слова Умения: ,Знания:, Практический опыт:
+    """
+    pass
+
+
 
 def convert_to_int(cell):
     """
@@ -366,7 +373,6 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     df_volume_all_mdk = df_volume_all_mdk.applymap(lambda x:'' if x ==0 else x)
 
 
-    print(df_volume_all_mdk)
 
 
 
@@ -419,6 +425,14 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
 
     _dct_mdk_df = processing_mdk(data_pm) # получам словарь где ключ это название МДК а значение это словарь с данными и итогами по подсчету этих данных
     dct_mdk_df ={mdk:value['Данные'] for mdk,value in _dct_mdk_df.items()} # создаем словарь извлекая датафрейм
+    _dct_mdk_data ={mdk:value['Итог'] for mdk,value in _dct_mdk_df.items()} # создаем словарь извлекая словарь с данными
+    dct_mdk_data = dict() # считаем общую сумму
+    for name,dct in _dct_mdk_data.items():
+        for key,value in dct.items():
+            if key not in dct_mdk_data:
+                dct_mdk_data[key] = value
+            else:
+                dct_mdk_data[key] += value
 
     """Обрабатываем лист ПК и ОК
 
@@ -452,13 +466,18 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     df_control.dropna(inplace=True, thresh=1)  # удаляем пустые строки
     df_control.columns = ['Результаты_обучения', 'Контроль_обучения']
     _lst_result_educ = df_control['Результаты_обучения'].dropna().tolist()  # создаем список
-    if 'Знания:' not in _lst_result_educ:
-        messagebox.showerror('Диана Создание рабочих программ',
-                             'На листе Контроль в первой колонке должно быть слово Знание:\n'
-                             'Посмотрите пример в исходном шаблоне')
+    control_set = {'Знания:','Умения:','Практический опыт:'}
+
+    if not control_set.issubset(set(_lst_result_educ)): # проверяем наличие нужных слов
+        raise ControlWord_PM
+
     border_divide = _lst_result_educ.index('Знания:')  # граница разделения
+    print(border_divide)
+    border_divide_second = _lst_result_educ.index('Практический опыт:')
+    print(border_divide_second)
     lst_skill = _lst_result_educ[1:border_divide]  # получаем список умений
     lst_knowledge = _lst_result_educ[border_divide + 1:]  # получаем список знаний
+
 
     lst_skill = processing_punctuation_end_string(lst_skill, ';\n', '- ', '.')  # форматируем выходную строку
     lst_knowledge = processing_punctuation_end_string(lst_knowledge, ';\n', '- ', '.')  # форматируем выходную строку
@@ -473,6 +492,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     df_up.fillna(0,inplace=True)
     df_up = df_up.applymap(lambda x:int(x) if isinstance(x,float) else x)
     df_up = df_up.applymap(lambda x: '' if x ==0 else x)
+    sum_up = sum_column_any_value(df_up,'Объем') # сумма учебной практики
 
     """
     Обрабатываем лист ПП (Производственная практика)
@@ -482,9 +502,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     df_pp.fillna(0,inplace=True)
     df_pp = df_pp.applymap(lambda x:int(x) if isinstance(x,float) else x)
     df_pp = df_pp.applymap(lambda x: '' if x ==0 else x)
-
-
-
+    sum_pp = sum_column_any_value(df_pp, 'Объем') # сумма производственной практики
 
     """
     Обрабатываем лист МТО
@@ -593,7 +611,16 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     # Объем МДК
     context['Объем_МДК'] = df_volume_all_mdk.to_dict('records')
 
-    # # добавляем единичные переменные
+    # добавляем единичные переменные
+    context['Всего'] = dct_mdk_data['Всего часов']
+    context['Всего_прак_под'] = dct_mdk_data['Всего практики']
+    context['СРС'] = dct_mdk_data['Всего СРС']
+    context['КР'] = dct_mdk_data['курсовая работа (КП)']
+
+    context['Объем_УП'] = sum_up
+    context['Объем_ПП'] = sum_pp
+
+
     # context['Макс_нагрузка'] = max_load
     # context['Обяз_нагрузка'] = mand_load
     # context['Практ_подготовка'] = practice_load
@@ -638,6 +665,10 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     doc.save(f'{end_folder}/РП {name_rp[:40]} {current_time}.docx')
 
 
+# messagebox.showerror('Диана Создание рабочих программ',
+#                      'На листе Контроль в первой колонке должно быть указаны слова\n'
+#                      'Умения: , Знания: , Практический опыт:\n'
+#                      'Посмотрите пример в исходном шаблоне')
 
 if __name__ == '__main__':
     template_pm_main = 'data/Шаблон автозаполнения ПМ.docx'
