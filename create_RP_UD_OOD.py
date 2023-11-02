@@ -422,7 +422,6 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
         current_time = time.strftime('%H_%M_%S', t)
         doc.save(f'{end_folder}/РП ООД {name_rp[:40]} {current_time}.docx')
     except DiffSheet:
-        # dif_value = etalon_cols - file_cols
         messagebox.showerror('Диана Создание рабочих программ',
                              f'В таблице не найдены листы {diff_cols},\n'
                              f'В таблице должны быть листы {etalon_cols_lst}\n'
