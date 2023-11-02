@@ -154,13 +154,26 @@ def processing_publ(row):
     return out_str
 
 
-def extract_data_mdk(data_pm,sheet_name)->pd.DataFrame:
+def sum_column_any_value(df:pd.DataFrame,name_column:str):
+    """
+    Суммирование колонки с разными типами значений в том числе строковыми.
+    """
+    lst_value = df[name_column].dropna().tolist()
+    sum_value = [value for value in lst_value if isinstance(value,(int,float))] # отбираем только числа
+    return sum(sum_value) # возвращаем сумму
+
+def extract_data_mdk(data_pm,sheet_name):
     """
     Функция для получения датафрейма из листа файла
     :param data_pm: путь к файлу
     :param sheet_name: имя листа
     :return: датафрейм
     """
+    lst_type_lesson = ['урок', 'практическое занятие', 'лабораторное занятие',
+                       'курсовая работа (КП)']  # список типов занятий
+    dct_all_sum_result = {key: 0 for key in lst_type_lesson}  # создаем словарь для подсчета значений
+
+
 
     df_plan_pm = pd.read_excel(data_pm,sheet_name=sheet_name,skiprows=1, usecols='A:H')
     df_plan_pm.dropna(inplace=True, thresh=1)  # удаляем пустые строки
@@ -170,6 +183,19 @@ def extract_data_mdk(data_pm,sheet_name)->pd.DataFrame:
     df_plan_pm['Курс_семестр'].fillna('Пусто', inplace=True)
     df_plan_pm['Раздел'].fillna('Пусто', inplace=True)
     df_plan_pm['Тема'].fillna('Пусто', inplace=True)
+
+    # Считаем общие суммы
+    mdk_all_sum = int(sum_column_any_value(df_plan_pm, 'Количество_часов'))  # получаем сумму общие часы
+    mdk_all_prac_sum = int(sum_column_any_value(df_plan_pm, 'Практика'))  # получаем сумму общие часы
+    mdk_all_srs_sum = int(sum_column_any_value(df_plan_pm, 'СРС'))  # сумма срс
+    for type_lesson in lst_type_lesson:
+        _df = df_plan_pm[df_plan_pm['Вид_занятия'] == type_lesson]  # фильтруем датафрейм
+        dct_all_sum_result[type_lesson] = int(sum_column_any_value(_df, 'Количество_часов'))  # получаем значение
+
+    dct_all_sum_result['Всего часов'] = mdk_all_sum
+    dct_all_sum_result['Всего практики'] = mdk_all_prac_sum
+    dct_all_sum_result['Всего СРС'] = mdk_all_srs_sum
+
 
     borders = df_plan_pm[
         df_plan_pm['Курс_семестр'].str.contains('семестр')].index  # получаем индексы строк где есть слово семестр
@@ -192,8 +218,6 @@ def extract_data_mdk(data_pm,sheet_name)->pd.DataFrame:
         columns=['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Практика', 'Вид_занятия',
                  'СРС'])  # создаем базовый датафрейм
 
-    lst_type_lesson = ['урок', 'практическое занятие', 'лабораторное занятие',
-                       'курсовая работа (КП)']  # список типов занятий
     for df in part_df:
         dct_sum_result = {key: 0 for key in lst_type_lesson}  # создаем словарь для подсчета значений
         for type_lesson in lst_type_lesson:
@@ -251,7 +275,7 @@ def extract_data_mdk(data_pm,sheet_name)->pd.DataFrame:
     main_df['Содержание'] = main_df['Курс_семестр'] + main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
     main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
 
-    return main_df
+    return (main_df,dct_all_sum_result) # возвращаем кортеж
 
 
 
@@ -270,8 +294,8 @@ def processing_mdk(data_pm) -> dict:
         if 'МДК' in sheet_name:
             name_mdk = str(wb[sheet_name]['D1'].value) # получаем название МДК, делаем строковыми на случай нан
             if 'МДК' in name_mdk:
-                temp_mdk_df = extract_data_mdk(data_pm,sheet_name) # извлекаем данные из датафрейма
-                dct_mdk[name_mdk] = temp_mdk_df
+                temp_mdk_df,temp_dct_result = extract_data_mdk(data_pm,sheet_name) # извлекаем данные из датафрейма
+                dct_mdk[name_mdk] = {'Итог':temp_dct_result,'Данные':temp_mdk_df}
     wb.close()
     return dct_mdk
 
@@ -372,7 +396,9 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     Обрабатываем листы с МДК
     """
 
-    dct_mdk_df = processing_mdk(data_pm) # получам словарь где ключ это название МДК а значение это датафрейм с данными
+    _dct_mdk_df = processing_mdk(data_pm) # получам словарь где ключ это название МДК а значение это словарь с данными и итогами по подсчету этих данных
+    dct_mdk_df ={mdk:value['Данные'] for mdk,value in _dct_mdk_df.items()} # создаем словарь извлекая датафрейм
+
     """Обрабатываем лист ПК и ОК
 
        """
@@ -577,12 +603,6 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
         # создаем переменные датафреймов
         name_mdk_table = f'План_МДК_{idx}'
         context[name_mdk_table] = value.to_dict('records')
-
-
-
-    # for idx,name in enumerate(dct_mdk_df.keys(),start=1):
-    #     name_var = f'МДК_{idx}'
-    #     context[name_var] = name
     # Создаем документ
     doc.render(context)
     # сохраняем документ
