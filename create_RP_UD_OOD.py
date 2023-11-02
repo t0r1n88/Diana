@@ -296,12 +296,8 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
     lst_predmet_result = processing_punctuation_end_string(lst_predmet_result, ';\n', '- ', '.')
     # УУПД
     df_uupd = pd.read_excel(data_work_program, sheet_name=uupd, usecols='A')
-    lst_uupd = df_target.iloc[:,0].dropna().tolist()
+    lst_uupd = df_uupd.iloc[:,0].dropna().tolist()
     lst_uupd = processing_punctuation_end_string(lst_uupd, ';\n', '- ', '.')
-
-
-
-
 
 
 
@@ -311,37 +307,45 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
 
 
     df_main_publ = pd.read_excel(data_work_program, sheet_name=main_publ, usecols='A:G')
-    df_main_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-    df_main_publ.fillna('Не заполнено !!!', inplace=True)
-    df_main_publ = df_main_publ.applymap(str)  # приводим к строковому виду
-    df_main_publ = df_main_publ.applymap(str.strip)  # очищаем от пробелов в начале и конце
+    if df_main_publ.shape[0] != 0:
+        df_main_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+        df_main_publ.fillna('Не заполнено !!!', inplace=True)
+        df_main_publ = df_main_publ.applymap(str)  # приводим к строковому виду
+        df_main_publ = df_main_publ.applymap(str.strip)  # очищаем от пробелов в начале и конце
 
-    df_main_publ['Основной_источник'] = df_main_publ.apply(processing_publ, axis=1)  # формируем строку
-    df_main_publ.sort_values(by='Основной_источник', inplace=True)
-    lst_main_source = df_main_publ['Основной_источник'].tolist()
+        df_main_publ['Основной_источник'] = df_main_publ.apply(processing_publ, axis=1)  # формируем строку
+        df_main_publ.sort_values(by='Основной_источник', inplace=True)
+        lst_main_source = df_main_publ['Основной_источник'].tolist()
+    else:
+        lst_main_source = 'Не заполнено'
 
     """
     Обрабатываем лист дополнительные источники
     """
     df_second_publ = pd.read_excel(data_work_program, sheet_name=second_publ, usecols='A:G')
-    df_second_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-    df_second_publ.fillna('Не заполнено !!!', inplace=True)
-    df_second_publ = df_second_publ.applymap(str)  # приводим к строковому виду
-    df_second_publ = df_second_publ.applymap(str.strip)  # очищаем от пробелов в начале и конце
-
-    df_second_publ['Основной_источник'] = df_second_publ.apply(processing_publ, axis=1)  # формируем строку
-    df_second_publ.sort_values(by='Основной_источник', inplace=True)
-    lst_slave_source = df_second_publ['Основной_источник'].tolist()
+    if df_second_publ.shape[0] != 0:
+        df_second_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+        df_second_publ.fillna('Не заполнено !!!', inplace=True)
+        df_second_publ = df_second_publ.applymap(str)  # приводим к строковому виду
+        df_second_publ = df_second_publ.applymap(str.strip)  # очищаем от пробелов в начале и конце
+        df_second_publ['Основной_источник'] = df_second_publ.apply(processing_publ, axis=1)  # формируем строку
+        df_second_publ.sort_values(by='Основной_источник', inplace=True)
+        lst_slave_source = df_second_publ['Основной_источник'].tolist()
+    else:
+        lst_slave_source = 'Не заполнено'
 
     """
     Обрабатываем лист интернет источники
     """
     df_ii_publ = pd.read_excel(data_work_program, sheet_name=ii_publ, usecols='A:B')
-    df_ii_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    if df_ii_publ.shape[0]:
+        df_ii_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
-    df_ii_publ.sort_values(by='Название', inplace=True)
+        df_ii_publ.sort_values(by='Название', inplace=True)
 
-    lst_inet_source = insert_type_source(df_ii_publ.copy())
+        lst_inet_source = insert_type_source(df_ii_publ.copy())
+    else:
+        lst_inet_source = 'Не заполнено'
 
     """
     Обрабатываем лист Контроль и Оценка
@@ -407,7 +411,8 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
 if __name__ == '__main__':
 
     template_work_program = 'data/Шаблон автозаполнения ООД 08_09_23.docx'
-    data_work_program = 'data/ПРИМЕР заполнения таблицы  ООД 13_09.xlsx'
+    # data_work_program = 'data/ПРИМЕР заполнения таблицы  ООД 13_09.xlsx'
+    data_work_program = 'data/Копия Рабочая программа Пм-23.xlsx'
     end_folder = 'data'
     #
     # # названия листов
