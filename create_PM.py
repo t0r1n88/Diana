@@ -482,37 +482,47 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     """
 
     df_main_publ = pd.read_excel(data_pm, sheet_name=main_publ, usecols='A:G')
-    df_main_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-    df_main_publ.fillna('Не заполнено !!!', inplace=True)
-    df_main_publ = df_main_publ.applymap(str)  # приводим к строковому виду
-    df_main_publ = df_main_publ.applymap(str.strip)  # очищаем от пробелов в начале и конце
+    if df_main_publ.shape[0] != 0:
+        df_main_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+        df_main_publ.fillna('Не заполнено !!!', inplace=True)
+        df_main_publ = df_main_publ.applymap(str)  # приводим к строковому виду
+        df_main_publ = df_main_publ.applymap(str.strip)  # очищаем от пробелов в начале и конце
 
-    df_main_publ['Основной_источник'] = df_main_publ.apply(processing_publ, axis=1)  # формируем строку
-    df_main_publ.sort_values(by='Основной_источник', inplace=True)
-    lst_main_source = df_main_publ['Основной_источник'].tolist()
+        df_main_publ['Основной_источник'] = df_main_publ.apply(processing_publ, axis=1)  # формируем строку
+        df_main_publ.sort_values(by='Основной_источник', inplace=True)
+        lst_main_source = df_main_publ['Основной_источник'].tolist()
+    else:
+        lst_main_source = 'Не заполнено'
 
     """
     Обрабатываем лист дополнительные источники
     """
     df_second_publ = pd.read_excel(data_pm, sheet_name=second_publ, usecols='A:G')
-    df_second_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-    df_second_publ.fillna('Не заполнено !!!', inplace=True)
-    df_second_publ = df_second_publ.applymap(str)  # приводим к строковому виду
-    df_second_publ = df_second_publ.applymap(str.strip)  # очищаем от пробелов в начале и конце
+    if df_second_publ.shape[0] != 0:
+        df_second_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+        df_second_publ.fillna('Не заполнено !!!', inplace=True)
+        df_second_publ = df_second_publ.applymap(str)  # приводим к строковому виду
+        df_second_publ = df_second_publ.applymap(str.strip)  # очищаем от пробелов в начале и конце
 
-    df_second_publ['Основной_источник'] = df_second_publ.apply(processing_publ, axis=1)  # формируем строку
-    df_second_publ.sort_values(by='Основной_источник', inplace=True)
-    lst_slave_source = df_second_publ['Основной_источник'].tolist()
+        df_second_publ['Основной_источник'] = df_second_publ.apply(processing_publ, axis=1)  # формируем строку
+        df_second_publ.sort_values(by='Основной_источник', inplace=True)
+        lst_slave_source = df_second_publ['Основной_источник'].tolist()
+    else:
+        lst_slave_source = 'Не заполнено'
 
     """
     Обрабатываем лист интернет источники
     """
     df_ii_publ = pd.read_excel(data_pm, sheet_name=ii_publ, usecols='A:B')
-    df_ii_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    if df_ii_publ.shape[0] != 0:
+        df_ii_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
-    df_ii_publ.sort_values(by='Название', inplace=True)
+        df_ii_publ.sort_values(by='Название', inplace=True)
 
-    lst_inet_source = insert_type_source(df_ii_publ.copy())
+        lst_inet_source = insert_type_source(df_ii_publ.copy())
+    else:
+        lst_inet_source = 'Не заполнено'
+
 
 
 
