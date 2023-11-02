@@ -9,6 +9,7 @@ import string
 import time
 import re
 from tkinter import messagebox
+from jinja2 import exceptions
 
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.set_option('display.max_columns', None)  # Отображать все столбцы
@@ -17,6 +18,13 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 warnings.filterwarnings('ignore', category=FutureWarning, module='openpyxl')
+
+class DiffSheet(Exception):
+    """
+    Исключение для случаев когда отсутствуют нужные колонки в файле
+    """
+    pass
+
 
 
 def convert_to_int(cell):
@@ -122,7 +130,6 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
     """
     # названия листов
     desc_rp = 'Описание РП'
-    pers_result = 'Лич_результаты'
     structure = 'Объем УД'
     plan = 'План УД'
     content = 'Содержание'
@@ -133,286 +140,322 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
     second_publ = 'ДИ'
     ii_publ = 'ИИ'
     control = 'Контроль'
-    # Обрабатываем лист Описание РП
-    df_desc_rp = pd.read_excel(data_work_program, sheet_name=desc_rp, nrows=1, usecols='A:L')  # загружаем датафрейм
-    df_desc_rp.fillna('НЕ ЗАПОЛНЕНО !!!', inplace=True)  # заполняем не заполненные разделы
-    df_desc_rp.columns = ['Тип_программы', 'Название_дисциплины', 'Цикл', 'Перечень', 'Код_специальность_профессия',
-                          'Год', 'Разработчик', 'Методист', 'ПЦК', 'Пред_ПЦК', 'Должность', 'Утверждающий']
+    # необходимые колонки
+    try:
+        etalon_cols_lst = [desc_rp,plan,structure,target,result,uupd,content,main_publ,second_publ,ii_publ,control]
+        etalon_cols = set(etalon_cols_lst)
+        temp_wb = openpyxl.load_workbook(data_work_program,read_only=True)
+        file_cols = set(temp_wb.sheetnames)
+        diff_cols = etalon_cols - file_cols
+        temp_wb.close()
+        if len(diff_cols) != 0:
+            raise DiffSheet
 
-    # Обрабатываем лист Объем УД
-    # Открываем файл
-    wb = openpyxl.load_workbook(data_work_program, read_only=True)
-    target_value = 'итог'
+        # Обрабатываем лист Описание РП
+        df_desc_rp = pd.read_excel(data_work_program, sheet_name=desc_rp, nrows=1, usecols='A:L')  # загружаем датафрейм
+        df_desc_rp.fillna('НЕ ЗАПОЛНЕНО !!!', inplace=True)  # заполняем не заполненные разделы
+        df_desc_rp.columns = ['Тип_программы', 'Название_дисциплины', 'Цикл', 'Перечень', 'Код_специальность_профессия',
+                              'Год', 'Разработчик', 'Методист', 'ПЦК', 'Пред_ПЦК', 'Должность', 'Утверждающий']
 
-    # Поиск значения в выбранном столбце
-    column_number = 1  # Номер столбца, в котором ищем значение (например, столбец A)
-    target_row = None  # Номер строки с искомым значением
+        # Обрабатываем лист Объем УД
+        # Открываем файл
+        wb = openpyxl.load_workbook(data_work_program, read_only=True)
+        target_value = 'итог'
 
-    for row in wb['Объем УД'].iter_rows(min_row=1, min_col=column_number, max_col=column_number):
-        cell_value = row[0].value
-        if target_value in str(cell_value).lower():
-            target_row = row[0].row
-            break
+        # Поиск значения в выбранном столбце
+        column_number = 1  # Номер столбца, в котором ищем значение (например, столбец A)
+        target_row = None  # Номер строки с искомым значением
 
-    if not target_row:
-        # если не находим строку в которой есть слово итог то выдаем исключение
-        print('Не найдена строка с названием Итоговая аттестация в форме ...')
+        for row in wb['Объем УД'].iter_rows(min_row=1, min_col=column_number, max_col=column_number):
+            cell_value = row[0].value
+            if target_value in str(cell_value).lower():
+                target_row = row[0].row
+                break
 
-    wb.close()  # закрываем файл
+        if not target_row:
+            # если не находим строку в которой есть слово итог то выдаем исключение
+            print('Не найдена строка с названием Итоговая аттестация в форме ...')
 
-    # если значение найдено то считываем нужное количество строк и  7 колонок
-    df_structure = pd.read_excel(data_work_program, sheet_name=structure, nrows=target_row,
-                                 usecols='A:C', dtype=str)
+        wb.close()  # закрываем файл
 
-    df_structure.iloc[:-1, 1:3] = df_structure.iloc[:-1, 1:3].applymap(convert_to_int)
-    df_structure.columns = ['Вид', 'Всего', 'Практика']
-    df_structure.fillna('', inplace=True)
-    max_load = df_structure.loc[0, 'Всего']  # максимальная учебная нагрузка
-    mand_load = df_structure.loc[1, 'Всего']  # обязательная нагрузка
-    prof_load = df_structure.loc[1, 'Практика']  # практическая нагрузка
+        # если значение найдено то считываем нужное количество строк и  7 колонок
+        df_structure = pd.read_excel(data_work_program, sheet_name=structure, nrows=target_row,
+                                     usecols='A:C', dtype=str)
 
-    sam_df = df_structure[
-        df_structure['Вид'] == 'Самостоятельная работа обучающегося (всего)']  # получаем часы самостоятельной работы
-    if len(sam_df) == 0:
-        print('Проверьте наличие строки Самостоятельная работа обучающегося (всего)')
-    sam_load = sam_df.iloc[0, 1]
+        df_structure.iloc[:-1, 1:3] = df_structure.iloc[:-1, 1:3].applymap(convert_to_int)
+        df_structure.columns = ['Вид', 'Всего', 'Практика']
+        df_structure.fillna('', inplace=True)
+        max_load = df_structure.loc[0, 'Всего']  # максимальная учебная нагрузка
+        mand_load = df_structure.loc[1, 'Всего']  # обязательная нагрузка
+        prof_load = df_structure.loc[1, 'Практика']  # практическая нагрузка
 
-    """
-    Обрабатываем лист План УД
-    """
-    df_plan_ud = pd.read_excel(data_work_program, sheet_name=plan, usecols='A:H')
-    df_plan_ud.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+        sam_df = df_structure[
+            df_structure['Вид'] == 'Самостоятельная работа обучающегося (всего)']  # получаем часы самостоятельной работы
+        if len(sam_df) == 0:
+            print('Проверьте наличие строки Самостоятельная работа обучающегося (всего)')
+        sam_load = sam_df.iloc[0, 1]
 
-    df_plan_ud.columns = ['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Практика', 'Вид_занятия',
-                          'СРС']
-    df_plan_ud['Курс_семестр'].fillna('Пусто', inplace=True)
-    df_plan_ud['Раздел'].fillna('Пусто', inplace=True)
-    df_plan_ud['Тема'].fillna('Пусто', inplace=True)
+        """
+            Обрабатываем лист План УД
+            """
+        df_plan_ud = pd.read_excel(data_work_program, sheet_name=plan, usecols='A:H')
+        df_plan_ud.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
-    borders = df_plan_ud[
-        df_plan_ud['Курс_семестр'].str.contains('семестр')].index  # получаем индексы строк где есть слово семестр
+        df_plan_ud.columns = ['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Практика', 'Вид_занятия',
+                              'СРС']
+        df_plan_ud['Курс_семестр'].fillna('Пусто', inplace=True)
+        df_plan_ud['Раздел'].fillna('Пусто', inplace=True)
+        df_plan_ud['Тема'].fillna('Пусто', inplace=True)
 
-    part_df = []  # список для хранения кусков датафрейма
-    previos_border = -1
-    # делим датафрем по границам
-    for value_border in borders:
-        part = df_plan_ud.iloc[previos_border:value_border]
-        part_df.append(part)
-        previos_border = value_border
+        borders = df_plan_ud[
+            df_plan_ud['Курс_семестр'].str.contains('семестр')].index  # получаем индексы строк где есть слово семестр
 
-    # добавляем последнюю часть
-    last_part = df_plan_ud.iloc[borders[-1]:]
-    part_df.append(last_part)
+        part_df = []  # список для хранения кусков датафрейма
+        previos_border = -1
+        # делим датафрем по границам
+        for value_border in borders:
+            part = df_plan_ud.iloc[previos_border:value_border]
+            part_df.append(part)
+            previos_border = value_border
 
-    part_df.pop(0)  # удаляем нулевой элемент так как он пустой
+        # добавляем последнюю часть
+        last_part = df_plan_ud.iloc[borders[-1]:]
+        part_df.append(last_part)
 
-    main_df = pd.DataFrame(
-        columns=['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Практика', 'Вид_занятия',
-                 'СРС'])  # создаем базовый датафрейм
+        part_df.pop(0)  # удаляем нулевой элемент так как он пустой
 
-    lst_type_lesson = ['урок', 'практическое занятие', 'лабораторное занятие',
-                       'курсовая работа (КП)']  # список типов занятий
-    for df in part_df:
-        dct_sum_result = {key: 0 for key in lst_type_lesson}  # создаем словарь для подсчета значений
-        for type_lesson in lst_type_lesson:
-            _df = df[df['Вид_занятия'] == type_lesson]  # фильтруем датафрейм
-            _df['Количество_часов'].fillna(0, inplace=True)
-            _df['Количество_часов'] = _df['Количество_часов'].astype(int)
-            dct_sum_result[type_lesson] = _df['Количество_часов'].sum()
-        # создаем строку с описанием
-        margint_text = 'Итого часов за семестр:\nиз них\nтеория\nпрактические занятия\nлабораторные занятия\nкурсовая работа (КП)'
+        main_df = pd.DataFrame(
+            columns=['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Практика', 'Вид_занятия',
+                     'СРС'])  # создаем базовый датафрейм
 
-        all_hours = sum(dct_sum_result.values())  # общая сумма часов
+        lst_type_lesson = ['урок', 'практическое занятие', 'лабораторное занятие',
+                           'курсовая работа (КП)']  # список типов занятий
+        for df in part_df:
+            dct_sum_result = {key: 0 for key in lst_type_lesson}  # создаем словарь для подсчета значений
+            for type_lesson in lst_type_lesson:
+                _df = df[df['Вид_занятия'] == type_lesson]  # фильтруем датафрейм
+                _df['Количество_часов'].fillna(0, inplace=True)
+                _df['Количество_часов'] = _df['Количество_часов'].astype(int)
+                dct_sum_result[type_lesson] = _df['Количество_часов'].sum()
+            # создаем строку с описанием
+            margint_text = 'Итого часов за семестр:\nиз них\nтеория\nпрактические занятия\nлабораторные занятия\nкурсовая работа (КП)'
 
-        theory_hours = dct_sum_result['урок']  # часы теории
-        praktice_hours = dct_sum_result['практическое занятие']  # часы практики
-        lab_hours = dct_sum_result['лабораторное занятие']  # часы лабораторных
-        kurs_hours = dct_sum_result['курсовая работа (КП)']  # часы курсовых
+            all_hours = sum(dct_sum_result.values())  # общая сумма часов
 
-        value_text = f'{all_hours}\n \n{theory_hours}\n{praktice_hours}\n{lab_hours}\n{kurs_hours}'  # строка со значениями
-        temp_df = pd.DataFrame([{'Тема': margint_text, 'Количество_часов': value_text}])
-        df = pd.concat([df, temp_df], ignore_index=True)  # добаляем итоговую строку
-        main_df = pd.concat([main_df, df], ignore_index=True)  # добавляем в основной датафрейм
+            theory_hours = dct_sum_result['урок']  # часы теории
+            praktice_hours = dct_sum_result['практическое занятие']  # часы практики
+            lab_hours = dct_sum_result['лабораторное занятие']  # часы лабораторных
+            kurs_hours = dct_sum_result['курсовая работа (КП)']  # часы курсовых
 
-    main_df.insert(0, 'Номер', np.nan)  # добавляем колонку с номерами занятий
+            value_text = f'{all_hours}\n \n{theory_hours}\n{praktice_hours}\n{lab_hours}\n{kurs_hours}'  # строка со значениями
+            temp_df = pd.DataFrame([{'Тема': margint_text, 'Количество_часов': value_text}])
+            df = pd.concat([df, temp_df], ignore_index=True)  # добаляем итоговую строку
+            main_df = pd.concat([main_df, df], ignore_index=True)  # добавляем в основной датафрейм
 
-    main_df['Содержание'] = main_df['Содержание'].fillna('Пусто')  # заменяем наны на пусто
+        main_df.insert(0, 'Номер', np.nan)  # добавляем колонку с номерами занятий
 
-    count = 0  # счетчик
-    for idx, row in enumerate(main_df.itertuples()):
-        if (row[5] == 'Пусто') | ('Итого часов' in row[5]):
-            main_df.iloc[idx, 0] = ''
+        main_df['Содержание'] = main_df['Содержание'].fillna('Пусто')  # заменяем наны на пусто
+
+        count = 0  # счетчик
+        for idx, row in enumerate(main_df.itertuples()):
+            if (row[5] == 'Пусто') | ('Итого часов' in row[5]):
+                main_df.iloc[idx, 0] = ''
+            else:
+                count += 1
+                main_df.iloc[idx, 0] = count
+
+        # очищаем от пустых символов и строки Пусто
+        main_df['Курс_семестр'] = main_df['Курс_семестр'].fillna('Пусто')
+        main_df['Раздел'] = main_df['Раздел'].fillna('Пусто')
+
+        main_df['Курс_семестр'] = main_df['Курс_семестр'].replace('Пусто', '')
+        main_df['Тема'] = main_df['Тема'].replace('Пусто', '')
+        main_df['Раздел'] = main_df['Раздел'].replace('Пусто', '')
+        main_df['Содержание'] = main_df['Содержание'].replace('Пусто', '')
+
+        main_df['Вид_занятия'] = main_df['Вид_занятия'].fillna('')
+
+        main_df['Количество_часов'] = main_df['Количество_часов'].apply(convert_to_int)
+        main_df['Количество_часов'] = main_df['Количество_часов'].fillna('')
+
+        main_df['Практика'] = main_df['Практика'].fillna(0)
+        main_df['Практика'] = main_df['Практика'].astype(int,errors='ignore')
+        main_df['Практика'] = main_df['Практика'].apply(lambda x:'' if x == 0 else x)
+
+        main_df['СРС'] = main_df['СРС'].fillna(0)
+        main_df['СРС'] = main_df['СРС'].astype(int,errors='ignore')
+        main_df['СРС'] = main_df['СРС'].apply(lambda x:'' if x == 0 else x)
+        main_df['Содержание'] = main_df['Курс_семестр'] + main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
+        main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
+
+        """
+            Обрабатываем лист Содержание
+            """
+        df_content = pd.read_excel(data_work_program, sheet_name=content, usecols='A',nrows=1,dtype=str)
+        df_content = df_content.applymap(str.strip) # очищаем от пробелов
+
+        """
+            Обрабатываем листы Цели,Результаты, УУПД
+            """
+        #Цели
+        df_target = pd.read_excel(data_work_program, sheet_name=target, usecols='A')
+        lst_target = df_target['Цели'].dropna().tolist()
+        lst_target = processing_punctuation_end_string(lst_target, ';\n', '- ', '.')
+        # Результаты
+        # Личностные результаты
+        df_result = pd.read_excel(data_work_program, sheet_name=result, usecols='A:C')
+        lst_perconal_result = df_result['Личностные_результаты'].dropna().tolist()
+        lst_perconal_result = processing_punctuation_end_string(lst_perconal_result, ';\n', '- ', '.')
+        # Метапредметные результаты
+        lst_meta_result = df_result['Метапредметные_результаты'].dropna().tolist()
+        lst_meta_result = processing_punctuation_end_string(lst_meta_result, ';\n', '- ', '.')
+        # Предметные результаты
+        lst_predmet_result = df_result['Предметные_результаты'].dropna().tolist()
+        lst_predmet_result = processing_punctuation_end_string(lst_predmet_result, ';\n', '- ', '.')
+        # УУПД
+        df_uupd = pd.read_excel(data_work_program, sheet_name=uupd, usecols='A')
+        lst_uupd = df_uupd.iloc[:,0].dropna().tolist()
+        lst_uupd = processing_punctuation_end_string(lst_uupd, ';\n', '- ', '.')
+
+        """
+            Обрабатываем лист Основные источники
+            """
+
+        df_main_publ = pd.read_excel(data_work_program, sheet_name=main_publ, usecols='A:G')
+        if df_main_publ.shape[0] != 0:
+            df_main_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+            df_main_publ.fillna('Не заполнено !!!', inplace=True)
+            df_main_publ = df_main_publ.applymap(str)  # приводим к строковому виду
+            df_main_publ = df_main_publ.applymap(str.strip)  # очищаем от пробелов в начале и конце
+
+            df_main_publ['Основной_источник'] = df_main_publ.apply(processing_publ, axis=1)  # формируем строку
+            df_main_publ.sort_values(by='Основной_источник', inplace=True)
+            lst_main_source = df_main_publ['Основной_источник'].tolist()
         else:
-            count += 1
-            main_df.iloc[idx, 0] = count
+            lst_main_source = 'Не заполнено'
 
-    # очищаем от пустых символов и строки Пусто
-    main_df['Курс_семестр'] = main_df['Курс_семестр'].fillna('Пусто')
-    main_df['Раздел'] = main_df['Раздел'].fillna('Пусто')
+        """
+            Обрабатываем лист дополнительные источники
+            """
+        df_second_publ = pd.read_excel(data_work_program, sheet_name=second_publ, usecols='A:G')
+        if df_second_publ.shape[0] != 0:
+            df_second_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+            df_second_publ.fillna('Не заполнено !!!', inplace=True)
+            df_second_publ = df_second_publ.applymap(str)  # приводим к строковому виду
+            df_second_publ = df_second_publ.applymap(str.strip)  # очищаем от пробелов в начале и конце
+            df_second_publ['Основной_источник'] = df_second_publ.apply(processing_publ, axis=1)  # формируем строку
+            df_second_publ.sort_values(by='Основной_источник', inplace=True)
+            lst_slave_source = df_second_publ['Основной_источник'].tolist()
+        else:
+            lst_slave_source = 'Не заполнено'
 
-    main_df['Курс_семестр'] = main_df['Курс_семестр'].replace('Пусто', '')
-    main_df['Тема'] = main_df['Тема'].replace('Пусто', '')
-    main_df['Раздел'] = main_df['Раздел'].replace('Пусто', '')
-    main_df['Содержание'] = main_df['Содержание'].replace('Пусто', '')
+        """
+            Обрабатываем лист интернет источники
+            """
+        df_ii_publ = pd.read_excel(data_work_program, sheet_name=ii_publ, usecols='A:B')
+        if df_ii_publ.shape[0]:
+            df_ii_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
-    main_df['Вид_занятия'] = main_df['Вид_занятия'].fillna('')
+            df_ii_publ.sort_values(by='Название', inplace=True)
 
-    main_df['Количество_часов'] = main_df['Количество_часов'].apply(convert_to_int)
-    main_df['Количество_часов'] = main_df['Количество_часов'].fillna('')
+            lst_inet_source = insert_type_source(df_ii_publ.copy())
+        else:
+            lst_inet_source = 'Не заполнено'
 
-    main_df['Практика'] = main_df['Практика'].fillna(0)
-    main_df['Практика'] = main_df['Практика'].astype(int,errors='ignore')
-    main_df['Практика'] = main_df['Практика'].apply(lambda x:'' if x == 0 else x)
+        """
+            Обрабатываем лист Контроль и Оценка
+            """
+        df_control = pd.read_excel(data_work_program, sheet_name=control, usecols='A:B')
+        df_control.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+        df_control.columns = ['Результаты_обучения', 'Контроль_обучения']
+        _lst_result_educ = df_control['Результаты_обучения'].dropna().tolist()  # создаем список
+        if 'Знания:' not in _lst_result_educ:
+            messagebox.showerror('Диана Создание рабочих программ','На листе Контроль в первой колонке должно быть слово Знание:\n'
+                                                                   'Посмотрите пример в исходном шаблоне')
+        border_divide = _lst_result_educ.index('Знания:')  # граница разделения
+        lst_skill = _lst_result_educ[1:border_divide]  # получаем список умений
+        lst_knowledge = _lst_result_educ[border_divide + 1:]  # получаем список знаний
 
-    main_df['СРС'] = main_df['СРС'].fillna(0)
-    main_df['СРС'] = main_df['СРС'].astype(int,errors='ignore')
-    main_df['СРС'] = main_df['СРС'].apply(lambda x:'' if x == 0 else x)
-    main_df['Содержание'] = main_df['Курс_семестр'] + main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
-    main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
+        lst_skill = processing_punctuation_end_string(lst_skill, ';\n', '- ', '.')  # форматируем выходную строку
+        lst_knowledge = processing_punctuation_end_string(lst_knowledge, ';\n', '- ', '.')  # форматируем выходную строку
+        df_control.fillna('', inplace=True)
 
-    """
-    Обрабатываем лист Содержание
-    """
-    df_content = pd.read_excel(data_work_program, sheet_name=content, usecols='A',nrows=1,dtype=str)
-    df_content = df_content.applymap(str.strip) # очищаем от пробелов
+        # Конвертируем датафрейм с описанием программы в список словарей и добавляем туда нужные элементы
+        data_program = df_desc_rp.to_dict('records')
+        context = data_program[0]
+        context['План_УД'] = main_df.to_dict('records')  # содержание учебной дисциплины
+        context['Учебная_работа'] = df_structure.to_dict('records')
+        context['Контроль_оценка'] = df_control.to_dict('records')
+        context['Знать'] = lst_knowledge
+        context['Уметь'] = lst_skill
 
-    """
-    Обрабатываем листы Цели,Результаты, УУПД
-    """
-    #Цели
-    df_target = pd.read_excel(data_work_program, sheet_name=target, usecols='A')
-    lst_target = df_target['Цели'].dropna().tolist()
-    lst_target = processing_punctuation_end_string(lst_target, ';\n', '- ', '.')
-    # Результаты
-    # Личностные результаты
-    df_result = pd.read_excel(data_work_program, sheet_name=result, usecols='A:C')
-    lst_perconal_result = df_result['Личностные_результаты'].dropna().tolist()
-    lst_perconal_result = processing_punctuation_end_string(lst_perconal_result, ';\n', '- ', '.')
-    # Метапредметные результаты
-    lst_meta_result = df_result['Метапредметные_результаты'].dropna().tolist()
-    lst_meta_result = processing_punctuation_end_string(lst_meta_result, ';\n', '- ', '.')
-    # Предметные результаты
-    lst_predmet_result = df_result['Предметные_результаты'].dropna().tolist()
-    lst_predmet_result = processing_punctuation_end_string(lst_predmet_result, ';\n', '- ', '.')
-    # УУПД
-    df_uupd = pd.read_excel(data_work_program, sheet_name=uupd, usecols='A')
-    lst_uupd = df_uupd.iloc[:,0].dropna().tolist()
-    lst_uupd = processing_punctuation_end_string(lst_uupd, ';\n', '- ', '.')
+        # добавляем единичные переменные
+        context['Макс_нагрузка'] = max_load
+        context['Обяз_нагрузка'] = mand_load
+        context['Проф_направленность'] = prof_load
+        context['Сам_работа'] = sam_load
 
+        # Листы Цели,результаты,УУПД
+        context['Цели'] = lst_target
+        context['Личностные_результаты'] =lst_perconal_result
+        context['Метапредметные_результаты'] =lst_meta_result
+        context['Предметные_результаты'] =lst_predmet_result
+        context['УУПД'] =lst_uupd
 
+        # Лист Содержание
+        context['Содержание_дисциплины'] = df_content.iloc[0,0]
+        # лист Учебные издания
+        context['Основные_источники'] = lst_main_source
+        context['Дополнительные_источники'] = lst_slave_source
+        context['Интернет_источники'] = lst_inet_source
 
-    """
-    Обрабатываем лист Основные источники
-    """
+        doc = DocxTemplate(template_work_program)
+        # Получаем ключи используемые в шаблоне
+        set_of_variables = doc.get_undeclared_template_variables()
 
+        # Создаем документ
+        doc.render(context)
+        # сохраняем документ
+        # название программы
+        name_rp = df_desc_rp['Название_дисциплины'].tolist()[0]
+        t = time.localtime()
+        current_time = time.strftime('%H_%M_%S', t)
+        doc.save(f'{end_folder}/РП ООД {name_rp[:40]} {current_time}.docx')
+    except DiffSheet:
+        # dif_value = etalon_cols - file_cols
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'В таблице не найдены листы {diff_cols},\n'
+                             f'В таблице должны быть листы {etalon_cols_lst}\n'
+                             f'Возможно вы используете шаблон РП для УД а не шаблон РП для ООД')
+    except KeyError as e:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
+    except ValueError as e:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'В таблице не найден лист,колонка или значение {e.args}!\nПроверьте написание названий')
 
-    df_main_publ = pd.read_excel(data_work_program, sheet_name=main_publ, usecols='A:G')
-    if df_main_publ.shape[0] != 0:
-        df_main_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-        df_main_publ.fillna('Не заполнено !!!', inplace=True)
-        df_main_publ = df_main_publ.applymap(str)  # приводим к строковому виду
-        df_main_publ = df_main_publ.applymap(str.strip)  # очищаем от пробелов в начале и конце
+    except FileNotFoundError:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'Перенесите файлы которые вы хотите обработать в корень диска. Проблема может быть\n '
+                             f'в слишком длинном пути к обрабатываемым файлам')
 
-        df_main_publ['Основной_источник'] = df_main_publ.apply(processing_publ, axis=1)  # формируем строку
-        df_main_publ.sort_values(by='Основной_источник', inplace=True)
-        lst_main_source = df_main_publ['Основной_источник'].tolist()
+    except exceptions.TemplateSyntaxError:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'Ошибка в оформлении вставляемых значений в шаблоне\n'
+                             f'Проверьте свой шаблон на наличие следующих ошибок:\n'
+                             f'1) Вставляемые значения должны быть оформлены двойными фигурными скобками\n'
+                             f'{{{{Вставляемое_значение}}}}\n'
+                             f'2) В названии колонки в таблице откуда берутся данные - есть пробелы,цифры,знаки пунктуации и т.п.\n'
+                             f'в названии колонки должны быть только буквы и нижнее подчеркивание.\n'
+                             f'{{{{Дата_рождения}}}}')
     else:
-        lst_main_source = 'Не заполнено'
-
-    """
-    Обрабатываем лист дополнительные источники
-    """
-    df_second_publ = pd.read_excel(data_work_program, sheet_name=second_publ, usecols='A:G')
-    if df_second_publ.shape[0] != 0:
-        df_second_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-        df_second_publ.fillna('Не заполнено !!!', inplace=True)
-        df_second_publ = df_second_publ.applymap(str)  # приводим к строковому виду
-        df_second_publ = df_second_publ.applymap(str.strip)  # очищаем от пробелов в начале и конце
-        df_second_publ['Основной_источник'] = df_second_publ.apply(processing_publ, axis=1)  # формируем строку
-        df_second_publ.sort_values(by='Основной_источник', inplace=True)
-        lst_slave_source = df_second_publ['Основной_источник'].tolist()
-    else:
-        lst_slave_source = 'Не заполнено'
-
-    """
-    Обрабатываем лист интернет источники
-    """
-    df_ii_publ = pd.read_excel(data_work_program, sheet_name=ii_publ, usecols='A:B')
-    if df_ii_publ.shape[0]:
-        df_ii_publ.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-
-        df_ii_publ.sort_values(by='Название', inplace=True)
-
-        lst_inet_source = insert_type_source(df_ii_publ.copy())
-    else:
-        lst_inet_source = 'Не заполнено'
-
-    """
-    Обрабатываем лист Контроль и Оценка
-    """
-    df_control = pd.read_excel(data_work_program, sheet_name=control, usecols='A:B')
-    df_control.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-    df_control.columns = ['Результаты_обучения', 'Контроль_обучения']
-    _lst_result_educ = df_control['Результаты_обучения'].dropna().tolist()  # создаем список
-    if 'Знания:' not in _lst_result_educ:
-        messagebox.showerror('Диана Создание рабочих программ','На листе Контроль в первой колонке должно быть слово Знание:\n'
-                                                               'Посмотрите пример в исходном шаблоне')
-    border_divide = _lst_result_educ.index('Знания:')  # граница разделения
-    lst_skill = _lst_result_educ[1:border_divide]  # получаем список умений
-    lst_knowledge = _lst_result_educ[border_divide + 1:]  # получаем список знаний
-
-    lst_skill = processing_punctuation_end_string(lst_skill, ';\n', '- ', '.')  # форматируем выходную строку
-    lst_knowledge = processing_punctuation_end_string(lst_knowledge, ';\n', '- ', '.')  # форматируем выходную строку
-    df_control.fillna('', inplace=True)
-
-
-    # Конвертируем датафрейм с описанием программы в список словарей и добавляем туда нужные элементы
-    data_program = df_desc_rp.to_dict('records')
-    context = data_program[0]
-    context['План_УД'] = main_df.to_dict('records')  # содержание учебной дисциплины
-    context['Учебная_работа'] = df_structure.to_dict('records')
-    context['Контроль_оценка'] = df_control.to_dict('records')
-    context['Знать'] = lst_knowledge
-    context['Уметь'] = lst_skill
-
-    # добавляем единичные переменные
-    context['Макс_нагрузка'] = max_load
-    context['Обяз_нагрузка'] = mand_load
-    context['Проф_направленность'] = prof_load
-    context['Сам_работа'] = sam_load
-
-    # Листы Цели,результаты,УУПД
-    context['Цели'] = lst_target
-    context['Личностные_результаты'] =lst_perconal_result
-    context['Метапредметные_результаты'] =lst_meta_result
-    context['Предметные_результаты'] =lst_predmet_result
-    context['УУПД'] =lst_uupd
-
-    # Лист Содержание
-    context['Содержание_дисциплины'] = df_content.iloc[0,0]
-    # лист Учебные издания
-    context['Основные_источники'] = lst_main_source
-    context['Дополнительные_источники'] = lst_slave_source
-    context['Интернет_источники'] = lst_inet_source
-
-    doc = DocxTemplate(template_work_program)
-    # Получаем ключи используемые в шаблоне
-    set_of_variables = doc.get_undeclared_template_variables()
-
-    # Создаем документ
-    doc.render(context)
-    # сохраняем документ
-    # название программы
-    name_rp = df_desc_rp['Название_дисциплины'].tolist()[0]
-    t = time.localtime()
-    current_time = time.strftime('%H_%M_%S', t)
-    doc.save(f'{end_folder}/РП ООД {name_rp[:40]} {current_time}.docx')
+        messagebox.showinfo('Диана Создание рабочих программ', 'Данные успешно обработаны')
 
 if __name__ == '__main__':
 
     template_work_program = 'data/Шаблон автозаполнения ООД 08_09_23.docx'
-    # data_work_program = 'data/ПРИМЕР заполнения таблицы  ООД 13_09.xlsx'
-    data_work_program = 'data/Копия Рабочая программа Пм-23.xlsx'
+    data_work_program = 'data/ПРИМЕР заполнения таблицы  ООД 13_09.xlsx'
+    # data_work_program = 'data/Копия Рабочая программа Пм-23.xlsx'
     end_folder = 'data'
     #
     # # названия листов
