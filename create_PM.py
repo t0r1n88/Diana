@@ -323,6 +323,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     pers_result = 'Лич_результаты'
     volume_pm = 'Объем ПМ'
     volume_all_mdk = 'Объем МДК'
+    kp = 'Тематика КП(КР)'
     up = 'УП'
     pp = 'ПП'
     mto = 'МТО'
@@ -488,6 +489,15 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
 
 
     """
+    Обрабатываем лист темы курсовых работ
+        """
+    df_kp = pd.read_excel(data_pm,sheet_name=kp,usecols='A')
+    lst_kp = df_kp.iloc[:,0].dropna().tolist()
+    lst_kp = processing_punctuation_end_string(lst_kp, ';\n', '- ', '.')  # форматируем выходную строку
+
+
+
+    """
     Обрабатываем лист УП (Учебная практика)
     """
     df_up = pd.read_excel(data_pm, sheet_name=up, usecols='A:C')
@@ -629,6 +639,8 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     context['Всего_прак_под'] = dct_mdk_data['Всего практики']
     context['СРС'] = dct_mdk_data['Всего СРС']
     context['КР'] = dct_mdk_data['курсовая работа (КП)']
+
+    context['КП'] = lst_kp # список тем курсовых работ
 
     context['Объем_УП'] = sum_up
     context['Объем_ПП'] = sum_pp
