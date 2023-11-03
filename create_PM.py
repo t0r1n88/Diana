@@ -331,6 +331,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     ii_publ = 'ИИ'
     control = 'Контроль'
     pk_ok_vpd = 'ПК,ОК,ВПД'
+    fgos = 'Данные ФГОС'
 
     # Обрабатываем лист Описание ПМ
     df_desc_rp = pd.read_excel(data_pm, sheet_name=desc_rp, nrows=1, usecols='A:J')  # загружаем датафрейм
@@ -471,16 +472,18 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     if not control_set.issubset(set(_lst_result_educ)): # проверяем наличие нужных слов
         raise ControlWord_PM
 
-    border_divide = _lst_result_educ.index('Знания:')  # граница разделения
-    print(border_divide)
-    border_divide_second = _lst_result_educ.index('Практический опыт:')
-    print(border_divide_second)
+    border_divide = _lst_result_educ.index('Знания:')  # граница разделения знания
+    border_divide_second = _lst_result_educ.index('Практический опыт:') # граница разделения Опыта
     lst_skill = _lst_result_educ[1:border_divide]  # получаем список умений
-    lst_knowledge = _lst_result_educ[border_divide + 1:]  # получаем список знаний
+    lst_knowledge = _lst_result_educ[border_divide + 1:border_divide_second]  # получаем список знаний
+    lst_prac_exp = _lst_result_educ[border_divide_second+1:]
+
 
 
     lst_skill = processing_punctuation_end_string(lst_skill, ';\n', '- ', '.')  # форматируем выходную строку
     lst_knowledge = processing_punctuation_end_string(lst_knowledge, ';\n', '- ', '.')  # форматируем выходную строку
+    lst_prac_exp = processing_punctuation_end_string(lst_prac_exp, ';\n', '- ', '.')  # форматируем выходную строку
+
     df_control.fillna('', inplace=True)
 
 
@@ -588,6 +591,15 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     else:
         lst_inet_source = 'Не заполнено'
 
+    """
+    Обрабатываем лист ФГОС
+    """
+    df_fgos = pd.read_excel(data_pm,sheet_name=fgos,usecols='A:C')
+    df_fgos.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    df_fgos.fillna('Не заполнено',inplace=True)
+
+
+
 
 
 
@@ -607,6 +619,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     context['Контроль_оценка'] = df_control.to_dict('records')
     context['Знать'] = lst_knowledge
     context['Уметь'] = lst_skill
+    context['Прак_опыт'] = lst_prac_exp
 
     # Объем МДК
     context['Объем_МДК'] = df_volume_all_mdk.to_dict('records')
@@ -645,6 +658,16 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     context['ВПД'] = lst_vpd
     context['Общ_компетенции'] = df_flat_ok.to_dict('records')
 
+    # Переменные ФГОС
+    # даты
+    context['ФГОС_у_дата'] = df_fgos.at[0,'Дата']
+    context['ФГОС_з_дата'] = df_fgos.at[1,'Дата']
+    context['Прог_з_дата'] = df_fgos.at[2,'Дата']
+
+    # номера
+    context['ФГОС_у_номер'] = df_fgos.at[0,'Номер документа']
+    context['ФГОС_з_номер'] = df_fgos.at[1,'Номер документа']
+    context['Прог_з_номер'] = df_fgos.at[2,'Номер документа']
 
     for idx,tpl_dct in enumerate(dct_mdk_df.items(),start=1):
         key,value = tpl_dct # распаковываем кортеж
