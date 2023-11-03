@@ -331,7 +331,9 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     second_publ = 'ДИ'
     ii_publ = 'ИИ'
     control = 'Контроль'
-    pk_ok_vpd = 'ПК,ОК,ВПД'
+    pk = 'ПК'
+    ok = 'ОК'
+    vpd = 'ВПД'
     fgos = 'Данные ФГОС'
 
     # Обрабатываем лист Описание ПМ
@@ -436,21 +438,28 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
             else:
                 dct_mdk_data[key] += value
 
-    """Обрабатываем лист ПК и ОК
-
+    """Обрабатываем лист ПК
        """
-    df_pk_ok = pd.read_excel(data_pm, sheet_name=pk_ok_vpd, usecols='A:C')
-    df_pk_ok.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    df_pk = pd.read_excel(data_pm, sheet_name=pk, usecols='A:C')
+    df_pk.dropna(inplace=True, thresh=1)  # удаляем пустые строки
     # Обработка ПК
-    lst_pk = df_pk_ok['Наименование ПК'].dropna().tolist()
+    lst_pk = df_pk['Наименование ПК'].dropna().tolist()
     lst_pk = processing_punctuation_end_string(lst_pk, ';\n', '- ', '.')
+    df_pk.fillna('',inplace=True)
+    df_pk.columns = ['Наименование','Показатель','Форма']
+
 
     # Обработка ОК
-    lst_ok = df_pk_ok['Наименование ОК'].dropna().tolist()
+    df_ok = pd.read_excel(data_pm, sheet_name=ok, usecols='A:C')
+    df_ok.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+    lst_ok = df_ok['Наименование ОК'].dropna().tolist()
     lst_ok = processing_punctuation_end_string(lst_ok, ';\n', '- ', '.')
 
     # Разворачиваем ОК в две колонки
-    df_flat_ok = df_pk_ok['Наименование ОК'].to_frame()
+    df_flat_ok = df_ok['Наименование ОК'].to_frame()
+    df_ok.fillna('',inplace=True) # заполняем пустыми пробелами наны
+    df_ok.columns = ['Наименование', 'Показатель', 'Форма']
+
     df_flat_ok.dropna(inplace=True)
 
     df_flat_ok.columns = ['Описание']
@@ -458,7 +467,9 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     df_flat_ok['Результат'] = df_flat_ok['Описание'].apply(extract_descr_lr)
 
     # Обработка ВПД
-    lst_vpd = df_pk_ok['Виды профессиональной деятельности'].dropna().tolist()
+    df_vpd = pd.read_excel(data_pm, sheet_name=vpd, usecols='A')
+    df_vpd.dropna(inplace=True)  # удаляем пустые строки
+    lst_vpd = df_vpd['Виды профессиональной деятельности'].dropna().tolist()
     lst_vpd = processing_punctuation_end_string(lst_vpd, ';\n', '- ', '.')
 
     """
@@ -664,10 +675,16 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     context['Основные_источники'] = lst_main_source
     context['Дополнительные_источники'] = lst_slave_source
     context['Интернет_источники'] = lst_inet_source
-    # Листы данные ОК и  данные ПК,ВПД
+    # Листы данные ОК,ПК,ВПД
     context['ОК'] = lst_ok
     context['ПК'] = lst_pk
     context['ВПД'] = lst_vpd
+    context['Контроль_ПК'] = df_pk.to_dict('records')
+    context['Контроль_ОК'] = df_ok.to_dict('records')
+
+
+
+
     context['Общ_компетенции'] = df_flat_ok.to_dict('records')
 
     # Переменные ФГОС
