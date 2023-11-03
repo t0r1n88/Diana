@@ -705,6 +705,8 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
 #                      'Умения: , Знания: , Практический опыт:\n'
 #                      'Посмотрите пример в исходном шаблоне')
 
+# jinja2.exceptions.UndefinedError: 'Интернет' is undefined неправильная запись в шаблоне
+
 if __name__ == '__main__':
     template_pm_main = 'data/Шаблон автозаполнения ПМ.docx'
     data_pm_main = 'data/Пример заполнения ПМ.xlsx'
