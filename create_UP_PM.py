@@ -1,5 +1,5 @@
 """
-скрипт для создания программ профессиональныъ модулей
+скрипт для создания программ учебных практик по профмодулям
 """
 import pandas as pd
 import numpy as np
@@ -471,7 +471,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
 
 
     """
-    Обрабатываем лист Контроль и Оценка
+    Обрабатываем лист Контроль
     """
     df_control = pd.read_excel(data_pm, sheet_name=control, usecols='A:B')
     df_control.dropna(inplace=True, thresh=1)  # удаляем пустые строки
@@ -495,7 +495,10 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     lst_prac_exp = processing_punctuation_end_string(lst_prac_exp, ';\n', '- ', '.')  # форматируем выходную строку
 
     df_control.fillna('', inplace=True)
-
+    # создаем 2 датафрейма для умений и практики
+    df_control_knowldege = df_control.iloc[:border_divide-1,:]
+    df_control_prac = df_control.iloc[border_divide_second:,:]
+    out_contol_df = pd.concat([df_control_prac,df_control_knowldege],ignore_index=True,axis=0)
 
     """
     Обрабатываем лист темы курсовых работ
@@ -509,15 +512,58 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     """
     Обрабатываем лист УП (Учебная практика)
     """
-    df_up = pd.read_excel(data_pm, sheet_name=up, usecols='A:C')
-    df_up.columns = ['Вид','Содержание','Объем']
+    df_up = pd.read_excel(data_pm, sheet_name=up, usecols='A:D')
+    df_up.columns = ['Вид','Содержание','Объем','Прак_под']
     df_up.fillna(0,inplace=True)
     df_up = df_up.applymap(lambda x:int(x) if isinstance(x,float) else x)
     df_up = df_up.applymap(lambda x: '' if x ==0 else x)
 
+    # делим датафрейм по разделам
+    borders = df_up[
+        df_up['Вид'].str.contains('Раздел')].index  # получаем индексы строк где есть слово семестр
+
+    part_df_up = []  # список для хранения кусков датафрейма
+    previos_border = -1
+    # делим датафрем по границам
+    for value_border in borders:
+        part = df_up.iloc[previos_border:value_border]
+        part_df_up.append(part)
+        previos_border = value_border
+
+    # добавляем последнюю часть
+    last_part = df_up.iloc[borders[-1]:]
+    part_df_up.append(last_part)
+    part_df_up.pop(0)  # удаляем нулевой элемент так как он пустой
+    df_up_short = pd.DataFrame(columns=['Вид','Объем','Прак_под']) # короткий датафрейм для объема
+    df_up_content = pd.DataFrame(columns=['Вид','Содержание','Объем']) # короткий датафрейм для содержания
+    for df in part_df_up:
+        name_part = [value.strip() for value in df['Вид'].tolist() if 'Раздел' in value][0] # получаем название раздела
+        volume_part = int(sum_column_any_value(df,'Объем'))
+        prac_volume_part = int(sum_column_any_value(df,'Прак_под'))
+        temp_df = pd.DataFrame(columns=['Вид','Объем','Прак_под'],
+                               data=[[name_part,volume_part,prac_volume_part]])
+        df_up_short = pd.concat([df_up_short,temp_df],axis=0,ignore_index=True)
+
+        # Суммируем
+        content_temp_df = df[['Вид','Содержание','Объем']].copy()
+        content_temp_df.loc['Итого'] = int(sum_column_any_value(content_temp_df,'Объем'))
+        # убираем лишние цифры
+        content_temp_df.at['Итого','Вид'] = ''
+        content_temp_df.at['Итого','Содержание'] = 'Итого'
+        df_up_content = pd.concat([df_up_content,content_temp_df],ignore_index=True,axis=0)
+
+
+
+
+
+    sum_volume_up = sum_column_any_value(df_up,'Объем')
+    sum_practice_up = sum_column_any_value(df_up,'Прак_под')
+
     theme_up_df = (df_up['Вид'] + df_up['Содержание']).to_frame()
     lst_theme_up = theme_up_df.iloc[:,0].dropna().tolist()
     lst_theme_up = processing_punctuation_end_string(lst_theme_up, ';\n', '- ', '.')  # форматируем выходную строку
+
+
 
 
     """
@@ -657,6 +703,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     context['Объем_ПМ'] = df_volume_pm.to_dict('records')  # объем ПМ
     # context['Учебная_работа'] = df_structure.to_dict('records')
     context['Контроль_оценка'] = df_control.to_dict('records')
+    context['Практика_умение'] = out_contol_df.to_dict('records')
     context['Знать'] = lst_knowledge
     context['Уметь'] = lst_skill
     context['Прак_опыт'] = lst_prac_exp
@@ -674,28 +721,31 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     context['Консул'] = dct_df_volume_pm['консультации']
     context['Пром_атт'] = dct_df_volume_pm['промежуточная аттестация']
     context['Экзамен_квал'] = dct_df_volume_pm['экзамен (квалификационный)']
-    context['Объем_УП'] = dct_df_volume_pm['Учебная практика']
+    context['Объем_УП'] = sum_volume_up # берем значения из соответсвующего листа
+    context['Объем_УП_прак_под'] = sum_practice_up
     context['Объем_ПП'] = dct_df_volume_pm['Производственная практика']
     context['Атт_УП'] = dct_df_volume_pm['итоговая аттестация УП в форме']
     context['Атт_ПП'] = dct_df_volume_pm['итоговая аттестация ПП в форме']
     context['Квалификация'] = df_volume_pm.iloc[-1,0] # получаем значение ячейки на последней строке
 
 
-    # context['Всего'] = dct_mdk_data['Всего часов']
-    # context['Всего_прак_под'] = dct_mdk_data['Всего практики']
-    # context['СРС'] = dct_mdk_data['Всего СРС']
-    # context['КР'] = dct_mdk_data['курсовая работа (КП)']
 
     context['Темы_КР'] = lst_kp # список тем курсовых работ
     #
     context['Темы_УП'] = lst_theme_up
     context['Темы_ПП'] = lst_theme_pp
 
+    context['УП_разд_объем'] = df_up_short.to_dict('records') # делаем таблицу УП
+    context['УП_содер_объем'] = df_up_content.to_dict('records') # делаем таблицу УП
+
+
+
+
     # #лист МТО
     context['Учебный_кабинет'] = name_kab
     context['Лаборатория'] = name_lab
     context['Мастерская'] = name_work
-    context['Список_оборудования'] = obor_cab
+    context['Оборудование_кабинета'] = obor_cab
     context['Средства_обучения'] = tecn_educ
     context['Оборудование_лаборатории'] = obor_labor
     context['Оборудование_мастерской'] = tecn_work
@@ -737,11 +787,11 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     doc.render(context)
     # сохраняем документ
     # название программы
-    # name_rp = df_desc_rp['Название_дисциплины'].tolist()[0]
-    name_rp = 'Тест'
+    name_rp = df_desc_rp['Название_модуля'].tolist()[0]
+    # name_rp = 'Тест'
     t = time.localtime()
     current_time = time.strftime('%H_%M_%S', t)
-    doc.save(f'{end_folder}/РП {name_rp[:40]} {current_time}.docx')
+    doc.save(f'{end_folder}/РП УП {name_rp[:40]} {current_time}.docx')
 
 
 # messagebox.showerror('Диана Создание рабочих программ',
@@ -752,7 +802,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
 # jinja2.exceptions.UndefinedError: 'Интернет' is undefined неправильная запись в шаблоне
 
 if __name__ == '__main__':
-    template_pm_main = 'data/Шаблон автозаполнения ПМ.docx'
+    template_pm_main = 'data/Шаблон автозаполнения УП.docx'
     data_pm_main = 'data/Пример заполнения ПМ.xlsx'
     end_folder_main = 'data'
 
