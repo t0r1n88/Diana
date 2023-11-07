@@ -106,6 +106,38 @@ def select_files_data_xlsx():
     # Получаем путь файлы
     files_data_xlsx = filedialog.askopenfilenames(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
 
+"""
+Функции для создания проф модуля
+"""
+def select_end_folder_pm():
+    """
+    Функция для выбора конечной папки куда будут складываться итоговые файлы
+    :return:
+    """
+    global path_to_end_folder_pm
+    path_to_end_folder_pm = filedialog.askdirectory()
+
+def select_file_docx_pm():
+    """
+    Функция для выбора файла Word
+    :return: Путь к файлу шаблона
+    """
+    global file_template_pm
+    file_template_pm = filedialog.askopenfilename(
+        filetypes=(('Word files', '*.docx'), ('all files', '*.*')))
+
+def select_file_data_xlsx_pm():
+    """
+    Функция для выбора файла с данными на основе которых будет генерироваться документ
+    :return: Путь к файлу с данными
+    """
+    global file_data_xlsx_pm
+    # Получаем путь к файлу
+    file_data_xlsx_pm = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+
+
+
+
 
 def processing_create_RP_for_UD():
     """
@@ -130,10 +162,22 @@ def processing_create_RP_for_OOD():
                              f'Выберите файлы с данными и папку куда будет генерироваться файл')
 
 
+def processing_create_RP_for_PM():
+    """
+    Фугкция для создания рабочей программы для профессионального модуля
+    :return:
+    """
+    try:
+        create_pm(file_template_pm,file_data_xlsx_pm,path_to_end_folder_pm)
+    except NameError:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'Выберите файлы с данными и папку куда будет генерироваться файл')
+
+
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('Диана Создание рабочих программ ver 1.6')
+    window.title('Диана Создание рабочих программ ver 2.0')
     window.geometry('700x860')
     window.resizable(False, False)
 
@@ -234,8 +278,52 @@ if __name__ == '__main__':
                                   )
     btn_proccessing_data.grid(column=0, row=5, padx=10, pady=10)
 
+    """
+    Интерфейс для РП профессионального модуля
+    """
+    tab_rp_for_pm = ttk.Frame(tab_control)
+    tab_control.add(tab_rp_for_pm, text='Создание РП для ПМ')
+    tab_control.pack(expand=1, fill='both')
+    # Добавляем виджеты на вкладку Создание РП для ООД
+    # Создаем метку для описания назначения программы
+    lbl_hello = Label(tab_rp_for_pm,
+                      text='Центр опережающей профессиональной подготовки Республики Бурятия\n'
+                           'Создание рабочей программы для профессионального модуля\n с помощью шаблона')
+    lbl_hello.grid(column=0, row=0, padx=10, pady=25)
 
+    # Картинка
+    path_to_img_pm = resource_path('logo.png')
 
+    img_pm = PhotoImage(file=path_to_img_pm)
+    Label(tab_rp_for_pm,
+          image=img_pm
+          ).grid(column=1, row=0, padx=10, pady=25)
+
+    # Создаем кнопку Выбрать шаблон
+    btn_choose_template_pm = Button(tab_rp_for_pm, text='1) Выберите шаблон РП ПМ', font=('Arial Bold', 20),
+                                    command=select_file_docx_pm
+                                    )
+    btn_choose_template_pm.grid(column=0, row=2, padx=10, pady=10)
+
+    # Создаем кнопку Выбрать файл с данными для шаблона
+    btn_choose_data_pm = Button(tab_rp_for_pm, text='2) Выберите файл с данными', font=('Arial Bold', 20),
+                                command=select_file_data_xlsx_pm
+                                )
+    btn_choose_data_pm.grid(column=0, row=3, padx=10, pady=10)
+
+    # Создаем кнопку для выбора папки куда будут генерироваться файлы
+
+    btn_choose_end_folder_pm = Button(tab_rp_for_pm, text='3) Выберите конечную папку', font=('Arial Bold', 20),
+                                      command=select_end_folder_pm
+                                      )
+    btn_choose_end_folder_pm.grid(column=0, row=4, padx=10, pady=10)
+
+    # Создаем кнопку обработки данных
+
+    btn_proccessing_pm = Button(tab_rp_for_pm, text='4) Обработать данные', font=('Arial Bold', 20),
+                                command=processing_create_RP_for_PM
+                                )
+    btn_proccessing_pm.grid(column=0, row=5, padx=10, pady=10)
 
 
 
