@@ -135,6 +135,63 @@ def select_file_data_xlsx_pm():
     # Получаем путь к файлу
     file_data_xlsx_pm = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
 
+"""
+Функции для создания рабочей программы учебной практики профмодуля
+"""
+def select_end_folder_up_pm():
+    """
+    Функция для выбора конечной папки куда будут складываться итоговые файлы
+    :return:
+    """
+    global path_to_end_folder_up_pm
+    path_to_end_folder_up_pm = filedialog.askdirectory()
+
+def select_file_docx_up_pm():
+    """
+    Функция для выбора файла Word
+    :return: Путь к файлу шаблона
+    """
+    global file_template_up_pm
+    file_template_up_pm = filedialog.askopenfilename(
+        filetypes=(('Word files', '*.docx'), ('all files', '*.*')))
+
+def select_file_data_xlsx_up_pm():
+    """
+    Функция для выбора файла с данными на основе которых будет генерироваться документ
+    :return: Путь к файлу с данными
+    """
+    global file_data_xlsx_up_pm
+    # Получаем путь к файлу
+    file_data_xlsx_up_pm = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
+
+"""
+Функции для создания рабочей программы производственной практики профмодуля
+"""
+def select_end_folder_pp_pm():
+    """
+    Функция для выбора конечной папки куда будут складываться итоговые файлы
+    :return:
+    """
+    global path_to_end_folder_pp_pm
+    path_to_end_folder_pp_pm = filedialog.askdirectory()
+
+def select_file_docx_pp_pm():
+    """
+    Функция для выбора файла Word
+    :return: Путь к файлу шаблона
+    """
+    global file_template_pp_pm
+    file_template_pp_pm = filedialog.askopenfilename(
+        filetypes=(('Word files', '*.docx'), ('all files', '*.*')))
+
+def select_file_data_xlsx_pp_pm():
+    """
+    Функция для выбора файла с данными на основе которых будет генерироваться документ
+    :return: Путь к файлу с данными
+    """
+    global file_data_xlsx_pp_pm
+    # Получаем путь к файлу
+    file_data_xlsx_pp_pm = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
 
 
 
@@ -169,6 +226,28 @@ def processing_create_RP_for_PM():
     """
     try:
         create_pm(file_template_pm,file_data_xlsx_pm,path_to_end_folder_pm)
+    except NameError:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'Выберите файлы с данными и папку куда будет генерироваться файл')
+
+def processing_create_RP_for_UP():
+    """
+    Фугкция для создания рабочей программы для профессионального модуля
+    :return:
+    """
+    try:
+        create_rp_up(file_template_up_pm,file_data_xlsx_up_pm,path_to_end_folder_up_pm)
+    except NameError:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'Выберите файлы с данными и папку куда будет генерироваться файл')
+
+def processing_create_RP_for_PP():
+    """
+    Фугкция для создания рабочей программы для профессионального модуля
+    :return:
+    """
+    try:
+        create_rp_pp(file_template_pp_pm,file_data_xlsx_pp_pm,path_to_end_folder_pp_pm)
     except NameError:
         messagebox.showerror('Диана Создание рабочих программ',
                              f'Выберите файлы с данными и папку куда будет генерироваться файл')
@@ -324,6 +403,100 @@ if __name__ == '__main__':
                                 command=processing_create_RP_for_PM
                                 )
     btn_proccessing_pm.grid(column=0, row=5, padx=10, pady=10)
+
+    """
+    Интерфейс для РП учебной практики профессионального модуля
+    """
+    tab_rp_for_up_pm = ttk.Frame(tab_control)
+    tab_control.add(tab_rp_for_up_pm, text='Создание РП для УП')
+    tab_control.pack(expand=1, fill='both')
+    # Добавляем виджеты на вкладку Создание РП для УП
+    # Создаем метку для описания назначения программы
+    lbl_hello = Label(tab_rp_for_up_pm,
+                      text='Центр опережающей профессиональной подготовки Республики Бурятия\n'
+                           'Создание рабочей программы для учебной практики ПМ\n с помощью шаблона')
+    lbl_hello.grid(column=0, row=0, padx=10, pady=25)
+
+    # Картинка
+    path_to_img_up_pm = resource_path('logo.png')
+
+    img_up_pm = PhotoImage(file=path_to_img_up_pm)
+    Label(tab_rp_for_up_pm,
+          image=img_up_pm
+          ).grid(column=1, row=0, padx=10, pady=25)
+
+    # Создаем кнопку Выбрать шаблон
+    btn_choose_template_up_pm = Button(tab_rp_for_up_pm, text='1) Выберите шаблон РП УП', font=('Arial Bold', 20),
+                                       command=select_file_docx_up_pm
+                                       )
+    btn_choose_template_up_pm.grid(column=0, row=2, padx=10, pady=10)
+
+    # Создаем кнопку Выбрать файл с данными для шаблона
+    btn_choose_data_up_pm = Button(tab_rp_for_up_pm, text='2) Выберите файл с данными', font=('Arial Bold', 20),
+                                   command=select_file_data_xlsx_up_pm
+                                   )
+    btn_choose_data_up_pm.grid(column=0, row=3, padx=10, pady=10)
+
+    # Создаем кнопку для выбора папки куда будут генерироваться файлы
+
+    btn_choose_end_folder_up_pm = Button(tab_rp_for_up_pm, text='3) Выберите конечную папку', font=('Arial Bold', 20),
+                                         command=select_end_folder_up_pm
+                                         )
+    btn_choose_end_folder_up_pm.grid(column=0, row=4, padx=10, pady=10)
+
+    # Создаем кнопку обработки данных
+
+    btn_proccessing_up_pm = Button(tab_rp_for_up_pm, text='4) Обработать данные', font=('Arial Bold', 20),
+                                   command=processing_create_RP_for_UP
+                                   )
+    btn_proccessing_up_pm.grid(column=0, row=5, padx=10, pady=10)
+
+    """
+    Интерфейс для РП производственной практики профессионального модуля
+    """
+    tab_rp_for_pp_pm = ttk.Frame(tab_control)
+    tab_control.add(tab_rp_for_pp_pm, text='Создание РП для ПП')
+    tab_control.pack(expand=1, fill='both')
+    # Добавляем виджеты на вкладку Создание РП для УП
+    # Создаем метку для описания назначения программы
+    lbl_hello = Label(tab_rp_for_pp_pm,
+                      text='Центр опережающей профессиональной подготовки Республики Бурятия\n'
+                           'Создание рабочей программы для производственной практики ПМ\n с помощью шаблона')
+    lbl_hello.grid(column=0, row=0, padx=10, pady=25)
+
+    # Картинка
+    path_to_img_pp_pm = resource_path('logo.png')
+
+    img_pp_pm = PhotoImage(file=path_to_img_pp_pm)
+    Label(tab_rp_for_pp_pm,
+          image=img_pp_pm
+          ).grid(column=1, row=0, padx=10, pady=25)
+
+    # Создаем кнопку Выбрать шаблон
+    btn_choose_template_pp_pm = Button(tab_rp_for_pp_pm, text='1) Выберите шаблон РП ПП', font=('Arial Bold', 20),
+                                       command=select_file_docx_pp_pm
+                                       )
+    btn_choose_template_pp_pm.grid(column=0, row=2, padx=10, pady=10)
+
+    # Создаем кнопку Выбрать файл с данными для шаблона
+    btn_choose_data_pp_pm = Button(tab_rp_for_pp_pm, text='2) Выберите файл с данными', font=('Arial Bold', 20),
+                                   command=select_file_data_xlsx_pp_pm
+                                   )
+    btn_choose_data_pp_pm.grid(column=0, row=3, padx=10, pady=10)
+
+    # Создаем кнопку для выбора папки куда будут генерироваться файлы
+
+    btn_choose_end_folder_pp_pm = Button(tab_rp_for_pp_pm, text='3) Выберите конечную папку', font=('Arial Bold', 20),
+                                         command=select_end_folder_pp_pm
+                                         )
+    btn_choose_end_folder_pp_pm.grid(column=0, row=4, padx=10, pady=10)
+
+    # Создаем кнопку обработки данных
+
+    btn_proccessing_pp_pm = Button(tab_rp_for_pp_pm, text='4) Обработать данные', font=('Arial Bold', 20),
+                                   command=processing_create_RP_for_PP
+                                   )
+    btn_proccessing_pp_pm.grid(column=0, row=5, padx=10, pady=10)
 
 
 
