@@ -337,13 +337,13 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     fgos = 'Данные ФГОС'
 
     # Обрабатываем лист Описание ПМ
-    df_desc_rp = pd.read_excel(data_pm, sheet_name=desc_rp, nrows=1, usecols='A:J')  # загружаем датафрейм
+    df_desc_rp = pd.read_excel(data_pm, sheet_name=desc_rp, nrows=1, usecols='A:K')  # загружаем датафрейм
     df_desc_rp.fillna('НЕ ЗАПОЛНЕНО !!!', inplace=True)  # заполняем не заполненные разделы
-    df_desc_rp.columns = ['Тип_программы', 'Название_модуля', 'Цикл', 'Перечень', 'Код_специальность_профессия',
+    df_desc_rp.columns = ['Тип_программы', 'Название_модуля', 'Цикл', 'ВПД','Перечень', 'Код_специальность_профессия',
                           'Год', 'Разработчик', 'Методист', 'Название_ПЦК', 'Пред_ПЦК']
 
     # Создаем переменные для ФИО утверждающих
-    df_accept_fio = pd.read_excel(data_pm, sheet_name=desc_rp, nrows=2, usecols='K:L')  # загружаем датафрейм
+    df_accept_fio = pd.read_excel(data_pm, sheet_name=desc_rp, nrows=2, usecols='L:M')  # загружаем датафрейм
     accept_UR = df_accept_fio.iloc[0,1]
     accept_PR = df_accept_fio.iloc[1,1]
 
@@ -360,6 +360,9 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     df_volume_pm = pd.read_excel(data_pm,sheet_name=volume_pm,usecols='A:B')
     df_volume_pm.dropna(inplace=True) # удаляем пустые строки
     df_volume_pm.columns = ['Наименование', 'Объем']
+    df_volume_pm.set_index('Наименование',inplace=True) # делаем индексом первую колонку
+    _dct_df_volume_pm = df_volume_pm.to_dict('dict') # превращаем в словарь
+    dct_df_volume_pm = _dct_df_volume_pm['Объем']
 
 
     """
@@ -466,11 +469,6 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     df_flat_ok['Код'] = df_flat_ok['Описание'].apply(extract_lr)
     df_flat_ok['Результат'] = df_flat_ok['Описание'].apply(extract_descr_lr)
 
-    # Обработка ВПД
-    df_vpd = pd.read_excel(data_pm, sheet_name=vpd, usecols='A')
-    df_vpd.dropna(inplace=True)  # удаляем пустые строки
-    lst_vpd = df_vpd['Виды профессиональной деятельности'].dropna().tolist()
-    lst_vpd = processing_punctuation_end_string(lst_vpd, ';\n', '- ', '.')
 
     """
     Обрабатываем лист Контроль и Оценка
@@ -516,7 +514,11 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     df_up.fillna(0,inplace=True)
     df_up = df_up.applymap(lambda x:int(x) if isinstance(x,float) else x)
     df_up = df_up.applymap(lambda x: '' if x ==0 else x)
-    sum_up = sum_column_any_value(df_up,'Объем') # сумма учебной практики
+
+    theme_up_df = (df_up['Вид'] + df_up['Содержание']).to_frame()
+    lst_theme_up = theme_up_df.iloc[:,0].dropna().tolist()
+    lst_theme_up = processing_punctuation_end_string(lst_theme_up, ';\n', '- ', '.')  # форматируем выходную строку
+
 
     """
     Обрабатываем лист ПП (Производственная практика)
@@ -526,12 +528,15 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     df_pp.fillna(0,inplace=True)
     df_pp = df_pp.applymap(lambda x:int(x) if isinstance(x,float) else x)
     df_pp = df_pp.applymap(lambda x: '' if x ==0 else x)
-    sum_pp = sum_column_any_value(df_pp, 'Объем') # сумма производственной практики
+    theme_pp_df = (df_pp['Вид'] + df_pp['Содержание']).to_frame()
+    lst_theme_pp = theme_pp_df.iloc[:,0].dropna().tolist()
+    lst_theme_pp = processing_punctuation_end_string(lst_theme_pp, ';\n', '- ', '.')  # форматируем выходную строку
+
 
     """
     Обрабатываем лист МТО
     """
-    df_mto = pd.read_excel(data_pm, sheet_name=mto, usecols='A:E')
+    df_mto = pd.read_excel(data_pm, sheet_name=mto, usecols='A:G')
     df_mto.dropna(inplace=True, thresh=1)  # удаляем пустые строки
     name_kab = df_mto['Наименование_учебного_кабинета'].dropna().tolist()  #
     name_kab = ','.join(name_kab)  # получаем все названия которые есть в колонке Наименование учебного кабинета
@@ -541,6 +546,12 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
         name_lab = []
     else:
         name_lab = ','.join(name_lab)
+
+    name_work = df_mto['Наименование_мастерской'].dropna().tolist()
+    if len(name_lab) == 0:
+        name_work = []
+    else:
+        name_work = ','.join(name_work)
 
     # Списки кабинета и средств обучения
     lst_obor_cab = df_mto[
@@ -566,6 +577,14 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     else:
         obor_labor = processing_punctuation_end_string(lst_obor_labor, ';\n', '- ',
                                                        '.')  # обрабатываем знаки пунктуации для каждой строки
+
+    # Оборудование мастерской
+    lst_tecn_work = df_mto[
+        'Оборудование_мастерской'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
+    if len(lst_tecn_work) == 0:
+        lst_tecn_work = ['На листе МТО НЕ заполнены технические средства обучения !!!']
+    tecn_work = processing_punctuation_end_string(lst_tecn_work, ';\n', '- ', '.')
+
     """
     Обрабатываем лист Основные источники
     """
@@ -646,39 +665,47 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
     context['Объем_МДК'] = df_volume_all_mdk.to_dict('records')
 
     # добавляем единичные переменные
-    context['Всего'] = dct_mdk_data['Всего часов']
-    context['Всего_прак_под'] = dct_mdk_data['Всего практики']
-    context['СРС'] = dct_mdk_data['Всего СРС']
-    context['КР'] = dct_mdk_data['курсовая работа (КП)']
+    context['Всего'] = dct_df_volume_pm['Всего часов']
+    context['Макс_уч_нагр'] = dct_df_volume_pm['Максимальной учебной нагрузки обучающегося']
+    context['Обяз_ауд_нагр'] = dct_df_volume_pm['Обязательной аудиторной нагрузки обучающегося']
+    context['КР'] = dct_df_volume_pm['курсовой проект (работа)']
+    context['Прак_подг'] = dct_df_volume_pm['на практическую подготовку']
+    context['СРС'] = dct_df_volume_pm['самостоятельная работа обучающегося']
+    context['Консул'] = dct_df_volume_pm['консультации']
+    context['Пром_атт'] = dct_df_volume_pm['промежуточная аттестация']
+    context['Экзамен_квал'] = dct_df_volume_pm['экзамен (квалификационный)']
+    context['Объем_УП'] = dct_df_volume_pm['Учебная практика']
+    context['Объем_ПП'] = dct_df_volume_pm['Производственная практика']
+    context['Атт_УП'] = dct_df_volume_pm['итоговая аттестация УП в форме']
+    context['Атт_ПП'] = dct_df_volume_pm['итоговая аттестация ПП в форме']
+    context['Квалификация'] = df_volume_pm.iloc[-1,0] # получаем значение ячейки на последней строке
 
-    context['КП'] = lst_kp # список тем курсовых работ
 
-    context['Объем_УП'] = sum_up
-    context['Объем_ПП'] = sum_pp
+    # context['Всего'] = dct_mdk_data['Всего часов']
+    # context['Всего_прак_под'] = dct_mdk_data['Всего практики']
+    # context['СРС'] = dct_mdk_data['Всего СРС']
+    # context['КР'] = dct_mdk_data['курсовая работа (КП)']
 
-
-    # context['Макс_нагрузка'] = max_load
-    # context['Обяз_нагрузка'] = mand_load
-    # context['Практ_подготовка'] = practice_load
-    # context['Сам_работа'] = sam_load
+    context['Темы_КР'] = lst_kp # список тем курсовых работ
     #
-    context['УП'] = df_up.to_dict('records')
-    context['ПП'] = df_pp.to_dict('records')
+    context['Темы_УП'] = lst_theme_up
+    context['Темы_ПП'] = lst_theme_pp
 
     # #лист МТО
     context['Учебный_кабинет'] = name_kab
     context['Лаборатория'] = name_lab
-    context['Список_оборудования'] = obor_cab
+    context['Мастерская'] = name_work
+    context['Оборудование_кабинета'] = obor_cab
     context['Средства_обучения'] = tecn_educ
     context['Оборудование_лаборатории'] = obor_labor
+    context['Оборудование_мастерской'] = tecn_work
     # лист Учебные издания
     context['Основные_источники'] = lst_main_source
     context['Дополнительные_источники'] = lst_slave_source
     context['Интернет_источники'] = lst_inet_source
-    # Листы данные ОК,ПК,ВПД
+    # Листы данные ОК,ПК
     context['ОК'] = lst_ok
     context['ПК'] = lst_pk
-    context['ВПД'] = lst_vpd
     context['Контроль_ПК'] = df_pk.to_dict('records')
     context['Контроль_ОК'] = df_ok.to_dict('records')
 
