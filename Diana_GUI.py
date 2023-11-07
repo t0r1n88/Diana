@@ -3,6 +3,9 @@
 """
 from create_RP_UD import create_RP_for_UD # Функция для генерации РП для УД
 from create_RP_UD_OOD import create_RP_for_UD_OOD # функция для генерации РП для ООД
+from create_PM import create_pm # функция для генерации программы профессионального модуля
+from create_UP_PM import create_rp_up #  функция для генерации РП для УП (учебных практик)
+from create_PP_PM import create_rp_pp #  функция для генерации РП для ПП (учебных практик)
 import tkinter
 import sys
 import os
