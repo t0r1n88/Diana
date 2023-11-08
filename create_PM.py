@@ -14,10 +14,10 @@ pd.options.mode.chained_assignment = None  # default='warn'
 pd.set_option('display.max_columns', None)  # Отображать все столбцы
 pd.set_option('display.expand_frame_repr', False)  # Не переносить строки
 import warnings
-
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 warnings.filterwarnings('ignore', category=FutureWarning, module='openpyxl')
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 class ControlWord_PM(Exception):
     """
@@ -312,6 +312,19 @@ def processing_mdk(data_pm) -> dict:
     return dct_mdk
 
 
+def create_check_error_df(dct:dict)->pd.DataFrame:
+    """
+    Функция для разворачивания словаря с данными по каждому мдк в датафрейм
+    :param dct: Словарь с данными
+    :type dct:dict
+    :return:Датафрейм
+    :rtype:pd.Dataframe
+    """
+    df = pd.DataFrame(dct).transpose() # создаем датафрейм и разворачиваем его
+    df.drop(columns=['Всего СРС'],inplace=True) # удаляем колонку СРС
+    new_order_col = ['Всего часов','Всего практики','','','','','','','',]
+
+
 
 
 
@@ -403,6 +416,12 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
                     dct_mdk_data[key] = value
                 else:
                     dct_mdk_data[key] += value
+        print(dct_mdk_data)
+        print(_dct_mdk_data)
+        # check_error_df = create_check_error_df(_dct_mdk_data)
+
+
+
 
         """Обрабатываем лист ПК
                """
@@ -725,7 +744,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
 
 if __name__ == '__main__':
     template_pm_main = 'data/Шаблон автозаполнения ПМ.docx'
-    data_pm_main = 'data/Пример заполнения ПМ.xlsx'
+    data_pm_main = 'data/Таблица для ПМ,УП,ПП.xlsx'
     end_folder_main = 'data'
 
     create_pm(template_pm_main, data_pm_main, end_folder_main)
