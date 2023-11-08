@@ -4,12 +4,15 @@
 import pandas as pd
 import numpy as np
 import openpyxl
+from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.utils import get_column_letter
 from docxtpl import DocxTemplate
 import string
 import time
 import re
 from tkinter import messagebox
 from jinja2 import exceptions
+from pandas import json_normalize
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.set_option('display.max_columns', None)  # Отображать все столбцы
 pd.set_option('display.expand_frame_repr', False)  # Не переносить строки
@@ -32,6 +35,39 @@ class DiffSheet(Exception):
     pass
 
 
+
+def write_df_to_excel(dct_df:dict,write_index:bool)->openpyxl.Workbook:
+    """
+    Функция для записи датафрейма в файл Excel
+    :param dct_df: словарь где ключе это название создаваемого листа а значение датафрейм который нужно записать
+    :param write_index: нужно ли записывать индекс датафрейма True or False
+    :return: объект Workbook с записанными датафреймами
+    """
+    wb = openpyxl.Workbook() # создаем файл
+    count_index = 0 # счетчик индексов создаваемых листов
+    for name_sheet,df in dct_df.items():
+        wb.create_sheet(title=name_sheet,index=count_index) # создаем лист
+        # записываем данные в лист
+        for row in dataframe_to_rows(df,index=write_index,header=True):
+            wb[name_sheet].append(row)
+        # ширина по содержимому
+        # сохраняем по ширине колонок
+        for column in wb[name_sheet].columns:
+            max_length = 0
+            column_name = get_column_letter(column[0].column)
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = (max_length + 2)
+            wb[name_sheet].column_dimensions[column_name].width = adjusted_width
+        count_index += 1
+    # удаляем лишний лист
+    if len(wb.sheetnames) >= 2 and 'Sheet' in wb.sheetnames:
+        del wb['Sheet']
+    return wb
 def convert_to_int(cell):
     """
     Метод для проверки значения ячейки
@@ -190,7 +226,7 @@ def extract_data_mdk(data_pm,sheet_name):
     df_plan_pm = pd.read_excel(data_pm,sheet_name=sheet_name,skiprows=1, usecols='A:H')
     df_plan_pm.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
-    df_plan_pm.columns = ['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Практика', 'Вид_занятия',
+    df_plan_pm.columns = ['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Прак_подготовка', 'Вид_занятия',
                           'СРС']
     df_plan_pm['Курс_семестр'].fillna('Пусто', inplace=True)
     df_plan_pm['Раздел'].fillna('Пусто', inplace=True)
@@ -198,19 +234,24 @@ def extract_data_mdk(data_pm,sheet_name):
 
     # Считаем общие суммы
     mdk_all_sum = int(sum_column_any_value(df_plan_pm, 'Количество_часов'))  # получаем сумму общие часы
-    mdk_all_prac_sum = int(sum_column_any_value(df_plan_pm, 'Практика'))  # получаем сумму общие часы
+    mdk_all_prac_sum = int(sum_column_any_value(df_plan_pm, 'Прак_подготовка'))  # получаем сумму общие часы
     mdk_all_srs_sum = int(sum_column_any_value(df_plan_pm, 'СРС'))  # сумма срс
     for type_lesson in lst_type_lesson:
         _df = df_plan_pm[df_plan_pm['Вид_занятия'] == type_lesson]  # фильтруем датафрейм
         dct_all_sum_result[type_lesson] = int(sum_column_any_value(_df, 'Количество_часов'))  # получаем значение
 
     dct_all_sum_result['Всего часов'] = mdk_all_sum
-    dct_all_sum_result['Всего практики'] = mdk_all_prac_sum
+    dct_all_sum_result['Всего прак_подготовка'] = mdk_all_prac_sum
     dct_all_sum_result['Всего СРС'] = mdk_all_srs_sum
 
 
     borders = df_plan_pm[
         df_plan_pm['Курс_семестр'].str.contains('семестр')].index  # получаем индексы строк где есть слово семестр
+
+    name_borders = [] # лист для хранения названий семестров(границ разделов)
+    for idx in borders:
+        _temp_name = df_plan_pm.at[idx,'Курс_семестр'].replace('\n','') # получаем название семестров и удаляем символ переноса
+        name_borders.append(_temp_name)
 
     part_df = []  # список для хранения кусков датафрейма
     previos_border = -1
@@ -227,16 +268,20 @@ def extract_data_mdk(data_pm,sheet_name):
     part_df.pop(0)  # удаляем нулевой элемент так как он пустой
 
     main_df = pd.DataFrame(
-        columns=['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Практика', 'Вид_занятия',
+        columns=['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Прак_подготовка', 'Вид_занятия',
                  'СРС'])  # создаем базовый датафрейм
+    part_dct_sum = dict() # создаем словарь который будет хранить суммы по семестрам
 
-    for df in part_df:
+    for idx,df in enumerate(part_df):
         dct_sum_result = {key: 0 for key in lst_type_lesson}  # создаем словарь для подсчета значений
+        dct_sum_result['Прак_подготовка'] = 0
         for type_lesson in lst_type_lesson:
             _df = df[df['Вид_занятия'] == type_lesson]  # фильтруем датафрейм
             _df['Количество_часов'].fillna(0, inplace=True)
-            _df['Количество_часов'] = _df['Количество_часов'].astype(int)
-            dct_sum_result[type_lesson] = _df['Количество_часов'].sum()
+            dct_sum_result[type_lesson] = int(sum_column_any_value(_df,'Количество_часов')) # считаем часы для каждого типа
+            dct_sum_result['Прак_подготовка'] += int(sum_column_any_value(_df,'Прак_подготовка')) # считаем часы для практики
+        part_dct_sum[name_borders[idx]] = dct_sum_result
+
         # создаем строку с описанием
         margint_text = 'Итого часов за семестр:\nиз них\nтеория\nпрактические занятия\nлабораторные занятия\nкурсовая работа (КП)'
 
@@ -277,9 +322,9 @@ def extract_data_mdk(data_pm,sheet_name):
 
     main_df['Количество_часов'] = main_df['Количество_часов'].apply(convert_to_int)
     main_df['Количество_часов'] = main_df['Количество_часов'].fillna('')
-    main_df['Практика'] = main_df['Практика'].fillna(0)
-    main_df['Практика'] = main_df['Практика'].astype(int, errors='ignore')
-    main_df['Практика'] = main_df['Практика'].apply(lambda x: '' if x == 0 else x)
+    main_df['Прак_подготовка'] = main_df['Прак_подготовка'].fillna(0)
+    main_df['Прак_подготовка'] = main_df['Прак_подготовка'].astype(int, errors='ignore')
+    main_df['Прак_подготовка'] = main_df['Прак_подготовка'].apply(lambda x: '' if x == 0 else x)
 
     main_df['СРС'] = main_df['СРС'].fillna(0)
     main_df['СРС'] = main_df['СРС'].astype(int, errors='ignore')
@@ -287,7 +332,7 @@ def extract_data_mdk(data_pm,sheet_name):
     main_df['Содержание'] = main_df['Курс_семестр'] + main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
     main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
 
-    return (main_df,dct_all_sum_result) # возвращаем кортеж
+    return (main_df,dct_all_sum_result,part_dct_sum) # возвращаем кортеж
 
 
 
@@ -306,8 +351,8 @@ def processing_mdk(data_pm) -> dict:
         if 'МДК' in sheet_name:
             name_mdk = str(wb[sheet_name]['D1'].value) # получаем название МДК, делаем строковыми на случай нан
             if 'МДК' in name_mdk:
-                temp_mdk_df,temp_dct_result = extract_data_mdk(data_pm,sheet_name) # извлекаем данные из датафрейма
-                dct_mdk[name_mdk] = {'Итог':temp_dct_result,'Данные':temp_mdk_df}
+                temp_mdk_df,temp_all_result,temp_part_result = extract_data_mdk(data_pm,sheet_name) # извлекаем данные из датафрейма
+                dct_mdk[name_mdk] = {'Итог':temp_all_result,'Данные':temp_mdk_df,'По частям':temp_part_result}
     wb.close()
     return dct_mdk
 
@@ -320,9 +365,24 @@ def create_check_error_df(dct:dict)->pd.DataFrame:
     :return:Датафрейм
     :rtype:pd.Dataframe
     """
-    df = pd.DataFrame(dct).transpose() # создаем датафрейм и разворачиваем его
-    df.drop(columns=['Всего СРС'],inplace=True) # удаляем колонку СРС
-    new_order_col = ['Всего часов','Всего практики','','','','','','','',]
+    df = pd.DataFrame(columns=['Наименование МДК','Семестр','Практическая подготовка','Обязательная нагрузка',
+                               'Прак_лаб занятия','КР','Урок','Практическое занятие','Лабораторное занятие'])
+    for name_mdk,part in dct.items():
+        for key,value in part.items():
+            prac_hour = value['практическое занятие'] + value['лабораторное занятие'] # считаем практические занятия
+            all_hours = value['практическое занятие'] + value['лабораторное занятие'] + value['урок'] + value['курсовая работа (КП)']
+            # создаем строку датафрейма
+            temp_df = pd.DataFrame(columns=['Наименование МДК','Семестр','Практическая подготовка','Обязательная нагрузка',
+                               'Прак_лаб занятия','КР','Урок','Практическое занятие','Лабораторное занятие'],
+                                   data=[[name_mdk,key,value['Прак_подготовка'],all_hours,prac_hour,value['курсовая работа (КП)'],
+                                          value['урок'],value['практическое занятие'],value['лабораторное занятие']]])
+            df = pd.concat([df,temp_df],ignore_index=True,axis=0)
+
+    sum_row = df.sum()  # получаем строку общей суммы
+    df.loc['Сумма'] = sum_row  # добавляем строку в датафрейм
+    df.at['Сумма', 'Наименование МДК'] = ''
+    df.at['Сумма', 'Семестр'] = 'Итого'
+    return df
 
 
 
@@ -409,6 +469,8 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
         _dct_mdk_df = processing_mdk(data_pm) # получам словарь где ключ это название МДК а значение это словарь с данными и итогами по подсчету этих данных
         dct_mdk_df ={mdk:value['Данные'] for mdk,value in _dct_mdk_df.items()} # создаем словарь извлекая датафрейм
         _dct_mdk_data ={mdk:value['Итог'] for mdk,value in _dct_mdk_df.items()} # создаем словарь извлекая словарь с данными
+        _dct_mdk_part_data ={mdk:value['По частям'] for mdk,value in _dct_mdk_df.items()} # создаем словарь извлекая словарь с данными по семестрам
+
         dct_mdk_data = dict() # считаем общую сумму
         for name,dct in _dct_mdk_data.items():
             for key,value in dct.items():
@@ -416,9 +478,8 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
                     dct_mdk_data[key] = value
                 else:
                     dct_mdk_data[key] += value
-        print(dct_mdk_data)
-        print(_dct_mdk_data)
-        # check_error_df = create_check_error_df(_dct_mdk_data)
+
+        check_error_df = create_check_error_df(_dct_mdk_part_data)
 
 
 
@@ -630,6 +691,8 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
         # Объем МДК
         context['Объем_МДК'] = df_volume_all_mdk.to_dict('records')
 
+        # Проверка МДК
+
         # добавляем единичные переменные
         context['Всего'] = dct_df_volume_pm['Всего часов']
         context['Макс_уч_нагр'] = dct_df_volume_pm['Максимальной учебной нагрузки обучающегося']
@@ -703,6 +766,14 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
         t = time.localtime()
         current_time = time.strftime('%H_%M_%S', t)
         doc.save(f'{end_folder}/РП Профмодуль {name_rp[:40]} {current_time}.docx')
+        # Сохраняем таблицу с результатом проверки часов
+        dct_write = {'Sheet1':check_error_df}
+        write_index = False
+        wb = write_df_to_excel(dct_write, write_index)
+        wb.save(f'{end_folder}/Проверка часов Профмодуль {name_rp[:40]} {current_time}.xlsx')
+
+
+
     except DiffSheet:
         messagebox.showerror('Диана Создание рабочих программ',
                              f'В таблице не найдены листы {diff_cols},\n'
@@ -734,8 +805,8 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
                              f'2) В названии колонки в таблице откуда берутся данные - есть пробелы,цифры,знаки пунктуации и т.п.\n'
                              f'в названии колонки должны быть только буквы и нижнее подчеркивание.\n'
                              f'{{{{Дата_рождения}}}}')
-    else:
-        messagebox.showinfo('Диана Создание рабочих программ', 'Данные успешно обработаны')
+    # else:
+    #     messagebox.showinfo('Диана Создание рабочих программ', 'Данные успешно обработаны')
 
 
 
