@@ -82,7 +82,7 @@ def extract_lr(cell):
     Функция для создания 2 списков из данных одной колонки
     первая колонка это код личностного результата а вторая колонка  это описание
     извлечение будет с помощью регулярок
-    :param df: датафрем из одной колонки
+    :param cell: ячейка датафрейма
     :return:
     """
     value = str(cell)  # делаем строковй
@@ -103,7 +103,7 @@ def extract_descr_lr(cell):
     Функция для создания 2 списков из данных одной колонки
     первая колонка это код личностного результата а вторая колонка  это описание
     извлечение будет с помощью регулярок
-    :param df: датафрем из одной колонки
+    :param cell: ячейка
     :return:
     """
     value = str(cell)  # делаем строковй
@@ -407,15 +407,62 @@ def create_pred_dip_prac(template_pm: str, data_pred_prac: str, end_folder: str)
         else:
             lst_inet_source = 'Не заполнено'
 
+        # Создаем датафрейм для таблицы Контроль
+
+        control_df = pd.DataFrame(columns=['Наименование','Форма'])
+
+
+
+        """
+        Обрабатываем лист Практический опыт
+        """
+        df_prac = pd.read_excel(data_pred_prac, sheet_name=po, usecols='A:B')
+        df_prac.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+        df_prac.fillna('', inplace=True)
+        df_prac.columns = ['Наименование', 'Форма']
+        # создаем списки
+        lst_prac = df_prac['Наименование'].dropna().tolist()  # список для ОК
+        lst_prac = processing_punctuation_end_string(lst_prac, ';\n', '- ', '.')
+        lst_prac_control = df_prac['Форма'].dropna().tolist()  # список для ОК
+        lst_prac_control = processing_punctuation_end_string(lst_prac_control, ';\n', '- ', '.')
+
+        temp_df = pd.DataFrame(columns=['Наименование', 'Форма'],
+                               data=[['Практический опыт',''],[lst_prac, lst_prac_control]])
+        control_df = pd.concat([control_df, temp_df], axis=0, ignore_index=True)
+
+        """
+        Обрабатываем лист Умения
+        """
+        df_skills = pd.read_excel(data_pred_prac, sheet_name=skills, usecols='A:B')
+        df_skills.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+        df_skills.fillna('', inplace=True)
+        df_skills.columns = ['Наименование', 'Форма']
+        # создаем списки
+        lst_skills = df_skills['Наименование'].dropna().tolist()  # список для ОК
+        lst_skills = processing_punctuation_end_string(lst_skills, ';\n', '- ', '.')
+        lst_skills_control = df_skills['Форма'].dropna().tolist()  # список для ОК
+        lst_skills_control = processing_punctuation_end_string(lst_skills_control, ';\n', '- ', '.')
+
+        temp_df = pd.DataFrame(columns=['Наименование', 'Форма'],
+                               data=[['Умения',''],[lst_skills, lst_skills_control]])
+        control_df = pd.concat([control_df, temp_df], axis=0, ignore_index=True)
+
         """
         Обрабатываем лист ВПД
         """
         df_vpd = pd.read_excel(data_pred_prac,sheet_name=vpd,usecols='A:B')
         df_vpd.dropna(inplace=True, thresh=1)  # удаляем пустые строки
         df_vpd.fillna('', inplace=True)
+        df_vpd.columns = ['Наименование','Форма']
+        # создаем списки
+        lst_vpd = df_vpd['Наименование'].dropna().tolist() # список для ОК
+        lst_vpd = processing_punctuation_end_string(lst_vpd, ';\n', '- ', '.')
+        lst_vpd_control = df_vpd['Форма'].dropna().tolist() # список для ОК
+        lst_vpd_control = processing_punctuation_end_string(lst_vpd_control, ';\n', '- ', '.')
 
-
-
+        temp_df = pd.DataFrame(columns=['Наименование','Форма'],
+                               data=[['Виды деятельности',''],[lst_vpd,lst_vpd_control]])
+        control_df = pd.concat([control_df,temp_df],axis=0,ignore_index=True)
 
         """
             Обрабатываем лист ФГОС
@@ -457,8 +504,7 @@ def create_pred_dip_prac(template_pm: str, data_pred_prac: str, end_folder: str)
         context['ВПД'] = lst_vpd
         context['ФГОС_ВД'] = lst_vd
         context['Контроль_ПК'] = df_pk.to_dict('records')
-        # context['Контроль_ОК'] = df_ok.to_dict('records')
-        # context['Общ_компетенции'] = df_flat_ok.to_dict('records')
+        context['Контроль'] = control_df.to_dict('records')
 
         # Переменные ФГОС
         # даты
@@ -479,7 +525,6 @@ def create_pred_dip_prac(template_pm: str, data_pred_prac: str, end_folder: str)
         t = time.localtime()
         current_time = time.strftime('%H_%M_%S', t)
         doc.save(f'{end_folder}/РП Преддипломная практика {name_rp[:40]} {current_time}.docx')
-        # Сохраняем таблицу с результатом проверки часов
 
 
     except DiffSheet:
@@ -508,8 +553,8 @@ def create_pred_dip_prac(template_pm: str, data_pred_prac: str, end_folder: str)
                              f'2) В названии колонки в таблице откуда берутся данные - есть пробелы,цифры,знаки пунктуации и т.п.\n'
                              f'в названии колонки должны быть только буквы и нижнее подчеркивание.\n'
                              f'{{{{Дата_рождения}}}}')
-    # else:
-    #     messagebox.showinfo('Диана Создание рабочих программ', 'Данные успешно обработаны')
+    else:
+        messagebox.showinfo('Диана Создание рабочих программ', 'Данные успешно обработаны')
 
 
 
