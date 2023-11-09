@@ -844,13 +844,6 @@ def create_rp_pp(template_pm: str, data_pm: str, end_folder: str):
         messagebox.showinfo('Диана Создание рабочих программ', 'Данные успешно обработаны')
 
 
-# messagebox.showerror('Диана Создание рабочих программ',
-#                      'На листе Контроль в первой колонке должно быть указаны слова\n'
-#                      'Умения: , Знания: , Практический опыт:\n'
-#                      'Посмотрите пример в исходном шаблоне')
-
-# jinja2.exceptions.UndefinedError: 'Интернет' is undefined неправильная запись в шаблоне
-
 if __name__ == '__main__':
     template_pm_main = 'data/Шаблон автозаполнения ПП.docx'
     data_pm_main = 'data/Таблица для ПМ,УП,ПП.xlsx'

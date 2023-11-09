@@ -12,7 +12,6 @@ import time
 import re
 from tkinter import messagebox
 from jinja2 import exceptions
-from pandas import json_normalize
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.set_option('display.max_columns', None)  # Отображать все столбцы
 pd.set_option('display.expand_frame_repr', False)  # Не переносить строки
@@ -805,13 +804,9 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
                              f'2) В названии колонки в таблице откуда берутся данные - есть пробелы,цифры,знаки пунктуации и т.п.\n'
                              f'в названии колонки должны быть только буквы и нижнее подчеркивание.\n'
                              f'{{{{Дата_рождения}}}}')
-    # else:
-    #     messagebox.showinfo('Диана Создание рабочих программ', 'Данные успешно обработаны')
+    else:
+        messagebox.showinfo('Диана Создание рабочих программ', 'Данные успешно обработаны')
 
-
-
-
-# jinja2.exceptions.UndefinedError: 'Интернет' is undefined неправильная запись в шаблоне
 
 if __name__ == '__main__':
     template_pm_main = 'data/Шаблон автозаполнения ПМ.docx'
