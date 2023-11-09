@@ -19,6 +19,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 warnings.filterwarnings('ignore', category=FutureWarning, module='openpyxl')
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 class ControlWord_PM(Exception):
     """
