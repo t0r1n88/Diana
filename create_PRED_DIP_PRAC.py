@@ -216,18 +216,19 @@ def create_pred_dip_prac(template_pm: str, data_pred_prac: str, end_folder: str)
     desc_pred_prac = 'Описание Пред_дип_практики'
     content_pred_prac = 'Содержание пред_дип_практики'
     pers_result = 'Лич_результаты'
-    mto = 'МТО'
+    # mto = 'МТО'
     main_publ = 'ОИ'
     second_publ = 'ДИ'
     ii_publ = 'ИИ'
     pk = 'ПК'
-    ok = 'ОК и ВД'
-    vpd = 'ВПД'
+    ok = 'ОК,ВД,ВПД'
+    # vpd = 'ВПД'
     po = 'Практический опыт'
-    skills = 'Умения'
+    # skills = 'Умения'
     fgos = 'Данные ФГОС'
     try:
-        etalon_cols_lst = [desc_pred_prac,content_pred_prac,pers_result,vpd,po,skills,mto,main_publ,second_publ,ii_publ,pk,ok,fgos]
+        # etalon_cols_lst = [desc_pred_prac,content_pred_prac,pers_result,vpd,po,skills,mto,main_publ,second_publ,ii_publ,pk,ok,fgos]
+        etalon_cols_lst = [desc_pred_prac,content_pred_prac,pers_result,po,main_publ,second_publ,ii_publ,pk,ok,fgos]
         etalon_cols = set(etalon_cols_lst)
         temp_wb = openpyxl.load_workbook(data_pred_prac, read_only=True)
         file_cols = set(temp_wb.sheetnames)
@@ -237,15 +238,15 @@ def create_pred_dip_prac(template_pm: str, data_pred_prac: str, end_folder: str)
             raise DiffSheet
 
         # Обрабатываем лист Описание ПМ
-        df_desc_rp = pd.read_excel(data_pred_prac, sheet_name=desc_pred_prac, nrows=1, usecols='A:I')  # загружаем датафрейм
+        df_desc_rp = pd.read_excel(data_pred_prac, sheet_name=desc_pred_prac, nrows=1, usecols='A:H')  # загружаем датафрейм
         df_desc_rp.fillna('НЕ ЗАПОЛНЕНО !!!', inplace=True)  # заполняем не заполненные разделы
-        df_desc_rp.columns = ['Тип_программы','Код_специальность_профессия','Форма_аттестации','Квалификация',
+        df_desc_rp.columns = ['Тип_программы','Код_специальность_профессия','Форма_аттестации',
                               'Год', 'Разработчик', 'Методист', 'Название_ПЦК', 'Пред_ПЦК']
 
         form_att = df_desc_rp.at[0, 'Форма_аттестации'] # переменная для названия итоговой квалификации
 
         # Создаем переменные для ФИО утверждающих
-        df_accept_fio = pd.read_excel(data_pred_prac, sheet_name=desc_pred_prac, nrows=1, usecols='J:K')  # загружаем датафрейм
+        df_accept_fio = pd.read_excel(data_pred_prac, sheet_name=desc_pred_prac, nrows=1, usecols='I:J')  # загружаем датафрейм
         accept_PR = df_accept_fio.iloc[0,1]
 
         # Обрабатываем лист Лич_результаты
@@ -268,13 +269,15 @@ def create_pred_dip_prac(template_pm: str, data_pred_prac: str, end_folder: str)
         df_pk.columns = ['Наименование','Показатель','Форма']
 
         # Обработка ОК
-        df_ok_vd = pd.read_excel(data_pred_prac, sheet_name=ok, usecols='A:B')
+        df_ok_vd = pd.read_excel(data_pred_prac, sheet_name=ok, usecols='A:C')
         df_ok_vd.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-        df_ok_vd.columns = ['Наименование ОК','Вид деятельности']
+        df_ok_vd.columns = ['Наименование ОК','Вид деятельности','ВПД']
         lst_ok = df_ok_vd['Наименование ОК'].dropna().tolist() # список для ОК
         lst_ok = processing_punctuation_end_string(lst_ok, ';\n', '- ', '.')
-        lst_vd = df_ok_vd['Вид деятельности'].dropna().tolist()  # список для ОК
+        lst_vd = df_ok_vd['Вид деятельности'].dropna().tolist()  # список для Вид деятельности по ФГОС
         lst_vd = processing_punctuation_end_string(lst_vd, ';\n', '- ', '.')
+        lst_vpd = df_ok_vd['ВПД'].dropna().tolist()  # список для Вид профессиональной деятельности
+        lst_vpd = processing_punctuation_end_string(lst_vpd, ';\n', '- ', '.')
 
         """
             Обрабатываем лист ПП (Преддипломная практика)
@@ -334,32 +337,32 @@ def create_pred_dip_prac(template_pm: str, data_pred_prac: str, end_folder: str)
         sum_practice_pp = sum_column_any_value(df_pp, 'Прак_под')
 
 
-        """
-            Обрабатываем лист МТО
-            """
-        df_mto = pd.read_excel(data_pred_prac, sheet_name=mto, usecols='A:C')
-        df_mto.columns = ['Оборудование','Инструменты_приспособления','Средства_обучения']
-        df_mto.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-        # Списки кабинета и средств обучения
-        lst_obor = df_mto[
-            'Оборудование'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
-        if len(lst_obor) == 0:
-            lst_obor = ['На листе МТО НЕ заполнена колонка Оборудование !!!']
-        lst_obor = processing_punctuation_end_string(lst_obor, ';\n', '- ',
-                                                     '.')  # обрабатываем знаки пунктуации для каждой строки
-
-        lst_tecn = df_mto[
-            'Инструменты_приспособления'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
-        if len(lst_tecn) == 0:
-            lst_tecn = ['На листе МТО НЕ заполнена колонка Инструменты и приспособления !!!']
-        lst_tecn = processing_punctuation_end_string(lst_tecn, ';\n', '- ', '.')
-
-        # Оборудование мастерской
-        lst_educ = df_mto[
-            'Средства_обучения'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
-        if len(lst_educ) == 0:
-            lst_educ = ['На листе МТО НЕ заполнена колонка Средства обучения !!!']
-        lst_educ = processing_punctuation_end_string(lst_educ, ';\n', '- ', '.')
+        # """
+        #     Обрабатываем лист МТО
+        #     """
+        # df_mto = pd.read_excel(data_pred_prac, sheet_name=mto, usecols='A:C')
+        # df_mto.columns = ['Оборудование','Инструменты_приспособления','Средства_обучения']
+        # df_mto.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+        # # Списки кабинета и средств обучения
+        # lst_obor = df_mto[
+        #     'Оборудование'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
+        # if len(lst_obor) == 0:
+        #     lst_obor = ['На листе МТО НЕ заполнена колонка Оборудование !!!']
+        # lst_obor = processing_punctuation_end_string(lst_obor, ';\n', '- ',
+        #                                              '.')  # обрабатываем знаки пунктуации для каждой строки
+        #
+        # lst_tecn = df_mto[
+        #     'Инструменты_приспособления'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
+        # if len(lst_tecn) == 0:
+        #     lst_tecn = ['На листе МТО НЕ заполнена колонка Инструменты и приспособления !!!']
+        # lst_tecn = processing_punctuation_end_string(lst_tecn, ';\n', '- ', '.')
+        #
+        # # Оборудование мастерской
+        # lst_educ = df_mto[
+        #     'Средства_обучения'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
+        # if len(lst_educ) == 0:
+        #     lst_educ = ['На листе МТО НЕ заполнена колонка Средства обучения !!!']
+        # lst_educ = processing_punctuation_end_string(lst_educ, ';\n', '- ', '.')
 
         """
             Обрабатываем лист Основные источники
@@ -421,48 +424,48 @@ def create_pred_dip_prac(template_pm: str, data_pred_prac: str, end_folder: str)
         df_prac.fillna('', inplace=True)
         df_prac.columns = ['Наименование', 'Форма']
         # создаем списки
-        lst_prac = df_prac['Наименование'].dropna().tolist()  # список для ОК
+        lst_prac = df_prac['Наименование'].dropna().tolist()  # список для Прак опыта
         lst_prac = processing_punctuation_end_string(lst_prac, ';\n', '- ', '.')
-        lst_prac_control = df_prac['Форма'].dropna().tolist()  # список для ОК
+        lst_prac_control = df_prac['Форма'].dropna().tolist()  # список для Прак опыта
         lst_prac_control = processing_punctuation_end_string(lst_prac_control, ';\n', '- ', '.')
 
         temp_df = pd.DataFrame(columns=['Наименование', 'Форма'],
                                data=[['Практический опыт',''],[lst_prac, lst_prac_control]])
         control_df = pd.concat([control_df, temp_df], axis=0, ignore_index=True)
 
-        """
-        Обрабатываем лист Умения
-        """
-        df_skills = pd.read_excel(data_pred_prac, sheet_name=skills, usecols='A:B')
-        df_skills.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-        df_skills.fillna('', inplace=True)
-        df_skills.columns = ['Наименование', 'Форма']
-        # создаем списки
-        lst_skills = df_skills['Наименование'].dropna().tolist()  # список для ОК
-        lst_skills = processing_punctuation_end_string(lst_skills, ';\n', '- ', '.')
-        lst_skills_control = df_skills['Форма'].dropna().tolist()  # список для ОК
-        lst_skills_control = processing_punctuation_end_string(lst_skills_control, ';\n', '- ', '.')
+        # """
+        # Обрабатываем лист Умения
+        # """
+        # df_skills = pd.read_excel(data_pred_prac, sheet_name=skills, usecols='A:B')
+        # df_skills.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+        # df_skills.fillna('', inplace=True)
+        # df_skills.columns = ['Наименование', 'Форма']
+        # # создаем списки
+        # lst_skills = df_skills['Наименование'].dropna().tolist()  # список для ОК
+        # lst_skills = processing_punctuation_end_string(lst_skills, ';\n', '- ', '.')
+        # lst_skills_control = df_skills['Форма'].dropna().tolist()  # список для ОК
+        # lst_skills_control = processing_punctuation_end_string(lst_skills_control, ';\n', '- ', '.')
+        #
+        # temp_df = pd.DataFrame(columns=['Наименование', 'Форма'],
+        #                        data=[['Умения',''],[lst_skills, lst_skills_control]])
+        # control_df = pd.concat([control_df, temp_df], axis=0, ignore_index=True)
 
-        temp_df = pd.DataFrame(columns=['Наименование', 'Форма'],
-                               data=[['Умения',''],[lst_skills, lst_skills_control]])
-        control_df = pd.concat([control_df, temp_df], axis=0, ignore_index=True)
-
-        """
-        Обрабатываем лист ВПД
-        """
-        df_vpd = pd.read_excel(data_pred_prac,sheet_name=vpd,usecols='A:B')
-        df_vpd.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-        df_vpd.fillna('', inplace=True)
-        df_vpd.columns = ['Наименование','Форма']
-        # создаем списки
-        lst_vpd = df_vpd['Наименование'].dropna().tolist() # список для ОК
-        lst_vpd = processing_punctuation_end_string(lst_vpd, ';\n', '- ', '.')
-        lst_vpd_control = df_vpd['Форма'].dropna().tolist() # список для ОК
-        lst_vpd_control = processing_punctuation_end_string(lst_vpd_control, ';\n', '- ', '.')
-
-        temp_df = pd.DataFrame(columns=['Наименование','Форма'],
-                               data=[['Виды деятельности',''],[lst_vpd,lst_vpd_control]])
-        control_df = pd.concat([control_df,temp_df],axis=0,ignore_index=True)
+        # """
+        # Обрабатываем лист ВПД
+        # """
+        # df_vpd = pd.read_excel(data_pred_prac,sheet_name=vpd,usecols='A:B')
+        # df_vpd.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+        # df_vpd.fillna('', inplace=True)
+        # df_vpd.columns = ['Наименование','Форма']
+        # # создаем списки
+        # lst_vpd = df_vpd['Наименование'].dropna().tolist() # список для ОК
+        # lst_vpd = processing_punctuation_end_string(lst_vpd, ';\n', '- ', '.')
+        # lst_vpd_control = df_vpd['Форма'].dropna().tolist() # список для ОК
+        # lst_vpd_control = processing_punctuation_end_string(lst_vpd_control, ';\n', '- ', '.')
+        #
+        # temp_df = pd.DataFrame(columns=['Наименование','Форма'],
+        #                        data=[['Виды деятельности',''],[lst_vpd,lst_vpd_control]])
+        # control_df = pd.concat([control_df,temp_df],axis=0,ignore_index=True)
 
         """
             Обрабатываем лист ФГОС
@@ -482,7 +485,7 @@ def create_pred_dip_prac(template_pm: str, data_pred_prac: str, end_folder: str)
 
         # Единичные переменные
 
-        context['Квалификация'] = df_desc_rp.at[0,'Квалификация']
+        # context['Квалификация'] = df_desc_rp.at[0,'Квалификация']
         context['Объем_ПП'] = sum_volume_pp
         context['Объем_ПП_прак_под'] = sum_practice_pp
 
@@ -491,9 +494,9 @@ def create_pred_dip_prac(template_pm: str, data_pred_prac: str, end_folder: str)
         context['ПП_содер_объем'] = df_pp_content.to_dict('records')  # делаем таблицу УП
 
         # #лист МТО
-        context['Оборудование'] = lst_obor
-        context['Инструменты_приспособления'] = lst_tecn
-        context['Средства_обучения'] = lst_educ
+        # context['Оборудование'] = lst_obor
+        # context['Инструменты_приспособления'] = lst_tecn
+        # context['Средства_обучения'] = lst_educ
         # лист Учебные издания
         context['Основные_источники'] = lst_main_source
         context['Дополнительные_источники'] = lst_slave_source
@@ -501,6 +504,8 @@ def create_pred_dip_prac(template_pm: str, data_pred_prac: str, end_folder: str)
         # Листы данные ОК,ПК
         context['ОК'] = lst_ok
         context['ПК'] = lst_pk
+
+        context['Прак_опыт'] = lst_prac
         context['ВПД'] = lst_vpd
         context['ФГОС_ВД'] = lst_vd
         context['Контроль_ПК'] = df_pk.to_dict('records')
