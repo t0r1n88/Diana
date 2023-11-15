@@ -227,6 +227,7 @@ def extract_data_mdk(data_pm,sheet_name):
     :param sheet_name: имя листа
     :return: датафрейм
     """
+    print(sheet_name)
     lst_type_lesson = ['урок', 'практическое занятие', 'лабораторное занятие',
                        'курсовая работа (КП)']  # список типов занятий
     dct_all_sum_result = {key: 0 for key in lst_type_lesson}  # создаем словарь для подсчета значений
@@ -364,8 +365,10 @@ def processing_mdk(data_pm) -> dict:
     wb = openpyxl.load_workbook(data_pm,read_only=True) # получаем названия листов содержащих МДК
     for sheet_name in wb.sheetnames:
         if 'План МДК' in sheet_name:
-            name_mdk = str(wb[sheet_name]['D1'].value) # получаем название МДК, делаем строковыми на случай нан
-            if len(name_mdk) > 2:
+
+            name_mdk = wb[sheet_name]['D1'].value # получаем название МДК, делаем строковыми на случай нан
+            if name_mdk:
+                name_mdk = str(name_mdk)
                 temp_mdk_df,temp_all_result,temp_part_result = extract_data_mdk(data_pm,sheet_name) # извлекаем данные из датафрейма
                 dct_mdk[name_mdk] = {'Итог':temp_all_result,'Данные':temp_mdk_df,'По частям':temp_part_result}
     wb.close()
@@ -800,9 +803,16 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
                              'На листе Контроль в первой колонке должно быть указаны слова\n'
                              'Умения: , Знания: , Практический опыт:\n'
                              'Посмотрите пример в исходном шаблоне')
-    # except KeyError as e:
-    #     messagebox.showerror('Диана Создание рабочих программ',
-    #                          f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
+    except NotDataMdk as e:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'На одном из листов План МДК заполнена ячейка с названием МДК (ячейка D1) но сам лист не заполнен !!!')
+    except ControlSemestr as e:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'При обработке листа с Планом МДК не найдено слово семестр в первой колонке Курс/семестр\n'
+                             f'Должны быть указаны семестры в формате: 2 курс 3 семестр')
+    except KeyError as e:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
     except ValueError as e:
         messagebox.showerror('Диана Создание рабочих программ',
                              f'В таблице не найден лист,колонка или значение {e.args}!\nПроверьте написание названий')
