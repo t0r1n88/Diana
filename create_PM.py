@@ -33,6 +33,17 @@ class DiffSheet(Exception):
     """
     pass
 
+class ControlSemestr(Exception):
+    """
+    Исключение для случаев когда на листе План Мдк отсутствует слово семест в колонках
+    """
+    pass
+
+class NotDataMdk(Exception):
+    """
+    Исключения для случаев когда пустой датафрейм в плане МДК
+    """
+    pass
 
 
 def write_df_to_excel(dct_df:dict,write_index:bool)->openpyxl.Workbook:
@@ -223,6 +234,8 @@ def extract_data_mdk(data_pm,sheet_name):
 
 
     df_plan_pm = pd.read_excel(data_pm,sheet_name=sheet_name,skiprows=1, usecols='A:H')
+    if df_plan_pm.shape[0] == 0:
+        raise NotDataMdk
     df_plan_pm.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
     df_plan_pm.columns = ['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Прак_подготовка', 'Вид_занятия',
@@ -246,6 +259,9 @@ def extract_data_mdk(data_pm,sheet_name):
 
     borders = df_plan_pm[
         df_plan_pm['Курс_семестр'].str.contains('семестр')].index  # получаем индексы строк где есть слово семестр
+
+    if len(borders) == 0:
+        raise ControlSemestr
 
     name_borders = [] # лист для хранения названий семестров(границ разделов)
     for idx in borders:
@@ -347,9 +363,9 @@ def processing_mdk(data_pm) -> dict:
     dct_mdk = dict()
     wb = openpyxl.load_workbook(data_pm,read_only=True) # получаем названия листов содержащих МДК
     for sheet_name in wb.sheetnames:
-        if 'МДК' in sheet_name:
+        if 'План МДК' in sheet_name:
             name_mdk = str(wb[sheet_name]['D1'].value) # получаем название МДК, делаем строковыми на случай нан
-            if 'МДК' in name_mdk:
+            if len(name_mdk) >5:
                 temp_mdk_df,temp_all_result,temp_part_result = extract_data_mdk(data_pm,sheet_name) # извлекаем данные из датафрейма
                 dct_mdk[name_mdk] = {'Итог':temp_all_result,'Данные':temp_mdk_df,'По частям':temp_part_result}
     wb.close()
@@ -442,8 +458,9 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
 
         # # Обрабатываем лист Объем ПМ
         df_volume_pm = pd.read_excel(data_pm,sheet_name=volume_pm,usecols='A:B')
-        df_volume_pm.dropna(inplace=True) # удаляем пустые строки
+        df_volume_pm.dropna(inplace=True,thresh=1) # удаляем пустые строки
         df_volume_pm.columns = ['Наименование', 'Объем']
+        df_volume_pm.fillna(0,inplace=True)
         df_volume_pm.set_index('Наименование',inplace=True) # делаем индексом первую колонку
         _dct_df_volume_pm = df_volume_pm.to_dict('dict') # превращаем в словарь
         dct_df_volume_pm = _dct_df_volume_pm['Объем']
@@ -693,19 +710,19 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
         # Проверка МДК
 
         # добавляем единичные переменные
-        context['Всего'] = dct_df_volume_pm['Всего часов']
-        context['Макс_уч_нагр'] = dct_df_volume_pm['Максимальной учебной нагрузки обучающегося']
-        context['Обяз_ауд_нагр'] = dct_df_volume_pm['Обязательной аудиторной нагрузки обучающегося']
-        context['КР'] = dct_df_volume_pm['курсовой проект (работа)']
-        context['Прак_подг'] = dct_df_volume_pm['на практическую подготовку']
-        context['СРС'] = dct_df_volume_pm['самостоятельная работа обучающегося']
-        context['Консул'] = dct_df_volume_pm['консультации']
-        context['Пром_атт'] = dct_df_volume_pm['промежуточная аттестация']
-        context['Экзамен_квал'] = dct_df_volume_pm['экзамен (квалификационный)']
-        context['Объем_УП'] = dct_df_volume_pm['Учебная практика']
-        context['Объем_ПП'] = dct_df_volume_pm['Производственная практика']
-        context['Атт_УП'] = dct_df_volume_pm['итоговая аттестация УП в форме']
-        context['Атт_ПП'] = dct_df_volume_pm['итоговая аттестация ПП в форме']
+        context['Всего'] = dct_df_volume_pm.get('Всего часов','Не заполнено')
+        context['Макс_уч_нагр'] = dct_df_volume_pm.get('Максимальной учебной нагрузки обучающегося','Не заполнено')
+        context['Обяз_ауд_нагр'] = dct_df_volume_pm.get('Обязательной аудиторной нагрузки обучающегося','Не заполнено')
+        context['КР'] = dct_df_volume_pm.get('курсовой проект (работа)','Не заполнено')
+        context['Прак_подг'] = dct_df_volume_pm.get('на практическую подготовку','Не заполнено')
+        context['СРС'] = dct_df_volume_pm.get('самостоятельная работа обучающегося','Не заполнено')
+        context['Консул'] = dct_df_volume_pm.get('консультации','Не заполнено')
+        context['Пром_атт'] = dct_df_volume_pm.get('промежуточная аттестация','Не заполнено')
+        context['Экзамен_квал'] = dct_df_volume_pm.get('экзамен (квалификационный)','Не заполнено')
+        context['Объем_УП'] = dct_df_volume_pm.get('Учебная практика','Не заполнено')
+        context['Объем_ПП'] = dct_df_volume_pm.get('Производственная практика','Не заполнено')
+        context['Атт_УП'] = dct_df_volume_pm.get('итоговая аттестация УП в форме','Не заполнено')
+        context['Атт_ПП'] = dct_df_volume_pm.get('итоговая аттестация ПП в форме','Не заполнено')
         context['Квалификация'] = df_volume_pm.iloc[-1,0] # получаем значение ячейки на последней строке
 
         # context['Всего'] = dct_mdk_data['Всего часов']
@@ -783,9 +800,9 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
                              'На листе Контроль в первой колонке должно быть указаны слова\n'
                              'Умения: , Знания: , Практический опыт:\n'
                              'Посмотрите пример в исходном шаблоне')
-    except KeyError as e:
-        messagebox.showerror('Диана Создание рабочих программ',
-                             f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
+    # except KeyError as e:
+    #     messagebox.showerror('Диана Создание рабочих программ',
+    #                          f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
     except ValueError as e:
         messagebox.showerror('Диана Создание рабочих программ',
                              f'В таблице не найден лист,колонка или значение {e.args}!\nПроверьте написание названий')
@@ -810,7 +827,8 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
 
 if __name__ == '__main__':
     template_pm_main = 'data/Шаблон автозаполнения ПМ.docx'
-    data_pm_main = 'data/Таблица для ПМ,УП,ПП.xlsx'
+    # data_pm_main = 'data/Таблица для ПМ,УП,ПП.xlsx'
+    data_pm_main = 'data/Маш_ПМ01.xlsx'
     end_folder_main = 'data'
 
     create_pm(template_pm_main, data_pm_main, end_folder_main)
