@@ -365,7 +365,7 @@ def processing_mdk(data_pm) -> dict:
     for sheet_name in wb.sheetnames:
         if 'План МДК' in sheet_name:
             name_mdk = str(wb[sheet_name]['D1'].value) # получаем название МДК, делаем строковыми на случай нан
-            if len(name_mdk) >5:
+            if len(name_mdk) > 2:
                 temp_mdk_df,temp_all_result,temp_part_result = extract_data_mdk(data_pm,sheet_name) # извлекаем данные из датафрейма
                 dct_mdk[name_mdk] = {'Итог':temp_all_result,'Данные':temp_mdk_df,'По частям':temp_part_result}
     wb.close()
