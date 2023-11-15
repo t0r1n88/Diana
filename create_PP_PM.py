@@ -371,7 +371,7 @@ def create_rp_pp(template_pm: str, data_pm: str, end_folder: str):
 
         # # Обрабатываем лист Объем ПМ
         df_volume_pm = pd.read_excel(data_pm,sheet_name=volume_pm,usecols='A:B')
-        df_volume_pm.dropna(inplace=True) # удаляем пустые строки
+        df_volume_pm.dropna(inplace=True,thresh=1) # удаляем пустые строки
         df_volume_pm.columns = ['Наименование', 'Объем']
         df_volume_pm.set_index('Наименование',inplace=True) # делаем индексом первую колонку
         _dct_df_volume_pm = df_volume_pm.to_dict('dict') # превращаем в словарь
@@ -847,6 +847,7 @@ def create_rp_pp(template_pm: str, data_pm: str, end_folder: str):
 if __name__ == '__main__':
     template_pm_main = 'data/Шаблон автозаполнения ПП.docx'
     data_pm_main = 'data/Таблица для ПМ,УП,ПП.xlsx'
+
     end_folder_main = 'data'
 
     create_rp_pp(template_pm_main, data_pm_main, end_folder_main)

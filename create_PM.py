@@ -837,8 +837,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
 
 if __name__ == '__main__':
     template_pm_main = 'data/Шаблон автозаполнения ПМ.docx'
-    # data_pm_main = 'data/Таблица для ПМ,УП,ПП.xlsx'
-    data_pm_main = 'data/Маш_ПМ01.xlsx'
+    data_pm_main = 'data/Таблица для ПМ,УП,ПП.xlsx'
     end_folder_main = 'data'
 
     create_pm(template_pm_main, data_pm_main, end_folder_main)
