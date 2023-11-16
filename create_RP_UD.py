@@ -454,20 +454,9 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
         """
             Обрабатываем лист План УД
             """
-        temp_plan_df, temp_all_result, temp_part_result = extract_data_plan(data_work_program,
+        main_df, temp_all_result, temp_part_result = extract_data_plan(data_work_program,
                                                                            plan)  # извлекаем данные из датафрейма
-
-
-
-        # dct_mdk_data = dict() # считаем общую сумму
-        # for name,dct in _dct_mdk_data.items():
-        #     for key,value in dct.items():
-        #         if key not in dct_mdk_data:
-        #             dct_mdk_data[key] = value
-        #         else:
-        #             dct_mdk_data[key] += value
         #
-        print(temp_part_result)
         check_error_df = create_check_error_df(temp_part_result)
 
 
@@ -679,7 +668,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
         data_program = df_desc_rp.to_dict('records')
         context = data_program[0]
         context['Лич_результаты'] = df_pers_result.to_dict('records')  # добаввляем лист личностных результатов
-        context['План_УД'] = temp_plan_df.to_dict('records')  # содержание учебной дисциплины
+        context['План_УД'] = main_df.to_dict('records')  # содержание учебной дисциплины
         context['Учебная_работа'] = df_structure.to_dict('records')
         context['Контроль_оценка'] = df_control.to_dict('records')
         context['Знать'] = lst_knowledge
