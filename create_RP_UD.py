@@ -26,6 +26,17 @@ class DiffSheet(Exception):
     """
     pass
 
+class ControlSemestr(Exception):
+    """
+    Исключение для случаев когда на листе План Мдк отсутствует слово семест в колонках
+    """
+    pass
+
+class NotDataMdk(Exception):
+    """
+    Исключения для случаев когда пустой датафрейм в плане МДК
+    """
+    pass
 
 def convert_to_int(cell):
     """
@@ -158,6 +169,171 @@ def processing_publ(row):
     out_str = f'{author}. {name_book}.- {short_city}.: {publ_house}, {clean_year}.- {clean_quan_pages} c.'
 
     return out_str
+
+def sum_column_any_value(df:pd.DataFrame,name_column:str):
+    """
+    Суммирование колонки с разными типами значений в том числе строковыми.
+    """
+    lst_value = df[name_column].dropna().tolist()
+    sum_value = [value for value in lst_value if isinstance(value,(int,float))] # отбираем только числа
+    return sum(sum_value) # возвращаем сумму
+
+def create_check_error_df(dct:dict)->pd.DataFrame:
+    """
+    Функция для разворачивания словаря с данными по каждому мдк в датафрейм
+    :param dct: Словарь с данными
+    :type dct:dict
+    :return:Датафрейм
+    :rtype:pd.Dataframe
+    """
+    df = pd.DataFrame(columns=['Наименование МДК','Семестр','Практическая подготовка','Обязательная нагрузка',
+                               'Прак_лаб занятия','КР','Урок','Практическое занятие','Лабораторное занятие'])
+    for name_mdk,part in dct.items():
+        for key,value in part.items():
+            prac_hour = value['практическое занятие'] + value['лабораторное занятие'] # считаем практические занятия
+            all_hours = value['практическое занятие'] + value['лабораторное занятие'] + value['урок'] + value['курсовая работа (КП)']
+            # создаем строку датафрейма
+            temp_df = pd.DataFrame(columns=['Наименование МДК','Семестр','Практическая подготовка','Обязательная нагрузка',
+                               'Прак_лаб занятия','КР','Урок','Практическое занятие','Лабораторное занятие'],
+                                   data=[[name_mdk,key,value['Прак_подготовка'],all_hours,prac_hour,value['курсовая работа (КП)'],
+                                          value['урок'],value['практическое занятие'],value['лабораторное занятие']]])
+            df = pd.concat([df,temp_df],ignore_index=True,axis=0)
+
+    sum_row = df.sum()  # получаем строку общей суммы
+    df.loc['Сумма'] = sum_row  # добавляем строку в датафрейм
+    df.at['Сумма', 'Наименование МДК'] = ''
+    df.at['Сумма', 'Семестр'] = 'Итого'
+    return df
+
+def extract_data_mdk(data_ud,sheet_name):
+    """
+    Функция для получения датафрейма из листа файла
+    :param data_ud: путь к файлу
+    :param sheet_name: имя листа
+    :return: датафрейм
+    """
+    print(sheet_name)
+    lst_type_lesson = ['урок', 'практическое занятие', 'лабораторное занятие',
+                       'курсовая работа (КП)']  # список типов занятий
+    dct_all_sum_result = {key: 0 for key in lst_type_lesson}  # создаем словарь для подсчета значений
+
+
+
+    df_plan_pm = pd.read_excel(data_ud,sheet_name=sheet_name,skiprows=1, usecols='A:H')
+    if df_plan_pm.shape[0] == 0:
+        raise NotDataMdk
+    df_plan_pm.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+
+    df_plan_pm.columns = ['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Прак_подготовка', 'Вид_занятия',
+                          'СРС']
+    df_plan_pm['Курс_семестр'].fillna('Пусто', inplace=True)
+    df_plan_pm['Раздел'].fillna('Пусто', inplace=True)
+    df_plan_pm['Тема'].fillna('Пусто', inplace=True)
+
+    # Считаем общие суммы
+    mdk_all_sum = int(sum_column_any_value(df_plan_pm, 'Количество_часов'))  # получаем сумму общие часы
+    mdk_all_prac_sum = int(sum_column_any_value(df_plan_pm, 'Прак_подготовка'))  # получаем сумму общие часы
+    mdk_all_srs_sum = int(sum_column_any_value(df_plan_pm, 'СРС'))  # сумма срс
+    for type_lesson in lst_type_lesson:
+        _df = df_plan_pm[df_plan_pm['Вид_занятия'] == type_lesson]  # фильтруем датафрейм
+        dct_all_sum_result[type_lesson] = int(sum_column_any_value(_df, 'Количество_часов'))  # получаем значение
+
+    dct_all_sum_result['Всего часов'] = mdk_all_sum
+    dct_all_sum_result['Всего прак_подготовка'] = mdk_all_prac_sum
+    dct_all_sum_result['Всего СРС'] = mdk_all_srs_sum
+
+
+    borders = df_plan_pm[
+        df_plan_pm['Курс_семестр'].str.contains('семестр')].index  # получаем индексы строк где есть слово семестр
+
+    if len(borders) == 0:
+        raise ControlSemestr
+
+    name_borders = [] # лист для хранения названий семестров(границ разделов)
+    for idx in borders:
+        _temp_name = df_plan_pm.at[idx,'Курс_семестр'].replace('\n','') # получаем название семестров и удаляем символ переноса
+        name_borders.append(_temp_name)
+
+    part_df = []  # список для хранения кусков датафрейма
+    previos_border = -1
+    # делим датафрем по границам
+    for value_border in borders:
+        part = df_plan_pm.iloc[previos_border:value_border]
+        part_df.append(part)
+        previos_border = value_border
+
+    # добавляем последнюю часть
+    last_part = df_plan_pm.iloc[borders[-1]:]
+    part_df.append(last_part)
+
+    part_df.pop(0)  # удаляем нулевой элемент так как он пустой
+
+    main_df = pd.DataFrame(
+        columns=['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Прак_подготовка', 'Вид_занятия',
+                 'СРС'])  # создаем базовый датафрейм
+    part_dct_sum = dict() # создаем словарь который будет хранить суммы по семестрам
+
+    for idx,df in enumerate(part_df):
+        dct_sum_result = {key: 0 for key in lst_type_lesson}  # создаем словарь для подсчета значений
+        dct_sum_result['Прак_подготовка'] = 0
+        for type_lesson in lst_type_lesson:
+            _df = df[df['Вид_занятия'] == type_lesson]  # фильтруем датафрейм
+            _df['Количество_часов'].fillna(0, inplace=True)
+            dct_sum_result[type_lesson] = int(sum_column_any_value(_df,'Количество_часов')) # считаем часы для каждого типа
+            dct_sum_result['Прак_подготовка'] += int(sum_column_any_value(_df,'Прак_подготовка')) # считаем часы для практики
+        part_dct_sum[name_borders[idx]] = dct_sum_result
+
+        # создаем строку с описанием
+        margint_text = 'Итого часов за семестр:\nиз них\nтеория\nпрактические занятия\nлабораторные занятия\nкурсовая работа (КП)'
+
+        all_hours = sum(dct_sum_result.values())  # общая сумма часов
+
+        theory_hours = dct_sum_result['урок']  # часы теории
+        praktice_hours = dct_sum_result['практическое занятие']  # часы практики
+        lab_hours = dct_sum_result['лабораторное занятие']  # часы лабораторных
+        kurs_hours = dct_sum_result['курсовая работа (КП)']  # часы курсовых
+
+        value_text = f'{all_hours}\n \n{theory_hours}\n{praktice_hours}\n{lab_hours}\n{kurs_hours}'  # строка со значениями
+        temp_df = pd.DataFrame([{'Тема': margint_text, 'Количество_часов': value_text}])
+        df = pd.concat([df, temp_df], ignore_index=True)  # добаляем итоговую строку
+        main_df = pd.concat([main_df, df], ignore_index=True)  # добавляем в основной датафрейм
+
+    main_df.insert(0, 'Номер', np.nan)  # добавляем колонку с номерами занятий
+
+    main_df['Содержание'] = main_df['Содержание'].fillna('Пусто')  # заменяем наны на пусто
+
+    count = 0  # счетчик
+    for idx, row in enumerate(main_df.itertuples()):
+        if (row[5] == 'Пусто') | ('Итого часов' in row[5]):
+            main_df.iloc[idx, 0] = ''
+        else:
+            count += 1
+            main_df.iloc[idx, 0] = count
+
+    # очищаем от пустых символов и строки Пусто
+    main_df['Курс_семестр'] = main_df['Курс_семестр'].fillna('Пусто')
+    main_df['Раздел'] = main_df['Раздел'].fillna('Пусто')
+
+    main_df['Курс_семестр'] = main_df['Курс_семестр'].replace('Пусто', '')
+    main_df['Тема'] = main_df['Тема'].replace('Пусто', '')
+    main_df['Раздел'] = main_df['Раздел'].replace('Пусто', '')
+    main_df['Содержание'] = main_df['Содержание'].replace('Пусто', '')
+
+    main_df['Вид_занятия'] = main_df['Вид_занятия'].fillna('')
+
+    main_df['Количество_часов'] = main_df['Количество_часов'].apply(convert_to_int)
+    main_df['Количество_часов'] = main_df['Количество_часов'].fillna('')
+    main_df['Прак_подготовка'] = main_df['Прак_подготовка'].fillna(0)
+    main_df['Прак_подготовка'] = main_df['Прак_подготовка'].astype(int, errors='ignore')
+    main_df['Прак_подготовка'] = main_df['Прак_подготовка'].apply(lambda x: '' if x == 0 else x)
+
+    main_df['СРС'] = main_df['СРС'].fillna(0)
+    main_df['СРС'] = main_df['СРС'].astype(int, errors='ignore')
+    main_df['СРС'] = main_df['СРС'].apply(lambda x: '' if x == 0 else x)
+    main_df['Содержание'] = main_df['Курс_семестр'] + main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
+    main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
+
+    return (main_df,dct_all_sum_result,part_dct_sum) # возвращаем кортеж
 
 
 def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:str):
@@ -497,6 +673,13 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
                              f'В таблице не найдены листы {diff_cols},\n'
                              f'В таблице должны быть листы {etalon_cols_lst}\n'
                              f'Возможно вы используете шаблон РП для ООД а не шаблон РП для УД')
+    except NotDataMdk as e:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'Лист План УД не заполнен !!!')
+    except ControlSemestr as e:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'При обработке листа с Планом УД не найдено слово семестр в первой колонке Курс/семестр\n'
+                             f'Должны быть указаны семестры в формате: 2 курс 3 семестр')
     except KeyError as e:
         messagebox.showerror('Диана Создание рабочих программ',
                              f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
@@ -525,20 +708,9 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
 if __name__=='__main__':
     template_work_program = 'data/Шаблон автозаполнения РП 08_09_23.docx'
     # data_work_program = 'data/Автозаполнение РП.xlsx'
-    data_work_program = 'data/ПРИМЕР заполнения таблицы  РП 13_09.xlsx'
+    # data_work_program = 'data/ПРИМЕР заполнения таблицы  РП 13_09.xlsx'
+    data_work_program = 'data/ПРИМЕР заполнения таблицы  РП 16_11.xlsx'
     end_folder = 'data'
-
-    # # названия листов
-    # desc_rp = 'Описание РП'
-    # pers_result = 'Лич_результаты'
-    # structure = 'Объем УД'
-    # plan = 'План УД'
-    # mto = 'МТО'
-    # main_publ = 'ОИ'
-    # second_publ = 'ДИ'
-    # ii_publ = 'ИИ'
-    # control = 'Контроль'
-    # pk_ok = 'ПК и ОК'
 
     create_RP_for_UD(template_work_program, data_work_program, end_folder)
 
