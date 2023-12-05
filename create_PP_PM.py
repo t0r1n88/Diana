@@ -241,6 +241,7 @@ def extract_data_mdk(data_pm,sheet_name):
         # создаем строку с описанием
         margint_text = 'Итого часов за семестр:\nиз них\nтеория\nпрактические занятия\nлабораторные занятия\nкурсовая работа (КП)'
 
+
         all_hours = sum(dct_sum_result.values())  # общая сумма часов
 
         theory_hours = dct_sum_result['урок']  # часы теории

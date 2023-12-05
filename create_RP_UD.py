@@ -320,7 +320,9 @@ def extract_data_plan(data_ud, sheet_name):
         # создаем строку с описанием
         margint_text = 'Итого часов за семестр:\nиз них\nтеория\nпрактические занятия\nлабораторные занятия\nкурсовая работа (КП)'
 
-        all_hours = sum(dct_sum_result.values())  # общая сумма часов
+        not_prac_dct_sum_result = dct_sum_result.copy()  # получаем копию
+        not_prac_dct_sum_result.pop('Прак_подготовка')  # удаляем ключ практическая подготовка
+        all_hours = sum(not_prac_dct_sum_result.values())  # общая сумма часов
 
         theory_hours = dct_sum_result['урок']  # часы теории
         praktice_hours = dct_sum_result['практическое занятие']  # часы практики
@@ -753,7 +755,8 @@ if __name__=='__main__':
     template_work_program = 'data/Шаблон автозаполнения РП 08_09_23.docx'
     # data_work_program = 'data/Автозаполнение РП.xlsx'
     # data_work_program = 'data/ПРИМЕР заполнения таблицы  РП 13_09.xlsx'
-    data_work_program = 'data/ПРИМЕР заполнения таблицы  РП 16_11.xlsx'
+    data_work_program = 'data/ПРИМЕР заполнения таблицы  РП УД 16_11.xlsx'
+    data_work_program = 'data/Копия 17_основы техн Черчение.xlsx'
     end_folder = 'data'
 
     create_RP_for_UD(template_work_program, data_work_program, end_folder)
