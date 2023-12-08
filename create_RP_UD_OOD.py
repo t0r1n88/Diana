@@ -593,7 +593,7 @@ if __name__ == '__main__':
 
     template_work_program = 'data/Шаблон автозаполнения ООД 08_09_23.docx'
     # data_work_program = 'data/ПРИМЕР заполнения таблицы  ООД 13_09.xlsx'
-    data_work_program = 'data/ПРИМЕР заполнения таблицы  ООД 16_11.xlsx'
+    data_work_program = 'data/ПРИМЕР заполнения таблицы РП ООД 16_11.xlsx'
     end_folder = 'data'
 
 

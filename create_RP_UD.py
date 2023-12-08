@@ -756,7 +756,7 @@ if __name__=='__main__':
     # data_work_program = 'data/Автозаполнение РП.xlsx'
     # data_work_program = 'data/ПРИМЕР заполнения таблицы  РП 13_09.xlsx'
     data_work_program = 'data/ПРИМЕР заполнения таблицы  РП УД 16_11.xlsx'
-    data_work_program = 'data/Копия 17_основы техн Черчение.xlsx'
+    # data_work_program = 'data/Копия 17_основы техн Черчение.xlsx'
     end_folder = 'data'
 
     create_RP_for_UD(template_work_program, data_work_program, end_folder)
