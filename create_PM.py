@@ -326,7 +326,6 @@ def extract_data_mdk(data_pm,sheet_name):
         else:
             count += 1
             main_df.iloc[idx, 0] = count
-
     # очищаем от пустых символов и строки Пусто
     main_df['Курс_семестр'] = main_df['Курс_семестр'].fillna('Пусто')
     main_df['Раздел'] = main_df['Раздел'].fillna('Пусто')
@@ -343,6 +342,7 @@ def extract_data_mdk(data_pm,sheet_name):
     main_df['Прак_подготовка'] = main_df['Прак_подготовка'].fillna(0)
     main_df['Прак_подготовка'] = main_df['Прак_подготовка'].astype(int, errors='ignore')
     main_df['Прак_подготовка'] = main_df['Прак_подготовка'].apply(lambda x: '' if x == 0 else x)
+
 
     main_df['СРС'] = main_df['СРС'].fillna(0)
     main_df['СРС'] = main_df['СРС'].astype(int, errors='ignore')
@@ -491,7 +491,6 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
         dct_mdk_df ={mdk:value['Данные'] for mdk,value in _dct_mdk_df.items()} # создаем словарь извлекая датафрейм
         _dct_mdk_data ={mdk:value['Итог'] for mdk,value in _dct_mdk_df.items()} # создаем словарь извлекая словарь с данными
         _dct_mdk_part_data ={mdk:value['По частям'] for mdk,value in _dct_mdk_df.items()} # создаем словарь извлекая словарь с данными по семестрам
-
         dct_mdk_data = dict() # считаем общую сумму
         for name,dct in _dct_mdk_data.items():
             for key,value in dct.items():
