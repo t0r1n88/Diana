@@ -299,7 +299,7 @@ def processing_create_RP_for_PP_prac():
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('Диана Создание рабочих программ ver 2.5')
+    window.title('Диана Создание рабочих программ ver 2.6')
     window.geometry('800x760')
     window.resizable(False, False)
 

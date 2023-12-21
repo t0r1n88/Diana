@@ -21,6 +21,14 @@ warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 warnings.filterwarnings('ignore', category=FutureWarning, module='openpyxl')
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
+
+class PartWord(Exception):
+    """
+    Исключение для случая когда не пишут раздел на листе производственной практики
+    """
+    pass
+
+
 class ControlWord_PM(Exception):
     """
     Исключение для случая когда на листе Контроль шаблона ПМ пропущены слова Умения: ,Знания:, Практический опыт:
@@ -175,147 +183,6 @@ def sum_column_any_value(df:pd.DataFrame,name_column:str):
     sum_value = [value for value in lst_value if isinstance(value,(int,float))] # отбираем только числа
     return sum(sum_value) # возвращаем сумму
 
-def extract_data_mdk(data_pm,sheet_name):
-    """
-    Функция для получения датафрейма из листа файла
-    :param data_pm: путь к файлу
-    :param sheet_name: имя листа
-    :return: датафрейм
-    """
-    lst_type_lesson = ['урок', 'практическое занятие', 'лабораторное занятие',
-                       'курсовая работа (КП)']  # список типов занятий
-    dct_all_sum_result = {key: 0 for key in lst_type_lesson}  # создаем словарь для подсчета значений
-
-
-
-    df_plan_pm = pd.read_excel(data_pm,sheet_name=sheet_name,skiprows=1, usecols='A:H')
-    df_plan_pm.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-
-    df_plan_pm.columns = ['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Практика', 'Вид_занятия',
-                          'СРС']
-    df_plan_pm['Курс_семестр'].fillna('Пусто', inplace=True)
-    df_plan_pm['Раздел'].fillna('Пусто', inplace=True)
-    df_plan_pm['Тема'].fillna('Пусто', inplace=True)
-
-    # Считаем общие суммы
-    mdk_all_sum = int(sum_column_any_value(df_plan_pm, 'Количество_часов'))  # получаем сумму общие часы
-    mdk_all_prac_sum = int(sum_column_any_value(df_plan_pm, 'Практика'))  # получаем сумму общие часы
-    mdk_all_srs_sum = int(sum_column_any_value(df_plan_pm, 'СРС'))  # сумма срс
-    for type_lesson in lst_type_lesson:
-        _df = df_plan_pm[df_plan_pm['Вид_занятия'] == type_lesson]  # фильтруем датафрейм
-        dct_all_sum_result[type_lesson] = int(sum_column_any_value(_df, 'Количество_часов'))  # получаем значение
-
-    dct_all_sum_result['Всего часов'] = mdk_all_sum
-    dct_all_sum_result['Всего практики'] = mdk_all_prac_sum
-    dct_all_sum_result['Всего СРС'] = mdk_all_srs_sum
-
-
-    borders = df_plan_pm[
-        df_plan_pm['Курс_семестр'].str.contains('семестр')].index  # получаем индексы строк где есть слово семестр
-
-    part_df = []  # список для хранения кусков датафрейма
-    previos_border = -1
-    # делим датафрем по границам
-    for value_border in borders:
-        part = df_plan_pm.iloc[previos_border:value_border]
-        part_df.append(part)
-        previos_border = value_border
-
-    # добавляем последнюю часть
-    last_part = df_plan_pm.iloc[borders[-1]:]
-    part_df.append(last_part)
-
-    part_df.pop(0)  # удаляем нулевой элемент так как он пустой
-
-    main_df = pd.DataFrame(
-        columns=['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Практика', 'Вид_занятия',
-                 'СРС'])  # создаем базовый датафрейм
-
-    for df in part_df:
-        dct_sum_result = {key: 0 for key in lst_type_lesson}  # создаем словарь для подсчета значений
-        for type_lesson in lst_type_lesson:
-            _df = df[df['Вид_занятия'] == type_lesson]  # фильтруем датафрейм
-            _df['Количество_часов'].fillna(0, inplace=True)
-            _df['Количество_часов'] = _df['Количество_часов'].astype(int)
-            dct_sum_result[type_lesson] = _df['Количество_часов'].sum()
-        # создаем строку с описанием
-        margint_text = 'Итого часов за семестр:\nиз них\nтеория\nпрактические занятия\nлабораторные занятия\nкурсовая работа (КП)'
-
-
-        all_hours = sum(dct_sum_result.values())  # общая сумма часов
-
-        theory_hours = dct_sum_result['урок']  # часы теории
-        praktice_hours = dct_sum_result['практическое занятие']  # часы практики
-        lab_hours = dct_sum_result['лабораторное занятие']  # часы лабораторных
-        kurs_hours = dct_sum_result['курсовая работа (КП)']  # часы курсовых
-
-        value_text = f'{all_hours}\n \n{theory_hours}\n{praktice_hours}\n{lab_hours}\n{kurs_hours}'  # строка со значениями
-        temp_df = pd.DataFrame([{'Тема': margint_text, 'Количество_часов': value_text}])
-        df = pd.concat([df, temp_df], ignore_index=True)  # добаляем итоговую строку
-        main_df = pd.concat([main_df, df], ignore_index=True)  # добавляем в основной датафрейм
-
-    main_df.insert(0, 'Номер', np.nan)  # добавляем колонку с номерами занятий
-
-    main_df['Содержание'] = main_df['Содержание'].fillna('Пусто')  # заменяем наны на пусто
-
-    count = 0  # счетчик
-    for idx, row in enumerate(main_df.itertuples()):
-        if (row[5] == 'Пусто') | ('Итого часов' in row[5]):
-            main_df.iloc[idx, 0] = ''
-        else:
-            count += 1
-            main_df.iloc[idx, 0] = count
-
-    # очищаем от пустых символов и строки Пусто
-    main_df['Курс_семестр'] = main_df['Курс_семестр'].fillna('Пусто')
-    main_df['Раздел'] = main_df['Раздел'].fillna('Пусто')
-
-    main_df['Курс_семестр'] = main_df['Курс_семестр'].replace('Пусто', '')
-    main_df['Тема'] = main_df['Тема'].replace('Пусто', '')
-    main_df['Раздел'] = main_df['Раздел'].replace('Пусто', '')
-    main_df['Содержание'] = main_df['Содержание'].replace('Пусто', '')
-
-    main_df['Вид_занятия'] = main_df['Вид_занятия'].fillna('')
-
-    main_df['Количество_часов'] = main_df['Количество_часов'].apply(convert_to_int)
-    main_df['Количество_часов'] = main_df['Количество_часов'].fillna('')
-    main_df['Практика'] = main_df['Практика'].fillna(0)
-    main_df['Практика'] = main_df['Практика'].astype(int, errors='ignore')
-    main_df['Практика'] = main_df['Практика'].apply(lambda x: '' if x == 0 else x)
-
-    main_df['СРС'] = main_df['СРС'].fillna(0)
-    main_df['СРС'] = main_df['СРС'].astype(int, errors='ignore')
-    main_df['СРС'] = main_df['СРС'].apply(lambda x: '' if x == 0 else x)
-    main_df['Содержание'] = main_df['Курс_семестр'] + main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
-    main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
-
-    return (main_df,dct_all_sum_result) # возвращаем кортеж
-
-
-
-
-def processing_mdk(data_pm) -> dict:
-    """
-    Функция для обработки листов с названием МДК
-    :param data_pm: путь к файлу
-    :return: список датафреймов
-    """
-    # Получаем список листов
-
-    dct_mdk = dict()
-    wb = openpyxl.load_workbook(data_pm,read_only=True) # получаем названия листов содержащих МДК
-    for sheet_name in wb.sheetnames:
-        if 'МДК' in sheet_name:
-            name_mdk = str(wb[sheet_name]['D1'].value) # получаем название МДК, делаем строковыми на случай нан
-            if 'МДК' in name_mdk:
-                temp_mdk_df,temp_dct_result = extract_data_mdk(data_pm,sheet_name) # извлекаем данные из датафрейма
-                dct_mdk[name_mdk] = {'Итог':temp_dct_result,'Данные':temp_mdk_df}
-    wb.close()
-    return dct_mdk
-
-
-
-
 
 def create_rp_pp(template_pm: str, data_pm: str, end_folder: str):
     """
@@ -377,74 +244,6 @@ def create_rp_pp(template_pm: str, data_pm: str, end_folder: str):
         df_volume_pm.set_index('Наименование',inplace=True) # делаем индексом первую колонку
         _dct_df_volume_pm = df_volume_pm.to_dict('dict') # превращаем в словарь
         dct_df_volume_pm = _dct_df_volume_pm['Объем']
-
-        """
-            Обрабатываем лист Объем МДК
-            """
-        df_volume_all_mdk = pd.read_excel(data_pm,sheet_name=volume_all_mdk,usecols='A:J')
-        df_volume_all_mdk.columns = ['Наименование','Всего','Прак_под','Обяз','Прак_зан','КР','СРС','УП','ПП','КА']
-        df_volume_all_mdk.dropna(inplace=True,thresh=1) # удаляем пустые строки
-        df_volume_all_mdk.fillna(0,inplace=True)  # заполняем наны
-        df_volume_all_mdk.iloc[:,1:] = df_volume_all_mdk.iloc[:,1:].applymap(lambda x: int(x) if isinstance(x,(int,float)) else 0) # приводим к инту
-        sum_row = df_volume_all_mdk.sum() # получаем строку общей суммы
-        df_volume_all_mdk.loc['Сумма'] = sum_row # добавляем строку в датафрейм
-        df_volume_all_mdk.at['Сумма','Наименование'] = 'Итого'
-        df_volume_all_mdk = df_volume_all_mdk.astype(int,errors='ignore') # делай интовыми
-        df_volume_all_mdk = df_volume_all_mdk.applymap(lambda x:'' if x ==0 else x)
-
-        # # Открываем файл
-        # wb = openpyxl.load_workbook(data_pm, read_only=True)
-        # target_value = 'итог'
-        #
-        # # Поиск значения в выбранном столбце
-        # column_number = 1  # Номер столбца, в котором ищем значение (например, столбец A)
-        # target_row = None  # Номер строки с искомым значением
-        #
-        # for row in wb['Объем УД'].iter_rows(min_row=1, min_col=column_number, max_col=column_number):
-        #     cell_value = row[0].value
-        #     if target_value in str(cell_value).lower():
-        #         target_row = row[0].row
-        #         break
-        #
-        # if not target_row:
-        #     # если не находим строку в которой есть слово итог то выдаем исключение
-        #     messagebox.showerror('Диана Создание рабочих программ',
-        #                          'Не найдена строка с названием Итоговая аттестация в листе Объем УД')
-        #
-        # wb.close()  # закрываем файл
-        #
-        # # если значение найдено то считываем нужное количество строк и  7 колонок
-        # df_structure = pd.read_excel(data_pm, sheet_name=structure, nrows=target_row,
-        #                              usecols='A:C', dtype=str)
-        #
-        # df_structure.iloc[:-1, 1:3] = df_structure.iloc[:-1, 1:3].applymap(convert_to_int)
-        # df_structure.columns = ['Вид', 'Всего', 'Практика']
-        # df_structure.fillna('', inplace=True)
-        # max_load = df_structure.loc[0, 'Всего']  # максимальная учебная нагрузка
-        # mand_load = df_structure.loc[1, 'Всего']  # обязательная нагрузка
-        # practice_load = df_structure.loc[1, 'Практика']  # практическая нагрузка
-        #
-        # sam_df = df_structure[
-        #     df_structure['Вид'] == 'Самостоятельная работа обучающегося (всего)']  # получаем часы самостоятельной работы
-        # if len(sam_df) == 0:
-        #     messagebox.showerror('Диана Создание рабочих программ',
-        #                          'Проверьте наличие строки Самостоятельная работа обучающегося (всего) в листе Объем УД')
-        # sam_load = sam_df.iloc[0, 1]
-
-        """
-            Обрабатываем листы с МДК
-            """
-
-        _dct_mdk_df = processing_mdk(data_pm) # получам словарь где ключ это название МДК а значение это словарь с данными и итогами по подсчету этих данных
-        dct_mdk_df ={mdk:value['Данные'] for mdk,value in _dct_mdk_df.items()} # создаем словарь извлекая датафрейм
-        _dct_mdk_data ={mdk:value['Итог'] for mdk,value in _dct_mdk_df.items()} # создаем словарь извлекая словарь с данными
-        dct_mdk_data = dict() # считаем общую сумму
-        for name,dct in _dct_mdk_data.items():
-            for key,value in dct.items():
-                if key not in dct_mdk_data:
-                    dct_mdk_data[key] = value
-                else:
-                    dct_mdk_data[key] += value
 
         """Обрабатываем лист ПК
                """
@@ -509,56 +308,6 @@ def create_rp_pp(template_pm: str, data_pm: str, end_folder: str):
         lst_kp = processing_punctuation_end_string(lst_kp, ';\n', '- ', '.')  # форматируем выходную строку
 
         """
-            Обрабатываем лист УП (Учебная практика)
-            """
-        df_up = pd.read_excel(data_pm, sheet_name=up, usecols='A:D')
-        df_up.columns = ['Вид','Содержание','Объем','Прак_под']
-        df_up.fillna(0,inplace=True)
-        df_up = df_up.applymap(lambda x:int(x) if isinstance(x,float) else x)
-        df_up = df_up.applymap(lambda x: '' if x ==0 else x)
-
-        # делим датафрейм по разделам
-        borders = df_up[
-            df_up['Вид'].str.contains('Раздел')].index  # получаем индексы строк где есть слово семестр
-
-        part_df_up = []  # список для хранения кусков датафрейма
-        previos_border = -1
-        # делим датафрем по границам
-        for value_border in borders:
-            part = df_up.iloc[previos_border:value_border]
-            part_df_up.append(part)
-            previos_border = value_border
-
-        # добавляем последнюю часть
-        last_part = df_up.iloc[borders[-1]:]
-        part_df_up.append(last_part)
-        part_df_up.pop(0)  # удаляем нулевой элемент так как он пустой
-        df_up_short = pd.DataFrame(columns=['Вид','Объем','Прак_под']) # короткий датафрейм для объема
-        df_up_content = pd.DataFrame(columns=['Вид','Содержание','Объем']) # короткий датафрейм для содержания
-        for df in part_df_up:
-            name_part = [value.strip() for value in df['Вид'].tolist() if 'Раздел' in value][0] # получаем название раздела
-            volume_part = int(sum_column_any_value(df,'Объем'))
-            prac_volume_part = int(sum_column_any_value(df,'Прак_под'))
-            temp_df = pd.DataFrame(columns=['Вид','Объем','Прак_под'],
-                                   data=[[name_part,volume_part,prac_volume_part]])
-            df_up_short = pd.concat([df_up_short,temp_df],axis=0,ignore_index=True)
-
-            # Суммируем
-            content_temp_df = df[['Вид','Содержание','Объем']].copy()
-            content_temp_df.loc['Итого'] = int(sum_column_any_value(content_temp_df,'Объем'))
-            # убираем лишние цифры
-            content_temp_df.at['Итого','Вид'] = ''
-            content_temp_df.at['Итого','Содержание'] = 'Итого'
-            df_up_content = pd.concat([df_up_content,content_temp_df],ignore_index=True,axis=0)
-
-        sum_volume_up = sum_column_any_value(df_up,'Объем')
-        sum_practice_up = sum_column_any_value(df_up,'Прак_под')
-
-        theme_up_df = (df_up['Вид'] + df_up['Содержание']).to_frame()
-        lst_theme_up = theme_up_df.iloc[:,0].dropna().tolist()
-        lst_theme_up = processing_punctuation_end_string(lst_theme_up, ';\n', '- ', '.')  # форматируем выходную строку
-
-        """
             Обрабатываем лист ПП (Производственная практика)
             """
         df_pp = pd.read_excel(data_pm, sheet_name=pp, usecols='A:D')
@@ -570,6 +319,9 @@ def create_rp_pp(template_pm: str, data_pm: str, end_folder: str):
         # делим датафрейм по разделам
         borders = df_pp[
             df_pp['Вид'].str.contains('Раздел')].index  # получаем индексы строк где есть слово семестр
+
+        if len(borders) == 0:
+            raise PartWord
 
         part_df_pp = []  # список для хранения кусков датафрейма
         previos_border = -1
@@ -730,8 +482,6 @@ def create_rp_pp(template_pm: str, data_pm: str, end_folder: str):
         context['Уметь'] = lst_skill
         context['Прак_опыт'] = lst_prac_exp
 
-        # Объем МДК
-        context['Объем_МДК'] = df_volume_all_mdk.to_dict('records')
 
         # добавляем единичные переменные
         context['Всего'] = dct_df_volume_pm['Всего часов']
@@ -743,8 +493,6 @@ def create_rp_pp(template_pm: str, data_pm: str, end_folder: str):
         context['Консул'] = dct_df_volume_pm['консультации']
         context['Пром_атт'] = dct_df_volume_pm['промежуточная аттестация']
         context['Экзамен_квал'] = dct_df_volume_pm['экзамен (квалификационный)']
-        context['Объем_УП'] = sum_volume_up # берем значения из соответсвующего листа
-        context['Объем_УП_прак_под'] = sum_practice_up
         context['Объем_ПП'] = sum_volume_pp
         context['Объем_ПП_прак_под'] = sum_practice_pp
         context['Атт_УП'] = dct_df_volume_pm['итоговая аттестация УП в форме']
@@ -753,11 +501,8 @@ def create_rp_pp(template_pm: str, data_pm: str, end_folder: str):
 
         context['Темы_КР'] = lst_kp # список тем курсовых работ
         #
-        context['Темы_УП'] = lst_theme_up
         context['Темы_ПП'] = lst_theme_pp
 
-        context['УП_разд_объем'] = df_up_short.to_dict('records') # делаем таблицу УП
-        context['УП_содер_объем'] = df_up_content.to_dict('records') # делаем таблицу УП
 
         context['ПП_разд_объем'] = df_pp_short.to_dict('records') # делаем таблицу УП
         context['ПП_содер_объем'] = df_pp_content.to_dict('records') # делаем таблицу УП
@@ -793,17 +538,8 @@ def create_rp_pp(template_pm: str, data_pm: str, end_folder: str):
         context['ФГОС_з_номер'] = df_fgos.at[1,'Номер документа']
         context['Прог_з_номер'] = df_fgos.at[2,'Номер документа']
 
-        for idx,tpl_dct in enumerate(dct_mdk_df.items(),start=1):
-            key,value = tpl_dct # распаковываем кортеж
-            # делаем переменные для названий МДК
-            name_var = f'МДК_{idx}'
-            context[name_var] = key
-            # создаем переменные датафреймов
-            name_mdk_table = f'План_МДК_{idx}'
-            context[name_mdk_table] = value.to_dict('records')
         # Создаем документ
         doc.render(context)
-        # сохраняем документ
         # название программы
         name_rp = df_desc_rp['Название_модуля'].tolist()[0]
         # name_rp = 'Тест'
@@ -820,6 +556,10 @@ def create_rp_pp(template_pm: str, data_pm: str, end_folder: str):
                              'На листе Контроль в первой колонке должно быть указаны слова\n'
                              'Умения: , Знания: , Практический опыт:\n'
                              'Посмотрите пример в исходном шаблоне')
+    except PartWord:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'На листе ПП (производственная практика) в колонке Виды работ (разделы практики)\nНеправильно оформлены названия разделов.'
+                             f'\nКаждый раздел практики должен начинаться словом Раздел')
     except KeyError as e:
         messagebox.showerror('Диана Создание рабочих программ',
                              f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
@@ -847,7 +587,7 @@ def create_rp_pp(template_pm: str, data_pm: str, end_folder: str):
 
 if __name__ == '__main__':
     template_pm_main = 'data/Шаблон автозаполнения ПП.docx'
-    data_pm_main = 'data/Таблица для ПМ,УП,ПП.xlsx'
+    data_pm_main = 'data/Пример заполнения таблицы для ПМ,УП,ПП.xlsx'
 
     end_folder_main = 'data'
 
