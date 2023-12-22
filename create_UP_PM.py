@@ -68,6 +68,8 @@ def extract_lr(cell):
         end_lr = result[1].strip()
         end_lr = end_lr.rstrip(string.punctuation)  # очищаем от точки в конце
         return f'{result[0]}{end_lr}'
+    elif len(result) == 0:
+        return ''
     else:
         lr = result[0].strip()
         lr = lr.rstrip(string.punctuation)

@@ -101,6 +101,7 @@ def extract_lr(cell):
     :param df: датафрем из одной колонки
     :return:
     """
+
     value = str(cell)  # делаем строковй
     result = re.split(r'(\d+\.\s*?)', value)
     result = [value for value in result if value]  # убираем пустые значения
@@ -108,6 +109,8 @@ def extract_lr(cell):
         end_lr = result[1].strip()
         end_lr = end_lr.rstrip(string.punctuation)  # очищаем от точки в конце
         return f'{result[0]}{end_lr}'
+    elif len(result) == 0:
+        return ''
     else:
         lr = result[0].strip()
         lr = lr.rstrip(string.punctuation)
@@ -840,6 +843,7 @@ if __name__ == '__main__':
     template_pm_main = 'data/Шаблон автозаполнения ПМ.docx'
     # data_pm_main = 'data/Таблица для ПМ,УП,ПП.xlsx'
     data_pm_main = 'data/Пример заполнения таблицы для ПМ,УП,ПП.xlsx'
+    data_pm_main = 'data/Копия ППВ ПМ 02.xlsx'
     end_folder_main = 'data'
 
     create_pm(template_pm_main, data_pm_main, end_folder_main)
