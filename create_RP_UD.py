@@ -707,6 +707,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
         # сохраняем документ
         # название программы
         name_rp = df_desc_rp['Название_дисциплины'].tolist()[0]
+        name_rp = re.sub(r'[\r\b\n\t<> :"?*|\\/]', '_', name_rp)  # очищаем от некорректных символов
         t = time.localtime()
         current_time = time.strftime('%H_%M_%S', t)
         doc.save(f'{end_folder}/РП {name_rp[:40]} {current_time}.docx')

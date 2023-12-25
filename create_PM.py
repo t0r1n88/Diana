@@ -786,6 +786,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
         # сохраняем документ
         # название программы
         name_rp = df_desc_rp['Название_модуля'].tolist()[0]
+        name_rp = re.sub(r'[\r\b\n\t<> :"?*|\\/]', '_', name_rp) #очищаем от некорректных символов
         t = time.localtime()
         current_time = time.strftime('%H_%M_%S', t)
         doc.save(f'{end_folder}/РП Профмодуль {name_rp[:40]} {current_time}.docx')
@@ -841,9 +842,8 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
 
 if __name__ == '__main__':
     template_pm_main = 'data/Шаблон автозаполнения ПМ.docx'
-    # data_pm_main = 'data/Таблица для ПМ,УП,ПП.xlsx'
     data_pm_main = 'data/Пример заполнения таблицы для ПМ,УП,ПП.xlsx'
-    data_pm_main = 'data/Копия ППВ ПМ 02.xlsx'
+    # data_pm_main = 'data/Копия СТ ПМ 03 2.xlsx'
     end_folder_main = 'data'
 
     create_pm(template_pm_main, data_pm_main, end_folder_main)

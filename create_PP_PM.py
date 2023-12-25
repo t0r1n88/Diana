@@ -544,7 +544,7 @@ def create_rp_pp(template_pm: str, data_pm: str, end_folder: str):
         doc.render(context)
         # название программы
         name_rp = df_desc_rp['Название_модуля'].tolist()[0]
-        # name_rp = 'Тест'
+        name_rp = re.sub(r'[\r\b\n\t<> :"?*|\\/]', '_', name_rp)  # очищаем от некорректных символов
         t = time.localtime()
         current_time = time.strftime('%H_%M_%S', t)
         doc.save(f'{end_folder}/РП Производственная практика {name_rp[:40]} {current_time}.docx')

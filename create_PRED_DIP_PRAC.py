@@ -529,6 +529,7 @@ def create_pred_dip_prac(template_pm: str, data_pred_prac: str, end_folder: str)
         # сохраняем документ
         # название программы
         name_rp = df_desc_rp['Код_специальность_профессия'].tolist()[0]
+        name_rp = re.sub(r'[\r\b\n\t<> :"?*|\\/]', '_', name_rp)  # очищаем от некорректных символов
         t = time.localtime()
         current_time = time.strftime('%H_%M_%S', t)
         doc.save(f'{end_folder}/РП Преддипломная практика {name_rp[:40]} {current_time}.docx')
