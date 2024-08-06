@@ -69,7 +69,7 @@ def create_report_teacher(data_folder: str, result_folder: str):
     for idx, file in enumerate(os.listdir(data_folder)):
         if not file.startswith('~$') and file.endswith('.xlsx'):
             name_file = file.split('.xlsx')[0]  # Получаем название файла
-            # загружаем файл чтобы получить названия листов
+            # загружаем файл, чтобы получить названия листов
             check_sheets_wb = openpyxl.load_workbook(f'{data_folder}/{file}', read_only=True)
             file_sheets = check_sheets_wb.sheetnames  # получаем названия листов
             check_sheets_wb.close()  # закрываем файл
