@@ -16,7 +16,6 @@ from jinja2 import exceptions
 
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.set_option('display.max_columns', None)  # Отображать все столбцы
-pd.set_option('display.expand_frame_repr', False)  # Не переносить строки
 import warnings
 
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -74,6 +73,29 @@ def check_required_columns_in_sheet(path_to_checked_file: str, func_required_she
         return check_error_req_columns_df
 
 
+def add_sheet_general_inf(path_to_file:str,name_sheet:str,lst_columns:list,func_general_inf_df:pd.DataFrame):
+    """"""
+    func_df = pd.read_excel(path_to_file,sheet_name=name_sheet,usecols=lst_columns)
+    func_df.dropna(how='all',inplace=True) # удаляем пустые строки
+    # очищаем от пробельных символов в начале и конце каждой ячейки
+    func_df = func_df.applymap(lambda x:x.strip() if isinstance(x,str) else x)
+    dis_lst = func_df['Преподаваемая дисциплина'].tolist() # список дисциплин преподавателя
+    # список полученных дипломов об образовании
+    educ_lst = func_df['Сведения об образовании (образовательное учреждение, квалификация, год окончания)'].tolist()
+    func_df = func_df.iloc[0,:].to_frame().transpose()
+    func_df.loc[0,'Преподаваемая дисциплина'] = ';'.join(dis_lst) # превращаем в строку список дисциплин
+    func_df.loc[0,'Сведения об образовании (образовательное учреждение, квалификация, год окончания)'] = ';'.join(educ_lst) # превращаем в строку список дисциплин
+
+    # добавляем в общий датафрейм
+    func_general_inf_df = pd.concat([func_general_inf_df,func_df])
+    return func_general_inf_df
+
+
+
+
+
+
+
 def create_report_teacher(data_folder: str, result_folder: str):
     """
     Функция для создания отчетности по преподавателям
@@ -115,6 +137,19 @@ def create_report_teacher(data_folder: str, result_folder: str):
     error_df = pd.DataFrame(
         columns=['Название файла', 'Название листа', 'Описание ошибки'])  # датафрейм для ошибок
 
+    # Создаем датафреймы для консолидации данных
+    general_inf_df = pd.DataFrame(columns=required_sheets_columns['Общие сведения'])
+    skills_dev_df = pd.DataFrame(columns=required_sheets_columns['Повышение квалификации'])
+    internship_df = pd.DataFrame(columns=required_sheets_columns['Стажировка'])
+    method_dev_df = pd.DataFrame(columns=required_sheets_columns['Методические разработки'])
+    events_teacher_df = pd.DataFrame(columns=required_sheets_columns['Мероприятия, пров. ППС'])
+    personal_perf_df = pd.DataFrame(columns=required_sheets_columns['Личное выступление ППС'])
+    publications_df = pd.DataFrame(columns=required_sheets_columns['Публикации'])
+    open_lessons_df = pd.DataFrame(columns=required_sheets_columns['Открытые уроки'])
+    mutual_visits_df = pd.DataFrame(columns=required_sheets_columns['Взаимопосещение'])
+    student_perf_df = pd.DataFrame(columns=required_sheets_columns['УИРС'])
+    nmr_df = pd.DataFrame(columns=required_sheets_columns['Работа по НМР'])
+
     for idx, file in enumerate(os.listdir(data_folder)):
         if not file.startswith('~$') and file.endswith('.xlsx'):
             name_file = file.split('.xlsx')[0]  # Получаем название файла
@@ -130,6 +165,9 @@ def create_report_teacher(data_folder: str, result_folder: str):
             if error_req_columns_sheet_df is not None:
                 error_df = pd.concat([error_df, error_req_columns_sheet_df], axis=0, ignore_index=True)
                 continue
+
+            # Добавляем данные в датафреймы
+            general_inf_df = add_sheet_general_inf(path_to_file,'Общие сведения',required_sheets_columns['Общие сведения'],general_inf_df)
 
     # генерируем текущее время
     t = time.localtime()
