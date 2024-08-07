@@ -277,11 +277,28 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
             publications_df, error_df = selection_by_date(prep_publications_df, start_date, end_date, 'Дата выпуска',
                                                            name_file, 'Публикации', publications_df,
                                                            error_df)
-
+            # Обрабатываем лис Открытые уроки
             prep_open_lessons_df = prepare_sheet_standart(path_to_file, 'Открытые уроки', required_sheets_columns['Открытые уроки'])
+            open_lessons_df, error_df = selection_by_date(prep_open_lessons_df, start_date, end_date, 'Дата проведения',
+                                                          name_file, 'Открытые уроки', open_lessons_df,
+                                                          error_df)
+            # Обрабатываем лист Взаимопосещение
             prep_mutual_visits_df = prepare_sheet_standart(path_to_file, 'Взаимопосещение', required_sheets_columns['Взаимопосещение'])
+            mutual_visits_df, error_df = selection_by_date(prep_mutual_visits_df, start_date, end_date, 'Дата посещения',
+                                                          name_file, 'Взаимопосещение', mutual_visits_df,
+                                                          error_df)
+            # Обрабатываем лист УИРС
             prep_student_perf_df = prepare_sheet_standart(path_to_file, 'УИРС', required_sheets_columns['УИРС'])
+            student_perf_df, error_df = selection_by_date(prep_student_perf_df, start_date, end_date,
+                                                           'Дата проведения',
+                                                           name_file, 'УИРС', student_perf_df,
+                                                           error_df)
+            # Обрабатываем лист Работа по НМР
             prep_nmr_df = prepare_sheet_standart(path_to_file, 'Работа по НМР', required_sheets_columns['Работа по НМР'])
+            nmr_df, error_df = selection_by_date(prep_nmr_df, start_date, end_date,
+                                                          'Дата обобщения опыта',
+                                                          name_file, 'Работа по НМР', nmr_df,
+                                                          error_df)
 
     # # Проводим отбор строк по датам
     # skills_dev_df,error_df = selection_by_date(skills_dev_df,start_date,end_date,'Дата прохождения программы (с какого по какое число, месяц, год)',
