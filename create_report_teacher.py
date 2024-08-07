@@ -25,6 +25,55 @@ warnings.filterwarnings('ignore', category=FutureWarning, module='openpyxl')
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
+def check_required_sheet_in_file(path_to_checked_file: str, func_required_sheets_columns: dict, func_name_file: str):
+    """
+    Функция для проверки наличия обязательных листов в файле
+    :param path_to_checked_file: путь к проверяемому файлу
+    :param func_required_sheets_columns: словарь с данными для проверки формата {Лист:[Список обязательных колонок}
+    :param func_name_file:  имя проверяемого файла
+    :return: датафрейм с найденными ошибками
+    """
+    # загружаем файл, чтобы получить названия листов
+    check_sheets_wb = openpyxl.load_workbook(path_to_checked_file, read_only=True)
+    file_sheets = check_sheets_wb.sheetnames  # получаем названия листов
+    check_sheets_wb.close()  # закрываем файл
+    # проверяем наличие нужных листов
+    diff_sheets = set(func_required_sheets_columns.keys()).difference(set(file_sheets))
+    if len(diff_sheets) != 0:
+        # Записываем ошибку
+        temp_error_df = pd.DataFrame(data=[[f'{func_name_file}', ';'.join(diff_sheets),
+                                            'Не найдены указанные обязательные листы']],
+                                     columns=['Название файла', 'Название листа',
+                                              'Описание ошибки'])
+        return temp_error_df
+
+
+def check_required_columns_in_sheet(path_to_checked_file: str, func_required_sheets_columns: dict, func_name_file: str):
+    """
+    Функция для проверки наличия обязательных колонок на каждом листе в файле
+    :param path_to_checked_file: путь к проверяемому файлу
+    :param func_required_sheets_columns: словарь с данными для проверки формата {Лист:[Список обязательных колонок}
+    :param func_name_file:  имя проверяемого файла
+    :return: датафрейм с найденными ошибками
+    """
+    # датафрейм для сбора ошибок
+    check_error_req_columns_df = pd.DataFrame(columns=['Название файла', 'Название листа', 'Описание ошибки'])
+    for name_sheet, lst_req_cols in func_required_sheets_columns.items():
+        check_cols_df = pd.read_excel(path_to_checked_file, sheet_name=name_sheet)  # открываем файл
+        diff_cols = set(lst_req_cols).difference(set(check_cols_df.columns))  # ищем разницу в колонках
+        if len(diff_cols) != 0:
+            # Записываем ошибку
+            temp_error_df = pd.DataFrame(data=[[f'{func_name_file}', name_sheet,
+                                                f'На листе не найдены указанные обязательные колонки: {";".join(diff_cols)}']],
+                                         columns=['Название файла', 'Название листа',
+                                                  'Описание ошибки'])
+            check_error_req_columns_df = pd.concat([check_error_req_columns_df, temp_error_df], axis=0,
+                                                   ignore_index=True)
+
+    if len(check_error_req_columns_df) != 0:
+        return check_error_req_columns_df
+
+
 def create_report_teacher(data_folder: str, result_folder: str):
     """
     Функция для создания отчетности по преподавателям
@@ -69,27 +118,23 @@ def create_report_teacher(data_folder: str, result_folder: str):
     for idx, file in enumerate(os.listdir(data_folder)):
         if not file.startswith('~$') and file.endswith('.xlsx'):
             name_file = file.split('.xlsx')[0]  # Получаем название файла
-            # загружаем файл, чтобы получить названия листов
-            check_sheets_wb = openpyxl.load_workbook(f'{data_folder}/{file}', read_only=True)
-            file_sheets = check_sheets_wb.sheetnames  # получаем названия листов
-            check_sheets_wb.close()  # закрываем файл
-            # проверяем наличие нужных листов
-            diff_sheets = required_sheets_columns.difference(set(file_sheets))
-            if len(diff_sheets) != 0:
-                # Записываем ошибку
-                temp_error_df = pd.DataFrame(data=[[f'{name_file}', ';'.join(diff_sheets),
-                                                    'Не найдены указанные обязательные колонки']],
-                                             columns=['Название файла', 'Название листа',
-                                                      'Описание ошибки'])
-                error_df = pd.concat([error_df, temp_error_df], axis=0, ignore_index=True)
+            path_to_file = f'{data_folder}/{file}'
+            # Проверяем наличие нужных листов в файле
+            error_req_sheet_df = check_required_sheet_in_file(path_to_file, required_sheets_columns, name_file)
+            if error_req_sheet_df is not None:
+                error_df = pd.concat([error_df, error_req_sheet_df], axis=0, ignore_index=True)
                 continue
-            # Проверка листов
+            # Проверка наличия нужных колонок в листах
+            error_req_columns_sheet_df = check_required_columns_in_sheet(path_to_file, required_sheets_columns,
+                                                                         name_file)
+            if error_req_columns_sheet_df is not None:
+                error_df = pd.concat([error_df, error_req_columns_sheet_df], axis=0, ignore_index=True)
+                continue
 
-
-            # генерируем текущее время
-            t = time.localtime()
-            current_time = time.strftime('%H_%M_%S', t)
-            error_df.to_excel(f'{result_folder}/Ошибки {current_time}.xlsx', index=False)
+    # генерируем текущее время
+    t = time.localtime()
+    current_time = time.strftime('%H_%M_%S', t)
+    error_df.to_excel(f'{result_folder}/Ошибки {current_time}.xlsx', index=False)
 
 
 if __name__ == '__main__':
