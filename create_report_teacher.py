@@ -317,7 +317,7 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
 if __name__ == '__main__':
     main_data_folder = 'data/Данные'
     main_result_folder = 'data/Результат'
-    main_start_date = '06.06.2023'
+    main_start_date = '06.06.1900'
     main_end_date = '01.05.2100'
 
     create_report_teacher(main_data_folder, main_result_folder, main_start_date, main_end_date)
