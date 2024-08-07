@@ -117,15 +117,73 @@ def add_sheet_standart(path_to_file:str,name_sheet:str,lst_columns:list,union_sh
     return union_sheet_df
 
 
+def extract_last_date(value:str):
+    """
+    Функция для извлечения последней даты из ячейки
+    :param value:значение ячейки
+    :return: дата в виде строки или None
+    """
+    result_lst = re.findall(r'\d{2}.\d{2}.\d{4}',value)
+    if result_lst:
+        return result_lst[-1]
+    else:
+        return None
+
+def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_column,name_file:str,name_sheet:str,error_df:pd.DataFrame):
+    """
+    Функция для отбора тех строк датафрейма что подходят под выбранные даты
+    :param df: датафрейм с данными
+    :param start_date: стартовая дата в формате строки 01.01.2024
+    :param end_date: конечная дата в формате строки 17.12.2024
+    :param name_date_column: список названий колонок с датами
+    :param name_file:  название файла
+    :param name_sheet: название листа с ошибкой
+    :param error_df: общий датафрейм с ошибками
+    :return: отфильтрованный датафрейм
+    """
+    # конвертируем даты в формат дат
+    start_date = pd.to_datetime(start_date,dayfirst=True,format='mixed')
+    end_date = pd.to_datetime(end_date,dayfirst=True,format='mixed')
+    df[name_date_column] = df[name_date_column].astype(str) # приводим на всякий случай к строковому виду
+    df[name_date_column] = df[name_date_column].apply(extract_last_date)
+    date_error_df = df[df[name_date_column].isnull()] # отбираем строки с ошибками в датах
+    if len(date_error_df) != 0:
+        number_row_error = list(map(lambda x:str(x+2),date_error_df.index)) # получаем номера строк с ошибками прибавляя 2
+        temp_error_df = pd.DataFrame(data=[[f'{name_file}', name_sheet,
+                                            f'В колонке {name_date_column} в указанных строках неправильно записаны даты: {";".join(number_row_error)}. Требуемый формат: 21.05.2024'
+                                            f' или 05.06.2024-15.08.2024']],
+                                     columns=['Название файла', 'Название листа',
+                                              'Описание ошибки'])
+        error_df = pd.concat([error_df, temp_error_df], axis=0,
+                                               ignore_index=True)
+
+
+    df = df[df[name_date_column].notnull()] # отбираем строки с правильной датой
+    # конвертируем в дату
+    df[name_date_column] = pd.to_datetime(df[name_date_column],dayfirst=True,format='mixed')
+    df = df[df[name_date_column].between(start_date,end_date)] # получаем значения в указанном диапазоне
+    df[name_date_column] = df[name_date_column].apply(lambda x: x.strftime('%d.%m.%Y') if isinstance(x, pd.Timestamp) else x)
+
+    return df,error_df
 
 
 
 
-def create_report_teacher(data_folder: str, result_folder: str):
+
+
+
+
+
+
+
+
+def create_report_teacher(data_folder: str, result_folder: str,start_date:str,end_date:str):
     """
     Функция для создания отчетности по преподавателям
     :param data_folder: папка где хранятся личные дела преподавателей
     :param result_folder: папка в которую будут сохраняться итоговые файлы
+    :param start_date: начальная дата, если ничего не указано то 01.01.1900
+    :param end_date: конечная дата, если ничего не указано то 01.01.2100
     """
     # обязательные листы
     required_sheets_columns = {'Общие сведения': ['ФИО', 'Дата рождения', 'Дата начала работы в ПОО',
@@ -204,16 +262,27 @@ def create_report_teacher(data_folder: str, result_folder: str):
             student_perf_df = add_sheet_standart(path_to_file,'УИРС',required_sheets_columns['УИРС'],student_perf_df)
             nmr_df = add_sheet_standart(path_to_file,'Работа по НМР',required_sheets_columns['Работа по НМР'],nmr_df)
 
+    # Проводим отбор строк по датам
+    skills_dev_df,error_df = selection_by_date(skills_dev_df,start_date,end_date,'Дата прохождения программы (с какого по какое число, месяц, год)',
+                                               name_file,'Повышение квалификации',error_df)
+
+
+
+
     # генерируем текущее время
     t = time.localtime()
     current_time = time.strftime('%H_%M_%S', t)
+
+    # skills_dev_df.to_excel(f'{result_folder}/Повышение квалификации {current_time}.xlsx', index=False)
     error_df.to_excel(f'{result_folder}/Ошибки {current_time}.xlsx', index=False)
 
 
 if __name__ == '__main__':
     main_data_folder = 'data/Данные'
     main_result_folder = 'data/Результат'
+    main_start_date = '06.06.2023'
+    main_end_date = '01.05.2100'
 
-    create_report_teacher(main_data_folder, main_result_folder)
+    create_report_teacher(main_data_folder, main_result_folder, main_start_date, main_end_date)
 
     print('Lindy Booth')
