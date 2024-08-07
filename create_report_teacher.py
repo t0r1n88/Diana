@@ -1,6 +1,7 @@
 """
 Скрипт для создания отчетности по преподавателям
 """
+from support_function_for_diana import write_df_to_excel,del_sheet
 import pandas as pd
 import numpy as np
 import openpyxl
@@ -91,7 +92,6 @@ def prepare_sheet_general_inf(path_to_file:str, name_sheet:str, lst_columns:list
     func_df = func_df.iloc[0,:].to_frame().transpose()
     func_df.loc[0,'Преподаваемая дисциплина'] = ';'.join(dis_lst) # превращаем в строку список дисциплин
     func_df.loc[0,'Сведения об образовании (образовательное учреждение, квалификация, год окончания)'] = ';'.join(educ_lst) # превращаем в строку список дисциплин
-
     return func_df
 
 
@@ -141,7 +141,11 @@ def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_colu
     start_date = pd.to_datetime(start_date,dayfirst=True,format='mixed')
     end_date = pd.to_datetime(end_date,dayfirst=True,format='mixed')
     df[name_date_column] = df[name_date_column].astype(str) # приводим на всякий случай к строковому виду
+    if name_sheet == 'Мероприятия, пров. ППС':
+        print(df[name_date_column])
     df[name_date_column] = df[name_date_column].apply(extract_last_date)
+    if name_sheet == 'Мероприятия, пров. ППС':
+        print(df[name_date_column])
     date_error_df = df[df[name_date_column].isnull()] # отбираем строки с ошибками в датах
     if len(date_error_df) != 0:
         number_row_error = list(map(lambda x:str(x+2),date_error_df.index)) # получаем номера строк с ошибками прибавляя 2
@@ -239,7 +243,7 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
             if error_req_columns_sheet_df is not None:
                 error_df = pd.concat([error_df, error_req_columns_sheet_df], axis=0, ignore_index=True)
                 continue
-
+            print(name_file)
             # Обрабатываем лист Общие сведения
             prep_general_inf_df = prepare_sheet_general_inf(path_to_file, 'Общие сведения', required_sheets_columns['Общие сведения'])
             # Отбираем данные по датам
@@ -300,9 +304,6 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
                                                           name_file, 'Работа по НМР', nmr_df,
                                                           error_df)
 
-    # # Проводим отбор строк по датам
-    # skills_dev_df,error_df = selection_by_date(skills_dev_df,start_date,end_date,'Дата прохождения программы (с какого по какое число, месяц, год)',
-    #                                            name_file,'Повышение квалификации',error_df)
 
 
 
@@ -310,8 +311,22 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
     # генерируем текущее время
     t = time.localtime()
     current_time = time.strftime('%H_%M_%S', t)
-    # skills_dev_df.to_excel(f'{result_folder}/Повышение квалификации {current_time}.xlsx', index=False)
-    error_df.to_excel(f'{result_folder}/Ошибки {current_time}.xlsx', index=False)
+    # Сохраняем файл эксель с данными
+    # Словарь для передачи в функцию форматирования
+
+    dct_df = {'Общие сведения':general_inf_df,'Повышение квалификации':skills_dev_df,
+              'Стажировка':internship_df,'Методические разработки':method_dev_df,'Мероприятия, пров. ППС':events_teacher_df,
+              'Личное выступление ППС':personal_perf_df,'Публикации':publications_df,'Открытые уроки':open_lessons_df,
+              'Взаимопосещение':mutual_visits_df,'УИРС':student_perf_df,'Работа по НМР':nmr_df}
+    main_wb = write_df_to_excel(dct_df,write_index=False)
+    del_sheet(main_wb,['Sheet'])
+    main_wb.save(f'{result_folder}/Списки {current_time}.xlsx')
+
+
+    # Сохраняем файл с ошибками
+    error_wb = write_df_to_excel({'Ошибки':error_df},write_index=False)
+    del_sheet(error_wb,['Sheet'])
+    error_wb.save(f'{result_folder}/Ошибки {current_time}.xlsx')
 
 
 if __name__ == '__main__':
