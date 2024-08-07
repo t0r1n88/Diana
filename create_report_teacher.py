@@ -73,8 +73,15 @@ def check_required_columns_in_sheet(path_to_checked_file: str, func_required_she
         return check_error_req_columns_df
 
 
-def add_sheet_general_inf(path_to_file:str,name_sheet:str,lst_columns:list,func_general_inf_df:pd.DataFrame):
-    """"""
+def add_sheet_general_inf(path_to_file:str,name_sheet:str,lst_columns:list,union_sheet_df:pd.DataFrame):
+    """
+    Функция для извлечения данных из листа Общие сведения
+    :param path_to_file: путь к файлу
+    :param name_sheet: название листа
+    :param lst_columns: список колонок из которых будут извлекаться даннные
+    :param union_sheet_df: консолидирующий датафрейм
+    :return: консолидирующий датафрейм
+    """
     func_df = pd.read_excel(path_to_file,sheet_name=name_sheet,usecols=lst_columns)
     func_df.dropna(how='all',inplace=True) # удаляем пустые строки
     # очищаем от пробельных символов в начале и конце каждой ячейки
@@ -87,9 +94,27 @@ def add_sheet_general_inf(path_to_file:str,name_sheet:str,lst_columns:list,func_
     func_df.loc[0,'Сведения об образовании (образовательное учреждение, квалификация, год окончания)'] = ';'.join(educ_lst) # превращаем в строку список дисциплин
 
     # добавляем в общий датафрейм
-    func_general_inf_df = pd.concat([func_general_inf_df,func_df])
-    return func_general_inf_df
+    union_sheet_df = pd.concat([union_sheet_df,func_df])
+    return union_sheet_df
 
+
+def add_sheet_standart(path_to_file:str,name_sheet:str,lst_columns:list,union_sheet_df:pd.DataFrame):
+    """
+    Функция для извлечения данных из листа Повышение квалификации
+    :param path_to_file: путь к файлу
+    :param name_sheet: название листа
+    :param lst_columns: список колонок из которых будут извлекаться даннные
+    :param union_sheet_df: консолидирующий датафрейм
+    :return: консолидирующий датафрейм
+    """
+    func_df = pd.read_excel(path_to_file,sheet_name=name_sheet,usecols=lst_columns)
+    func_df.dropna(how='all',inplace=True) # удаляем пустые строки
+    # очищаем от пробельных символов в начале и конце каждой ячейки
+    func_df = func_df.applymap(lambda x:x.strip() if isinstance(x,str) else x)
+
+    # добавляем в общий датафрейм
+    union_sheet_df = pd.concat([union_sheet_df,func_df])
+    return union_sheet_df
 
 
 
@@ -168,6 +193,16 @@ def create_report_teacher(data_folder: str, result_folder: str):
 
             # Добавляем данные в датафреймы
             general_inf_df = add_sheet_general_inf(path_to_file,'Общие сведения',required_sheets_columns['Общие сведения'],general_inf_df)
+            skills_dev_df = add_sheet_standart(path_to_file,'Повышение квалификации',required_sheets_columns['Повышение квалификации'],skills_dev_df)
+            internship_df = add_sheet_standart(path_to_file,'Стажировка',required_sheets_columns['Стажировка'],internship_df)
+            method_dev_df = add_sheet_standart(path_to_file,'Методические разработки',required_sheets_columns['Методические разработки'],method_dev_df)
+            events_teacher_df = add_sheet_standart(path_to_file,'Мероприятия, пров. ППС',required_sheets_columns['Мероприятия, пров. ППС'],events_teacher_df)
+            personal_perf_df = add_sheet_standart(path_to_file,'Личное выступление ППС',required_sheets_columns['Личное выступление ППС'],personal_perf_df)
+            publications_df = add_sheet_standart(path_to_file,'Публикации',required_sheets_columns['Публикации'],publications_df)
+            open_lessons_df = add_sheet_standart(path_to_file,'Открытые уроки',required_sheets_columns['Открытые уроки'],open_lessons_df)
+            mutual_visits_df = add_sheet_standart(path_to_file,'Взаимопосещение',required_sheets_columns['Взаимопосещение'],mutual_visits_df)
+            student_perf_df = add_sheet_standart(path_to_file,'УИРС',required_sheets_columns['УИРС'],student_perf_df)
+            nmr_df = add_sheet_standart(path_to_file,'Работа по НМР',required_sheets_columns['Работа по НМР'],nmr_df)
 
     # генерируем текущее время
     t = time.localtime()
