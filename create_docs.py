@@ -390,13 +390,21 @@ def generate_docs(master_dct:dict,template_doc:str,result_folder:str):
         first_sheet_df[['Стаж','Педстаж']] = first_sheet_df[['Стаж','Педстаж']].applymap(lambda x: int(x) if isinstance(x,(int,float)) else x)
         first_sheet_df.fillna('',inplace=True)
 
-
-        context['Преподаватель'] = first_sheet_df.iloc[0,0]
+        context['Преподаватель'] = first_sheet_df.iloc[0,0] # ФИО преподавателя
         context['Общая_информация'] = first_sheet_df[['Дисциплина','Дата_рождения','Дата_ПОО','Стаж','Педстаж',
         'Категория','Приказ','Сайт']].to_dict('records')
         context['Образование'] = first_sheet_df[['Организация','Квалификация','Год_окончания']].to_dict('records')
 
+        # данные с листа Повышение квалификации
         skills_dev_df = dct_value['Повышение квалификации']
+        skills_dev_df.columns = ['Название','Вид','Место','Дата','Часов','Документ']
+        # Приводим колонку
+        skills_dev_df['Часов'] = skills_dev_df['Часов'].fillna(0)
+        skills_dev_df['Часов'] = skills_dev_df['Часов'].apply(lambda x: int(x) if isinstance(x,(int,float)) else x)
+        skills_dev_df.fillna('', inplace=True)
+        context['Доп_образование'] = skills_dev_df.to_dict('records')
+
+
         internship_df = dct_value['Стажировка']
         method_dev_df = dct_value['Методические разработки']
         events_teacher_df = dct_value['Мероприятия, пров. ППС']
@@ -411,10 +419,10 @@ def generate_docs(master_dct:dict,template_doc:str,result_folder:str):
         doc = DocxTemplate(template_doc)
 
         doc.render(context)
-        name_file = re.sub(r'[\r\b\n\t<> :"?*|\\/]', '_', name_file)  # очищаем от некорректных символов
+        name_file = re.sub(r'[\r\b\n\t<>:"?*|\\/]', '_', name_file)  # очищаем от некорректных символов
         t = time.localtime()
         current_time = time.strftime('%H_%M_%S', t)
-        doc.save(f'{result_folder}/Личное дело {name_file[:40]}.docx')
+        doc.save(f'{result_folder}/Личное дело {name_file[:40]} {current_time}.docx')
 
 
 
