@@ -432,13 +432,24 @@ def generate_docs(master_dct:dict,template_doc:str,result_folder:str):
         context['Публикации'] = publications_df.to_dict('records')
 
         open_lessons_df = dct_value['Открытые уроки']
-        open_lessons_df.columns = ['Название','Издание','Дата','']
+        open_lessons_df.columns = ['Дисциплина','Группа','Тема','Дата']
         open_lessons_df.fillna('', inplace=True)
         context['Открытые_уроки'] = open_lessons_df.to_dict('records')
 
         mutual_visits_df = dct_value['Взаимопосещение']
+        mutual_visits_df.columns = ['ФИО','Дата','Группа','Тема']
+        mutual_visits_df.fillna('', inplace=True)
+        context['Взаимопосещение'] = mutual_visits_df.to_dict('records')
+
         student_perf_df = dct_value['УИРС']
+        student_perf_df.columns = ['ФИО','Профессия','Группа','Вид','Название','Тема','Способ','Уровень','Дата','Результат']
+        student_perf_df.fillna('', inplace=True)
+        context['УИРС'] = student_perf_df.to_dict('records')
+
         nmr_df = dct_value['Работа по НМР']
+        nmr_df.columns = ['Тема','Обобщение','Форма','Место','Дата']
+        nmr_df.fillna('', inplace=True)
+        context['НМР'] = nmr_df.to_dict('records')
 
         # Сохраняем файл
         doc = DocxTemplate(template_doc)
