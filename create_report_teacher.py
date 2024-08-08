@@ -167,28 +167,29 @@ def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_colu
     :param error_df: общий датафрейм с ошибками
     :return: отфильтрованный датафрейм
     """
-    # конвертируем даты в формат дат
-    start_date = pd.to_datetime(start_date,dayfirst=True,format='mixed')
-    end_date = pd.to_datetime(end_date,dayfirst=True,format='mixed')
+    if name_sheet != 'Общие сведения':
+        # конвертируем даты в формат дат
+        start_date = pd.to_datetime(start_date,dayfirst=True,format='mixed')
+        end_date = pd.to_datetime(end_date,dayfirst=True,format='mixed')
 
-    df['_Отбор даты'] = df[name_date_column].apply(prepare_date)
-    date_error_df = df[df['_Отбор даты'].isnull()] # отбираем строки с ошибками в датах
-    if len(date_error_df) != 0:
-        number_row_error = list(map(lambda x:str(x+2),date_error_df.index)) # получаем номера строк с ошибками прибавляя 2
-        temp_error_df = pd.DataFrame(data=[[f'{name_file}', name_sheet,
-                                            f'В колонке {name_date_column} в указанных строках неправильно записаны даты: {";".join(number_row_error)}. Требуемый формат: 21.05.2024'
-                                            f' или 05.06.2024-15.08.2024']],
-                                     columns=['Название файла', 'Название листа',
-                                              'Описание ошибки'])
-        error_df = pd.concat([error_df, temp_error_df], axis=0,
-                                               ignore_index=True)
+        df['_Отбор даты'] = df[name_date_column].apply(prepare_date)
+        date_error_df = df[df['_Отбор даты'].isnull()] # отбираем строки с ошибками в датах
+        if len(date_error_df) != 0:
+            number_row_error = list(map(lambda x:str(x+2),date_error_df.index)) # получаем номера строк с ошибками прибавляя 2
+            temp_error_df = pd.DataFrame(data=[[f'{name_file}', name_sheet,
+                                                f'В колонке {name_date_column} в указанных строках неправильно записаны даты: {";".join(number_row_error)}. Требуемый формат: 21.05.2024'
+                                                f' или 05.06.2024-15.08.2024']],
+                                         columns=['Название файла', 'Название листа',
+                                                  'Описание ошибки'])
+            error_df = pd.concat([error_df, temp_error_df], axis=0,
+                                                   ignore_index=True)
 
 
-    df = df[df['_Отбор даты'].notnull()] # отбираем строки с правильной датой
+        df = df[df['_Отбор даты'].notnull()] # отбираем строки с правильной датой
 
-    df = df[df['_Отбор даты'].between(start_date,end_date)] # получаем значения в указанном диапазоне
-    df[name_date_column] = df[name_date_column].apply(lambda x: x.strftime('%d.%m.%Y') if isinstance(x, (pd.Timestamp, datetime.datetime)) else x)
-    df.drop(columns=['_Отбор даты'], inplace=True) # удаляем служебную колонку
+        df = df[df['_Отбор даты'].between(start_date,end_date)] # получаем значения в указанном диапазоне
+        df[name_date_column] = df[name_date_column].apply(lambda x: x.strftime('%d.%m.%Y') if isinstance(x, (pd.Timestamp, datetime.datetime)) else x)
+        df.drop(columns=['_Отбор даты'], inplace=True) # удаляем служебную колонку
 
 
 
