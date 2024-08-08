@@ -1,6 +1,8 @@
 """
 Скрипт для создания отчетности по преподавателям
 """
+import datetime
+
 from support_function_for_diana import write_df_to_excel,del_sheet
 import pandas as pd
 import numpy as np
@@ -123,6 +125,24 @@ def extract_last_date(value:str):
     else:
         return None
 
+def prepare_date(value):
+    """
+    Функция для конвертации дат с учетом возможных вариантов вида 01.01.2023-02.03.2023
+    :param value: значение
+    :return: дата в формате timestamp
+    """
+    try:
+        prep_date = pd.to_datetime(value,dayfirst=True,format='mixed') # конвертируем в дату
+        return prep_date
+    except:
+        value_str = str(value) # конвертируем в строку
+        prep_date = extract_last_date(value_str) # ищем последнюю дату
+        if prep_date:
+            prep_date = datetime.datetime.strptime(prep_date,'%d.%m.%Y')  # конвертируем в дату
+            return prep_date
+        else:
+            return None
+
 def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_column,name_file:str,name_sheet:str,
                       union_df:pd.DataFrame,error_df:pd.DataFrame):
     """
@@ -140,12 +160,8 @@ def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_colu
     # конвертируем даты в формат дат
     start_date = pd.to_datetime(start_date,dayfirst=True,format='mixed')
     end_date = pd.to_datetime(end_date,dayfirst=True,format='mixed')
-    df[name_date_column] = df[name_date_column].astype(str) # приводим на всякий случай к строковому виду
-    if name_sheet == 'Мероприятия, пров. ППС':
-        print(df[name_date_column])
-    df[name_date_column] = df[name_date_column].apply(extract_last_date)
-    if name_sheet == 'Мероприятия, пров. ППС':
-        print(df[name_date_column])
+
+    df[name_date_column] = df[name_date_column].apply(prepare_date)
     date_error_df = df[df[name_date_column].isnull()] # отбираем строки с ошибками в датах
     if len(date_error_df) != 0:
         number_row_error = list(map(lambda x:str(x+2),date_error_df.index)) # получаем номера строк с ошибками прибавляя 2
@@ -159,8 +175,6 @@ def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_colu
 
 
     df = df[df[name_date_column].notnull()] # отбираем строки с правильной датой
-    # конвертируем в дату
-    df[name_date_column] = pd.to_datetime(df[name_date_column],dayfirst=True,format='mixed')
     df = df[df[name_date_column].between(start_date,end_date)] # получаем значения в указанном диапазоне
     df[name_date_column] = df[name_date_column].apply(lambda x: x.strftime('%d.%m.%Y') if isinstance(x, pd.Timestamp) else x)
 
