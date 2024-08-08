@@ -1,6 +1,7 @@
 """
-Скрипт для создания отчетности по преподавателям
+Функция для создания документов Word
 """
+
 import datetime
 
 from support_function_for_diana import write_df_to_excel,del_sheet
@@ -152,7 +153,6 @@ def prepare_date(value):
         else:
             return None
 
-
 def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_column,name_file:str,name_sheet:str,
                       union_df:pd.DataFrame,error_df:pd.DataFrame):
     """
@@ -185,9 +185,8 @@ def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_colu
 
 
     df = df[df['_Отбор даты'].notnull()] # отбираем строки с правильной датой
-
     df = df[df['_Отбор даты'].between(start_date,end_date)] # получаем значения в указанном диапазоне
-    df[name_date_column] = df[name_date_column].apply(lambda x: x.strftime('%d.%m.%Y') if isinstance(x, (pd.Timestamp, datetime.datetime)) else x)
+    df[name_date_column] = df[name_date_column].apply(lambda x: x.strftime('%d.%m.%Y') if isinstance(x, pd.Timestamp) else x)
     df.drop(columns=['_Отбор даты'], inplace=True) # удаляем служебную колонку
 
 
@@ -213,7 +212,6 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
                                                   'Преподаваемая дисциплина', 'Общий стаж работы',
                                                   'Педагогический стаж',
                                                   'Сведения об образовании (образовательное учреждение, квалификация, год окончания)',
-                                                  'Квалификация',
                                                   'Категория', '№ приказа на аттестацию, дата',
                                                   'Наличие личного сайта, блога (ссылка)'],
                                'Повышение квалификации': ['Название программы повышения квалификации',
@@ -345,28 +343,37 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
                                                           name_file, 'Работа по НМР', nmr_df,
                                                           error_df)
 
+    return teachers_dct
+
+def generate_docs(master_dct:dict,result_folder:str):
+    """
+    Функция для генерации документов
+    :param master_dct: словарь содержащий данные в формате {Ключ:{Ключ:датафрейм}}
+    :param required_sheets_columns: словарь с обязательными колонками для каждого листа
+    :param result_folder:куда сохранять результат
+    """
+
+    for name_file, dct_value in master_dct.items():
+        context = dict() # словарь
+        # Создаем переменные для листов
+        context['Общие_сведения'] = dct_value['Общие сведения']
+        # Общая информация дисциплина, дата рождения, дата начала работы в ПОО,общий стаж,пед стаж,категория и т.д
+
+        skills_dev_df = dct_value['Повышение квалификации']
+        internship_df = dct_value['Стажировка']
+        method_dev_df = dct_value['Методические разработки']
+        events_teacher_df = dct_value['Мероприятия, пров. ППС']
+        personal_perf_df = dct_value['Личное выступление ППС']
+        publications_df = dct_value['Публикации']
+        open_lessons_df = dct_value['Открытые уроки']
+        mutual_visits_df = dct_value['Взаимопосещение']
+        student_perf_df = dct_value['УИРС']
+        nmr_df = dct_value['Работа по НМР']
 
 
 
-    # генерируем текущее время
-    t = time.localtime()
-    current_time = time.strftime('%H_%M_%S', t)
-    # Сохраняем файл эксель с данными
-    # Словарь для передачи в функцию форматирования
-
-    dct_df = {'Общие сведения':general_inf_df,'Повышение квалификации':skills_dev_df,
-              'Стажировка':internship_df,'Методические разработки':method_dev_df,'Мероприятия, пров. ППС':events_teacher_df,
-              'Личное выступление ППС':personal_perf_df,'Публикации':publications_df,'Открытые уроки':open_lessons_df,
-              'Взаимопосещение':mutual_visits_df,'УИРС':student_perf_df,'Работа по НМР':nmr_df}
-    main_wb = write_df_to_excel(dct_df,write_index=False)
-    del_sheet(main_wb,['Sheet'])
-    main_wb.save(f'{result_folder}/Списки {current_time}.xlsx')
 
 
-    # Сохраняем файл с ошибками
-    error_wb = write_df_to_excel({'Ошибки':error_df},write_index=False)
-    del_sheet(error_wb,['Sheet'])
-    error_wb.save(f'{result_folder}/Ошибки {current_time}.xlsx')
 
 
 if __name__ == '__main__':
@@ -375,6 +382,13 @@ if __name__ == '__main__':
     main_start_date = '06.06.1900'
     main_end_date = '01.05.2100'
 
-    create_report_teacher(main_data_folder, main_result_folder, main_start_date, main_end_date)
+    main_dct = create_report_teacher(main_data_folder, main_result_folder, main_start_date, main_end_date)
+    generate_docs(main_dct,main_result_folder)
+
 
     print('Lindy Booth')
+
+
+
+
+
