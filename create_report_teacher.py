@@ -88,13 +88,22 @@ def prepare_sheet_general_inf(path_to_file:str, name_sheet:str, lst_columns:list
     func_df.dropna(how='all',inplace=True) # удаляем пустые строки
     # очищаем от пробельных символов в начале и конце каждой ячейки
     func_df = func_df.applymap(lambda x:x.strip() if isinstance(x,str) else x)
+    person_df = func_df.copy() # создаем датафрейм для сохранения всех строк
+    person_df['ФИО'] = person_df.iloc[0,0]
+    person_df['Дата рождения'] = person_df.iloc[0,1]
+    person_df['Дата начала работы в ПОО'] = person_df.iloc[0,2]
+    person_df['Общий стаж работы'] = person_df.iloc[0,4]
+    person_df['Педагогический стаж'] = person_df.iloc[0,5]
+    person_df['Категория'] = person_df.iloc[0,7]
+    person_df['№ приказа на аттестацию, дата'] = person_df.iloc[0,8]
+    person_df['Наличие личного сайта, блога (ссылка)'] = person_df.iloc[0,9]
     dis_lst = func_df['Преподаваемая дисциплина'].tolist() # список дисциплин преподавателя
     # список полученных дипломов об образовании
     educ_lst = func_df['Сведения об образовании (образовательное учреждение, квалификация, год окончания)'].tolist()
     func_df = func_df.iloc[0,:].to_frame().transpose()
     func_df.loc[0,'Преподаваемая дисциплина'] = ';'.join(dis_lst) # превращаем в строку список дисциплин
     func_df.loc[0,'Сведения об образовании (образовательное учреждение, квалификация, год окончания)'] = ';'.join(educ_lst) # превращаем в строку список дисциплин
-    return func_df
+    return func_df,person_df
 
 
 def prepare_sheet_standart(path_to_file:str, name_sheet:str, lst_columns:list):
@@ -232,6 +241,8 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
     error_df = pd.DataFrame(
         columns=['Название файла', 'Название листа', 'Описание ошибки'])  # датафрейм для ошибок
 
+    teachers_dct = dict() # словарь в котором будут храниться словари с данными листов для каждого преподавателя
+
     # Создаем датафреймы для консолидации данных
     general_inf_df = pd.DataFrame(columns=required_sheets_columns['Общие сведения'])
     skills_dev_df = pd.DataFrame(columns=required_sheets_columns['Повышение квалификации'])
@@ -262,13 +273,14 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
                 continue
             print(name_file)
             # Обрабатываем лист Общие сведения
-            prep_general_inf_df = prepare_sheet_general_inf(path_to_file, 'Общие сведения', required_sheets_columns['Общие сведения'])
+            prep_general_inf_df,teachers_dct[name_file] = prepare_sheet_general_inf(path_to_file, 'Общие сведения', required_sheets_columns['Общие сведения'])
             # Отбираем данные по датам
             general_inf_df,error_df = selection_by_date(prep_general_inf_df,start_date,end_date,'Дата начала работы в ПОО',
                                                         name_file,'Общие сведения',general_inf_df,error_df)
 
             # Обрабатываем лист Повышение квалификации
             prep_skills_dev_df = prepare_sheet_standart(path_to_file, 'Повышение квалификации', required_sheets_columns['Повышение квалификации'])
+
             skills_dev_df,error_df = selection_by_date(prep_skills_dev_df,start_date,end_date,'Дата прохождения программы (с какого по какое число, месяц, год)',
                                                         name_file,'Повышение квалификации',skills_dev_df,error_df)
 
