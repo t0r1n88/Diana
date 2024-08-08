@@ -6,8 +6,8 @@ from tkinter import filedialog
 from tkinter import messagebox
 import openpyxl
 from openpyxl.utils.dataframe import dataframe_to_rows
+from openpyxl.styles import Alignment
 from openpyxl.utils import get_column_letter
-from openpyxl.styles import Font, PatternFill
 
 
 def write_df_to_excel(dct_df: dict, write_index: bool) -> openpyxl.Workbook:
@@ -44,7 +44,12 @@ def write_df_to_excel(dct_df: dict, write_index: bool) -> openpyxl.Workbook:
                 except:
                     pass
             adjusted_width = (max_length + 2)
-            wb[name_sheet].column_dimensions[column_name].width = adjusted_width
+            if adjusted_width >= 80:
+                wb[name_sheet].column_dimensions[column_name].width = 80
+                for cell in wb[name_sheet][column_name]:
+                    cell.alignment = Alignment(horizontal='left',wrap_text=True)
+            else:
+                wb[name_sheet].column_dimensions[column_name].width = adjusted_width+2
         count_index += 1
 
     return wb
