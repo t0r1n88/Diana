@@ -94,9 +94,9 @@ def prepare_sheet_general_inf(path_to_file:str, name_sheet:str, lst_columns:list
     person_df['Дата начала работы в ПОО'] = person_df.iloc[0,2]
     person_df['Общий стаж работы'] = person_df.iloc[0,4]
     person_df['Педагогический стаж'] = person_df.iloc[0,5]
-    person_df['Категория'] = person_df.iloc[0,7]
-    person_df['№ приказа на аттестацию, дата'] = person_df.iloc[0,8]
-    person_df['Наличие личного сайта, блога (ссылка)'] = person_df.iloc[0,9]
+    person_df['Категория'] = person_df.iloc[0,9]
+    person_df['№ приказа на аттестацию, дата'] = person_df.iloc[0,10]
+    person_df['Наличие личного сайта, блога (ссылка)'] = person_df.iloc[0,11]
     dis_lst = func_df['Преподаваемая дисциплина'].tolist() # список дисциплин преподавателя
     # список полученных дипломов об образовании
     educ_lst = func_df['Сведения об образовании (образовательное учреждение, квалификация, год окончания)'].tolist()
