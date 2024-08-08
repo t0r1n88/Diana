@@ -161,8 +161,8 @@ def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_colu
     start_date = pd.to_datetime(start_date,dayfirst=True,format='mixed')
     end_date = pd.to_datetime(end_date,dayfirst=True,format='mixed')
 
-    df[name_date_column] = df[name_date_column].apply(prepare_date)
-    date_error_df = df[df[name_date_column].isnull()] # отбираем строки с ошибками в датах
+    df['_Отбор даты'] = df[name_date_column].apply(prepare_date)
+    date_error_df = df[df['_Отбор даты'].isnull()] # отбираем строки с ошибками в датах
     if len(date_error_df) != 0:
         number_row_error = list(map(lambda x:str(x+2),date_error_df.index)) # получаем номера строк с ошибками прибавляя 2
         temp_error_df = pd.DataFrame(data=[[f'{name_file}', name_sheet,
@@ -174,9 +174,12 @@ def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_colu
                                                ignore_index=True)
 
 
-    df = df[df[name_date_column].notnull()] # отбираем строки с правильной датой
-    df = df[df[name_date_column].between(start_date,end_date)] # получаем значения в указанном диапазоне
+    df = df[df['_Отбор даты'].notnull()] # отбираем строки с правильной датой
+    df = df[df['_Отбор даты'].between(start_date,end_date)] # получаем значения в указанном диапазоне
     df[name_date_column] = df[name_date_column].apply(lambda x: x.strftime('%d.%m.%Y') if isinstance(x, pd.Timestamp) else x)
+    df.drop(columns=['_Отбор даты'], inplace=True) # удаляем служебную колонку
+
+
 
     # Соединяем
     union_df = pd.concat([union_df,df])
