@@ -404,13 +404,38 @@ def generate_docs(master_dct:dict,template_doc:str,result_folder:str):
         skills_dev_df.fillna('', inplace=True)
         context['Доп_образование'] = skills_dev_df.to_dict('records')
 
-
         internship_df = dct_value['Стажировка']
+        internship_df.columns = ['Место','Часов','Дата']
+        skills_dev_df['Часов'] = skills_dev_df['Часов'].fillna(0)
+        internship_df['Часов'] = internship_df['Часов'].apply(lambda x: int(x) if isinstance(x,(int,float)) else x)
+        internship_df.fillna('', inplace=True)
+        context['Стажировка'] = internship_df.to_dict('records')
+
         method_dev_df = dct_value['Методические разработки']
+        method_dev_df.columns = ['Вид', 'Название', 'Профессия','Дата','Утверждено']
+        method_dev_df.fillna('', inplace=True)
+        context['Метод_разработки'] = method_dev_df.to_dict('records')
+
         events_teacher_df = dct_value['Мероприятия, пров. ППС']
+        events_teacher_df.columns = ['Название','Дата','Уровень']
+        events_teacher_df.fillna('', inplace=True)
+        context['Пров_мероприятия'] = events_teacher_df.to_dict('records')
+
         personal_perf_df = dct_value['Личное выступление ППС']
+        personal_perf_df.columns = ['Дата','Название','Тема','Вид','Уровень','Способ','Результат']
+        personal_perf_df.fillna('', inplace=True)
+        context['Выступления'] = personal_perf_df.to_dict('records')
+
         publications_df = dct_value['Публикации']
+        publications_df.columns = ['Название','Издание','Дата']
+        publications_df.fillna('', inplace=True)
+        context['Публикации'] = publications_df.to_dict('records')
+
         open_lessons_df = dct_value['Открытые уроки']
+        open_lessons_df.columns = ['Название','Издание','Дата','']
+        open_lessons_df.fillna('', inplace=True)
+        context['Открытые_уроки'] = open_lessons_df.to_dict('records')
+
         mutual_visits_df = dct_value['Взаимопосещение']
         student_perf_df = dct_value['УИРС']
         nmr_df = dct_value['Работа по НМР']
