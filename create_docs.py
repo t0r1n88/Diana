@@ -212,6 +212,7 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
                                                   'Преподаваемая дисциплина', 'Общий стаж работы',
                                                   'Педагогический стаж',
                                                   'Сведения об образовании (образовательное учреждение, квалификация, год окончания)',
+                                                  'Квалификация', 'Год окончания',
                                                   'Категория', '№ приказа на аттестацию, дата',
                                                   'Наличие личного сайта, блога (ссылка)'],
                                'Повышение квалификации': ['Название программы повышения квалификации',
@@ -345,19 +346,28 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
 
     return teachers_dct
 
-def generate_docs(master_dct:dict,result_folder:str):
+def generate_docs(master_dct:dict,template_doc:str,result_folder:str):
     """
     Функция для генерации документов
     :param master_dct: словарь содержащий данные в формате {Ключ:{Ключ:датафрейм}}
-    :param required_sheets_columns: словарь с обязательными колонками для каждого листа
+    :param template_doc: шаблон документа docx
     :param result_folder:куда сохранять результат
     """
 
     for name_file, dct_value in master_dct.items():
         context = dict() # словарь
         # Создаем переменные для листов
-        context['Общие_сведения'] = dct_value['Общие сведения']
-        # Общая информация дисциплина, дата рождения, дата начала работы в ПОО,общий стаж,пед стаж,категория и т.д
+        first_sheet_df = dct_value['Общие сведения']
+        # Переименовываем колонки для удобства
+        first_sheet_df.columns = ['ФИО','Дата_рождения','Дата_ПОО','Дисциплина','Стаж','Педстаж',
+                                  'Организация','Квалификация','Год_окончания','Категория','Приказ','Сайт']
+        first_sheet_df[['Стаж', 'Педстаж']].fillna(0)
+        first_sheet_df[['Стаж','Педстаж']] = first_sheet_df[['Стаж','Педстаж']].applymap(lambda x: int(x) if isinstance(x,(int,float)) else x)
+
+        context['Преподаватель'] = first_sheet_df.iloc[0,0]
+        context['Общая_информация'] = first_sheet_df[['Дисциплина','Дата_рождения','Дата_ПОО','Стаж','Педстаж',
+        'Категория','Приказ','Сайт']].to_dict('records')
+        context['Образование'] = first_sheet_df[['Организация','Квалификация','Год_окончания']].to_dict('records')
 
         skills_dev_df = dct_value['Повышение квалификации']
         internship_df = dct_value['Стажировка']
@@ -370,6 +380,17 @@ def generate_docs(master_dct:dict,result_folder:str):
         student_perf_df = dct_value['УИРС']
         nmr_df = dct_value['Работа по НМР']
 
+        # Сохраняем файл
+        doc = DocxTemplate(template_doc)
+
+        doc.render(context)
+        name_file = re.sub(r'[\r\b\n\t<> :"?*|\\/]', '_', name_file)  # очищаем от некорректных символов
+        t = time.localtime()
+        current_time = time.strftime('%H_%M_%S', t)
+        doc.save(f'{result_folder}/Личное дело {name_file[:40]}.docx')
+
+
+
 
 
 
@@ -381,9 +402,10 @@ if __name__ == '__main__':
     main_result_folder = 'data/Результат'
     main_start_date = '06.06.1900'
     main_end_date = '01.05.2100'
+    main_template = 'data/Данные/Шаблон Информация о преподавателе.docx'
 
     main_dct = create_report_teacher(main_data_folder, main_result_folder, main_start_date, main_end_date)
-    generate_docs(main_dct,main_result_folder)
+    generate_docs(main_dct,main_template,main_result_folder)
 
 
     print('Lindy Booth')
