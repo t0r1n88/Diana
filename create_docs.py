@@ -229,7 +229,7 @@ def create_report_teacher(data_folder: str, result_folder: str, start_date: str,
                                                           'Уровень мероприятия',
                                                           'Способ участия', 'Результат участия'],
                                'Публикации': ['Полное название статьи', 'Издание', 'Дата выпуска'],
-                               'Открытые уроки': ['Дисциплина', 'Группа', 'Тема', 'Дата проведения'],
+                               'Открытые уроки': ['Вид занятия','Дисциплина', 'Группа', 'Тема', 'Дата проведения'],
                                'Взаимопосещение': ['ФИО посещенного педагога', 'Дата посещения', 'Группа', 'Тема'],
                                'УИРС': ['ФИО обучающегося', 'Профессия/специальность', 'Группа', 'Вид мероприятия',
                                         'Название мероприятия',
@@ -621,7 +621,7 @@ def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
 
 
         open_lessons_df = dct_value['Открытые уроки']
-        open_lessons_df.columns = ['ФИО', 'Дисциплина', 'Группа', 'Тема', 'Дата']
+        open_lessons_df.columns = ['ФИО','Вид','Дисциплина', 'Группа', 'Тема', 'Дата']
         open_lessons_df.fillna('', inplace=True)
         context['Открытые_уроки'] = open_lessons_df.to_dict('records')
 
@@ -632,10 +632,14 @@ def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
         quantity_open_lessons = itog_open_lessons_df.shape[0]  # общее количество открытых уроков
         count_teach_open_lessons = Counter(itog_open_lessons_df['ФИО'].tolist())
         lst_teacher_open = [f'{key} {value}' for key, value in count_teach_open_lessons.items()]
-        result_str_open_lessons = (f'ИТОГО:\n'
-                                   f'{quantity_open_lessons} открытых урока\n{quantity_course} дисциплин(-ы)')
 
-        itog_open_lessons_df.loc[len(itog_open_lessons_df) + 1] = ['\n'.join(lst_teacher_open), result_str_open_lessons,'', '',
+        count_type_open_lessons = Counter(itog_open_lessons_df['Вид'].tolist())
+        lst_type_open = [f'{key} {value}' for key, value in count_type_open_lessons.items()]
+        result_str_open_lessons = f'ИТОГО:\n{quantity_open_lessons} открытых урока\n{quantity_course} дисциплин(-ы)\nПо типам занятий:\n'
+        type_str = '\n'.join(lst_type_open)
+
+
+        itog_open_lessons_df.loc[len(itog_open_lessons_df) + 1] = ['\n'.join(lst_teacher_open), '',result_str_open_lessons + type_str,'', '',
                                                                    '']
         context['Открытые_уроки_итог'] = itog_open_lessons_df.to_dict('records')
 
