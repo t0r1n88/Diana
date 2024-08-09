@@ -340,7 +340,11 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
                                                           name_file, 'Работа по НМР', nmr_df,
                                                           error_df,fio_teacher)
 
-    return teachers_dct
+    dct_df = {'Общие сведения':general_inf_df,'Повышение квалификации':skills_dev_df,
+              'Стажировка':internship_df,'Методические разработки':method_dev_df,'Мероприятия, пров. ППС':events_teacher_df,
+              'Личное выступление ППС':personal_perf_df,'Публикации':publications_df,'Открытые уроки':open_lessons_df,
+              'Взаимопосещение':mutual_visits_df,'УИРС':student_perf_df,'Работа по НМР':nmr_df}
+    return {'Общий отчет':dct_df}
 
 
 
@@ -454,7 +458,11 @@ def generate_docs(master_dct:dict,template_doc:str,result_folder:str):
         name_file = re.sub(r'[\r\b\n\t<>:"?*|\\/]', '_', name_file)  # очищаем от некорректных символов
         t = time.localtime()
         current_time = time.strftime('%H_%M_%S', t)
-        doc.save(f'{result_folder}/Личное дело {name_file[:40]} {current_time}.docx')
+        if name_file != 'Общий отчет':
+            doc.save(f'{result_folder}/Личное дело {name_file[:40]} {current_time}.docx')
+        else:
+            doc.save(f'{result_folder}/Общий отчет {current_time}.docx')
+
 
 
 
