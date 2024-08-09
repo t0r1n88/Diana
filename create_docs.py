@@ -463,6 +463,51 @@ def generate_table_events_teacher(df: pd.DataFrame):
 
     return main_df
 
+def generate_table_personal_perf(df:pd.DataFrame):
+    """
+    Функция для генерации сложной таблицы по личным выступлениям педагога
+    :param df: датафрейм
+    :return: датафрейм
+    """
+    main_df = pd.DataFrame(columns=df.columns)  # создаем датафрейм куда будут добавляться данные
+    main_df.insert(0, 'Номер', '')
+    df.insert(0, 'Номер', 0)
+    df['Название'] = df['Название'] + '\nТема '+ df['Тема']
+    count = 1  # счетчик строк
+    lst_type = ['конкурс', 'научно-практическая конференция', 'олимпиада', 'иное']
+    for type in lst_type:
+        name_table = type.capitalize()  # получаем название промежуточной таблицы
+        row_header = pd.DataFrame(columns=main_df.columns,
+                                  data=[[name_table, '', '', '', '', '', '','','']])
+        main_df = pd.concat([main_df, row_header], axis=0, ignore_index=True)
+        temp_df = df[df['Вид'] == type]
+        if len(temp_df) != 0:
+            temp_df['Номер'] = range(count, count + len(temp_df))  # присваеваем номера строк
+            main_df = pd.concat([main_df, temp_df], axis=0, ignore_index=True)
+            count += len(temp_df)
+        # Результирующая строка
+        quantity_event = len(temp_df) #  количество конкурсов
+        quantity_teacher = len(temp_df['ФИО'].unique()) # количество педагогов
+        count_type_event = Counter(temp_df['Уровень']) # количество по уровням
+        lst_type_event = [f'{key} {value}' for key,value in count_type_event.items()]
+
+        count_way_event = Counter(temp_df['Способ']) # количество по способам
+        lst_way_event = [f'{key} {value}' for key,value in count_way_event.items()]
+
+        count_teacher = Counter(temp_df['ФИО']) # количество по педагогам
+        lst_teacher = [f'{key} {value}' for key, value in count_teacher.items()]
+
+        count_result = Counter(temp_df['Результат']) # количество по результатам
+        result_str_result = f'1 место {count_result["1 место"]}\n2 место {count_result["2 место"]}\n3 место {count_result["3 место"]}\nпобедитель номинации {count_result["победитель номинации"]}'
+        row_itog = pd.DataFrame(columns=main_df.columns,
+                                data=[['Итого','\n'.join(lst_teacher),f'мероприятий {quantity_event}',
+                                       f'преподавателей {quantity_teacher}','','','\n'.join(lst_type_event),'\n'.join(lst_way_event),result_str_result]])
+        main_df = pd.concat([main_df,row_itog])
+
+    return main_df
+
+
+
 
 def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
     """
@@ -551,6 +596,11 @@ def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
         personal_perf_df.columns = ['ФИО', 'Дата', 'Название', 'Тема', 'Вид', 'Уровень', 'Способ', 'Результат']
         personal_perf_df.fillna('', inplace=True)
         context['Выступления'] = personal_perf_df.to_dict('records')
+
+        itog_personal_perf_df = personal_perf_df.copy()
+        context['Выступления_итог'] = generate_table_personal_perf(itog_personal_perf_df).to_dict(
+            'records')  # генерируем таблицу
+
 
         publications_df = dct_value['Публикации']
         publications_df.columns = ['ФИО', 'Название', 'Издание', 'Дата']
