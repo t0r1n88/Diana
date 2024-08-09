@@ -3,25 +3,18 @@
 """
 
 import datetime
+from collections import Counter
 
-from support_function_for_diana import write_df_to_excel,del_sheet
 import pandas as pd
-import numpy as np
 import openpyxl
-from openpyxl.utils.dataframe import dataframe_to_rows
-from openpyxl.utils import get_column_letter
 from docxtpl import DocxTemplate
-import string
 import time
 import re
 import os
-from tkinter import messagebox
-from jinja2 import exceptions
 
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.set_option('display.max_columns', None)  # Отображать все столбцы
 import warnings
-
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 warnings.filterwarnings('ignore', category=FutureWarning, module='openpyxl')
@@ -385,8 +378,21 @@ def generate_docs(master_dct:dict,template_doc:str,result_folder:str):
         skills_dev_df['Часов'] = skills_dev_df['Часов'].apply(lambda x: int(x) if isinstance(x,(int,float)) else x)
         skills_dev_df.fillna('', inplace=True)
         context['Доп_образование'] = skills_dev_df.to_dict('records')
-
         # Создаем датафрейм для общего отчета с результирующей строкой
+        quantity_teacher = len(skills_dev_df['ФИО'].unique()) # получаем количество уникальных преподавателей прошедших ПК
+        quantity_course = skills_dev_df.shape[0] # общее количество курсов
+        count_type_course = Counter(skills_dev_df['Вид'].tolist())
+        # Результирующая строка по преподавателям и количеству курсов
+        result_str_teacher = f'ИТОГО:\n{quantity_teacher} преподавателя(-ей)\n{quantity_course} повышений квалификаций'
+        quantity_kpk = count_type_course['курс повышения квалификации']
+        quantity_pp = count_type_course['профессиональная переподготовка']
+        quantity_other = count_type_course['иное']
+        result_str_course = f'ИТОГО:\n{quantity_kpk} КПК\n{quantity_pp} курсов переподготовки\n{quantity_other} Иное'
+        itog_skills_dev_df = skills_dev_df.copy() # создаем новый датафрейм
+        itog_skills_dev_df.loc[len(itog_skills_dev_df)+1] = [result_str_teacher,result_str_course,'','','','','']
+        context['Доп_образование_итог'] = itog_skills_dev_df.to_dict('records')
+
+
 
 
 
@@ -464,7 +470,7 @@ if __name__ == '__main__':
     main_result_folder = 'data/Результат'
     main_start_date = '06.06.1900'
     main_end_date = '01.05.2100'
-    main_template = 'data/Данные/Шаблон Информация о преподавателе.docx'
+    main_template = 'data/Данные/Шаблон Отчет методиста отделения.docx'
 
     main_dct = create_report_teacher(main_data_folder, main_result_folder, main_start_date, main_end_date)
     generate_docs(main_dct,main_template,main_result_folder)
