@@ -168,8 +168,8 @@ def selection_by_date(df: pd.DataFrame, start_date: str, end_date: str, name_dat
     """
     if name_sheet != 'Общие сведения':
         # конвертируем даты в формат дат
-        start_date = pd.to_datetime(start_date, dayfirst=True, format='mixed')
-        end_date = pd.to_datetime(end_date, dayfirst=True, format='mixed')
+        start_date = pd.to_datetime(start_date, dayfirst=True)
+        end_date = pd.to_datetime(end_date, dayfirst=True)
 
         df['_Отбор даты'] = df[name_date_column].apply(prepare_date)
         date_error_df = df[df['_Отбор даты'].isnull()]  # отбираем строки с ошибками в датах
@@ -498,7 +498,7 @@ def generate_table_personal_perf(df:pd.DataFrame):
         lst_teacher = [f'{key} {value}' for key, value in count_teacher.items()]
 
         count_result = Counter(temp_df['Результат']) # количество по результатам
-        result_str_result = f'1 место {count_result["1 место"]}\n2 место {count_result["2 место"]}\n3 место {count_result["3 место"]}\nпобедитель номинации {count_result["победитель номинации"]}'
+        result_str_result = f'1 место {count_result["1 место"]}\n2 место {count_result["2 место"]}\n3 место {count_result["3 место"]}\nпобедитель номинации {count_result["победитель номинации"]}\nноминация {count_result["номинация"]}'
         row_itog = pd.DataFrame(columns=main_df.columns,
                                 data=[['Итого','\n'.join(lst_teacher),f'мероприятий {quantity_event}',
                                        f'преподавателей {quantity_teacher}','','','\n'.join(lst_type_event),'\n'.join(lst_way_event),result_str_result]])
@@ -517,7 +517,6 @@ def generate_table_student_perf(df:pd.DataFrame):
     df.insert(0, 'Номер', 0)
 
     count = 1  # счетчик строк
-    print(main_df.columns)
     lst_type = ['конкурс', 'научно-практическая конференция', 'олимпиада', 'иное']
     for type in lst_type:
         name_table = type.capitalize()  # получаем название промежуточной таблицы
@@ -525,14 +524,6 @@ def generate_table_student_perf(df:pd.DataFrame):
                                   data=[[name_table, '', '', '', '', '', '','','','','','']])
         main_df = pd.concat([main_df, row_header], axis=0, ignore_index=True)
         temp_df = df[df['Вид'] == type]
-        # Считаем профессии и группы
-        count_prof = Counter(temp_df['Профессия'])
-        lst_prof = [f'{key} {value}' for key, value in count_prof.items()] # список профессий
-        str_count_prof = '\n'.join(lst_prof)
-
-        count_group = Counter(temp_df['Группа'])
-        lst_group = [f'{key} {value}' for key, value in count_group.items()] # список профессий
-        str_count_group = '\n'.join(lst_group)
         if len(temp_df) != 0:
             temp_df['Номер'] = range(count, count + len(temp_df))  # присваеваем номера строк
             temp_df['Профессия'] = temp_df['Профессия'] + ', ' + temp_df['Группа']
@@ -541,26 +532,23 @@ def generate_table_student_perf(df:pd.DataFrame):
             count += len(temp_df)
         # Результирующая строка
         all_quantity_student = len(temp_df) # количество участий студентов
-        quantity_uniq_student = len(temp_df['ФИО_студента'].unique()) # количество уникальных студентов
-        count_student = Counter(temp_df['ФИО_студента'])
-        lst_student = [f'{key} {value}' for key, value in count_student.items()] # список студентов
-        str_count_student = '\n'.join(lst_student)
-        result_student = f'участий обучающихся {all_quantity_student}\nУникальных {quantity_uniq_student}\n' + str_count_student
-
+        result_student = f'участий обучающихся-{all_quantity_student}\n'
 
         # Считаем преподавателей
-        count_teacher = Counter(temp_df['ФИО'])
-        lst_teacher = [f'{key} {value}' for key, value in count_teacher.items()] # список профессий
+        quantity_teacher = len(temp_df['ФИО'].unique())
 
-        # Считаем Способы
-        count_way = Counter(temp_df['Способ'])
-        lst_way = [f'{key} {value}' for key, value in count_way.items()] # список профессий
+        # считаем по уровням
+        count_type = Counter(temp_df['Уровень'])
+        result_str_type = f'Внутренние-{count_type["внутренний"]}\nМуниципальные-{count_type["муниципальный"]}\nРегиональные-{count_type["региональный"]}\nМежрегиональные-{count_type["межрегиональный"]}\nФедеральные-{count_type["федеральный"]}\nМеждународные-{count_type["международный"]}'
+        # Считаем результат
+        count_result = Counter(temp_df['Результат'])  # количество по результатам
+        result_str_result = f'1 место-{count_result["1 место"]}\n2 место-{count_result["2 место"]}\n3 место-{count_result["3 место"]}\nпобедитель номинации-{count_result["победитель номинации"]}\nноминация-{count_result["номинация"]}'
 
 
 
         row_itog = pd.DataFrame(columns=main_df.columns,
-                                data=[['ИТОГО','\n'.join(lst_teacher), result_student, str_count_prof +'\n'+ str_count_group, '','','\n'.join(lst_way),
-                                       '', '','','','']])
+                                data=[['ИТОГО',f'руководителей-{quantity_teacher}', result_student,'', '','','',
+                                       '', '',result_str_type,'',result_str_result]])
 
         main_df = pd.concat([main_df, row_itog])
     return main_df
