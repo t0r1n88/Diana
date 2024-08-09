@@ -379,34 +379,33 @@ def generate_docs(master_dct:dict,template_doc:str,result_folder:str):
         skills_dev_df.fillna('', inplace=True)
         context['Доп_образование'] = skills_dev_df.to_dict('records')
         # Создаем датафрейм для общего отчета с результирующей строкой
-        quantity_teacher = len(skills_dev_df['ФИО'].unique()) # получаем количество уникальных преподавателей прошедших ПК
-        quantity_course = skills_dev_df.shape[0] # общее количество курсов
-        count_type_course = Counter(skills_dev_df['Вид'].tolist())
+        itog_skills_dev_df = skills_dev_df.copy()  # создаем новый датафрейм
+        quantity_teacher = len(itog_skills_dev_df['ФИО'].unique()) # получаем количество уникальных преподавателей прошедших ПК
+        quantity_course = itog_skills_dev_df.shape[0] # общее количество курсов
+        count_type_course = Counter(itog_skills_dev_df['Вид'].tolist())
         # Результирующая строка по преподавателям и количеству курсов
         result_str_teacher = f'ИТОГО:\n{quantity_teacher} преподавателя(-ей)\n{quantity_course} повышений квалификаций'
         quantity_kpk = count_type_course['курс повышения квалификации']
         quantity_pp = count_type_course['профессиональная переподготовка']
         quantity_other = count_type_course['иное']
         result_str_course = f'ИТОГО:\n{quantity_kpk} КПК\n{quantity_pp} курсов переподготовки\n{quantity_other} Иное'
-        itog_skills_dev_df = skills_dev_df.copy() # создаем новый датафрейм
+
         itog_skills_dev_df.loc[len(itog_skills_dev_df)+1] = [result_str_teacher,result_str_course,'','','','','']
         context['Доп_образование_итог'] = itog_skills_dev_df.to_dict('records')
 
-
-
-
-
-
-
-
-
-
         internship_df = dct_value['Стажировка']
         internship_df.columns = ['ФИО','Место','Часов','Дата']
-        skills_dev_df['Часов'] = skills_dev_df['Часов'].fillna(0)
+        internship_df['Часов'] = internship_df['Часов'].fillna(0)
         internship_df['Часов'] = internship_df['Часов'].apply(lambda x: int(x) if isinstance(x,(int,float)) else x)
         internship_df.fillna('', inplace=True)
         context['Стажировка'] = internship_df.to_dict('records')
+        itog_internship_df = internship_df.copy()
+        quantity_teacher = len(itog_internship_df['ФИО'].unique()) # получаем количество уникальных преподавателей прошедших стажировку
+        quantity_internship = itog_internship_df.shape[0] # общее количество стажировок
+        result_str_internship =(f'ИТОГО:\n'
+                                f'{quantity_internship} стажировок(-и)\n{quantity_teacher} педагогов(-а)')
+        itog_internship_df.loc[len(itog_internship_df)+1] = [result_str_internship,'','','']
+        context['Стажировка_итог'] = itog_internship_df.to_dict('records')
 
         method_dev_df = dct_value['Методические разработки']
         method_dev_df.columns = ['ФИО','Вид', 'Название', 'Профессия','Дата','Утверждено']
