@@ -714,6 +714,12 @@ def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
         nmr_df.fillna('', inplace=True)
         context['НМР'] = nmr_df.to_dict('records')
 
+        itog_nmr_df = nmr_df.copy()
+        quantity_teacher = len(itog_nmr_df['ФИО'].unique())
+        itog_nmr_df.loc[len(itog_nmr_df) + 1] = [f'ИТОГО преподавателей-{quantity_teacher}', '', '','','','']
+        context['НМР_итог'] = itog_nmr_df.to_dict('records')
+
+
         # Сохраняем файл
         doc = DocxTemplate(template_doc)
 
