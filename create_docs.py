@@ -506,6 +506,68 @@ def generate_table_personal_perf(df:pd.DataFrame):
 
     return main_df
 
+def generate_table_student_perf(df:pd.DataFrame):
+    """
+    Функция для создания сложной таблицы по результатам обучающихся
+    :param df: датафрейм
+    :return: датафрейм
+    """
+    main_df = pd.DataFrame(columns=df.columns)  # создаем датафрейм куда будут добавляться данные
+    main_df.insert(0, 'Номер', '')
+    df.insert(0, 'Номер', 0)
+
+    count = 1  # счетчик строк
+    print(main_df.columns)
+    lst_type = ['конкурс', 'научно-практическая конференция', 'олимпиада', 'иное']
+    for type in lst_type:
+        name_table = type.capitalize()  # получаем название промежуточной таблицы
+        row_header = pd.DataFrame(columns=main_df.columns,
+                                  data=[[name_table, '', '', '', '', '', '','','','','','']])
+        main_df = pd.concat([main_df, row_header], axis=0, ignore_index=True)
+        temp_df = df[df['Вид'] == type]
+        # Считаем профессии и группы
+        count_prof = Counter(temp_df['Профессия'])
+        lst_prof = [f'{key} {value}' for key, value in count_prof.items()] # список профессий
+        str_count_prof = '\n'.join(lst_prof)
+
+        count_group = Counter(temp_df['Группа'])
+        lst_group = [f'{key} {value}' for key, value in count_group.items()] # список профессий
+        str_count_group = '\n'.join(lst_group)
+        if len(temp_df) != 0:
+            temp_df['Номер'] = range(count, count + len(temp_df))  # присваеваем номера строк
+            temp_df['Профессия'] = temp_df['Профессия'] + ', ' + temp_df['Группа']
+            temp_df['Название'] = temp_df['Название'] + '\nТема ' + temp_df['Тема']
+            main_df = pd.concat([main_df, temp_df], axis=0, ignore_index=True)
+            count += len(temp_df)
+        # Результирующая строка
+        all_quantity_student = len(temp_df) # количество участий студентов
+        quantity_uniq_student = len(temp_df['ФИО_студента'].unique()) # количество уникальных студентов
+        count_student = Counter(temp_df['ФИО_студента'])
+        lst_student = [f'{key} {value}' for key, value in count_student.items()] # список студентов
+        str_count_student = '\n'.join(lst_student)
+        result_student = f'участий обучающихся {all_quantity_student}\nУникальных {quantity_uniq_student}\n' + str_count_student
+
+
+        # Считаем преподавателей
+        count_teacher = Counter(temp_df['ФИО'])
+        lst_teacher = [f'{key} {value}' for key, value in count_teacher.items()] # список профессий
+
+        # Считаем Способы
+        count_way = Counter(temp_df['Способ'])
+        lst_way = [f'{key} {value}' for key, value in count_way.items()] # список профессий
+
+
+
+        row_itog = pd.DataFrame(columns=main_df.columns,
+                                data=[['ИТОГО','\n'.join(lst_teacher), result_student, str_count_prof +'\n'+ str_count_group, '','','\n'.join(lst_way),
+                                       '', '','','','']])
+
+        main_df = pd.concat([main_df, row_itog])
+    return main_df
+
+
+
+
 
 
 
@@ -637,8 +699,6 @@ def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
         lst_type_open = [f'{key} {value}' for key, value in count_type_open_lessons.items()]
         result_str_open_lessons = f'ИТОГО:\n{quantity_open_lessons} открытых урока\n{quantity_course} дисциплин(-ы)\nПо типам занятий:\n'
         type_str = '\n'.join(lst_type_open)
-
-
         itog_open_lessons_df.loc[len(itog_open_lessons_df) + 1] = ['\n'.join(lst_teacher_open), '',result_str_open_lessons + type_str,'', '',
                                                                    '']
         context['Открытые_уроки_итог'] = itog_open_lessons_df.to_dict('records')
@@ -656,6 +716,10 @@ def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
                                    'Уровень', 'Дата', 'Результат']
         student_perf_df.fillna('', inplace=True)
         context['УИРС'] = student_perf_df.to_dict('records')
+
+        itog_student_perf_df = student_perf_df.copy()
+        context['УИРС_итог'] = generate_table_student_perf(itog_student_perf_df).to_dict(
+            'records')  # генерируем таблицу
 
         nmr_df = dct_value['Работа по НМР']
         nmr_df.columns = ['ФИО', 'Тема', 'Обобщение', 'Форма', 'Место', 'Дата']
