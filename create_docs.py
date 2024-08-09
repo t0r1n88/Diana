@@ -348,6 +348,42 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
 
 
 
+def generate_table_method_dev(df:pd.DataFrame):
+    """
+    Функция для генерации сложной таблицы методических разработок
+    :param df: датафрейм
+    :return: датафрейм
+    """
+    main_df = pd.DataFrame(columns=df.columns) # создаем датафрейм куда будут добавляться данные
+    main_df.insert(0,'Номер','')
+    df.insert(0,'Номер',0)
+    count = 1 # счетчик строк
+    lst_type = ['методические рекомендации','методические разработки','учебное пособие','электронный курс','рабочая тетрадь',
+                'тест','видеоурок','профессиональная проба','иное']
+    for type in lst_type:
+        name_table = type.capitalize() # получаем название промежуточной таблицы
+        row_header = pd.DataFrame(columns=main_df.columns,
+                                  data=[[name_table,'','','','','','']])
+        main_df = pd.concat([main_df,row_header],axis=0,ignore_index=True)
+        temp_df = df[df['Вид'] == type]
+        if len(temp_df) != 0:
+            print(type)
+            print(count)
+            print(len(temp_df))
+
+
+            temp_df['Номер'] = range(count,count + len(temp_df))
+
+
+            main_df = pd.concat([main_df, temp_df], axis=0, ignore_index=True)
+            count += len(temp_df)
+
+    return main_df
+
+
+
+
+
 
 
 def generate_docs(master_dct:dict,template_doc:str,result_folder:str):
@@ -415,6 +451,14 @@ def generate_docs(master_dct:dict,template_doc:str,result_folder:str):
         method_dev_df.columns = ['ФИО','Вид', 'Название', 'Профессия','Дата','Утверждено']
         method_dev_df.fillna('', inplace=True)
         context['Метод_разработки'] = method_dev_df.to_dict('records')
+
+        itog_method_dev_df = method_dev_df.copy()
+        context['Метод_разработки_итог'] = generate_table_method_dev(itog_method_dev_df).to_dict('records') # генерируем таблицу
+
+
+
+
+
 
         events_teacher_df = dct_value['Мероприятия, пров. ППС']
         events_teacher_df.columns = ['ФИО','Название','Дата','Уровень']
