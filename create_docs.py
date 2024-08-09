@@ -607,6 +607,21 @@ def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
         publications_df.fillna('', inplace=True)
         context['Публикации'] = publications_df.to_dict('records')
 
+        itog_publications_df = publications_df.copy()
+        quantity_teacher = len(
+            itog_publications_df['ФИО'].unique())  # получаем количество уникальных преподавателей прошедших стажировку
+        quantity_publications = itog_publications_df.shape[0]  # общее количество стажировок
+        result_str_publications = (f'ИТОГО:\n'
+                                 f'{quantity_publications} публикаций(-ии)\n{quantity_teacher} педагогов(-а)')
+        count_teach_publ = Counter(itog_publications_df['ФИО'].tolist())
+        lst_teacher = [f'{key} {value}' for key, value in count_teach_publ.items()]
+
+        itog_publications_df.loc[len(itog_publications_df) + 1] = ['\n'.join(lst_teacher),result_str_publications , '', '']
+        context['Публикации_итог'] = itog_publications_df.to_dict('records')
+
+
+
+
         open_lessons_df = dct_value['Открытые уроки']
         open_lessons_df.columns = ['ФИО', 'Дисциплина', 'Группа', 'Тема', 'Дата']
         open_lessons_df.fillna('', inplace=True)
