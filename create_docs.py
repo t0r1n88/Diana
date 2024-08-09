@@ -15,6 +15,7 @@ import os
 pd.options.mode.chained_assignment = None  # default='warn'
 pd.set_option('display.max_columns', None)  # Отображать все столбцы
 import warnings
+
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 warnings.filterwarnings('ignore', category=FutureWarning, module='openpyxl')
@@ -70,7 +71,7 @@ def check_required_columns_in_sheet(path_to_checked_file: str, func_required_she
         return check_error_req_columns_df
 
 
-def prepare_sheet_general_inf(path_to_file:str, name_sheet:str, lst_columns:list):
+def prepare_sheet_general_inf(path_to_file: str, name_sheet: str, lst_columns: list):
     """
     Функция для извлечения данных из листа Общие сведения
     :param path_to_file: путь к файлу
@@ -78,29 +79,30 @@ def prepare_sheet_general_inf(path_to_file:str, name_sheet:str, lst_columns:list
     :param lst_columns: список колонок из которых будут извлекаться данные
     :return: подготовленный датафрейм
     """
-    func_df = pd.read_excel(path_to_file,sheet_name=name_sheet,usecols=lst_columns)
-    func_df.dropna(how='all',inplace=True) # удаляем пустые строки
+    func_df = pd.read_excel(path_to_file, sheet_name=name_sheet, usecols=lst_columns)
+    func_df.dropna(how='all', inplace=True)  # удаляем пустые строки
     # очищаем от пробельных символов в начале и конце каждой ячейки
-    func_df = func_df.applymap(lambda x:x.strip() if isinstance(x,str) else x)
-    person_df = func_df.copy() # создаем датафрейм для сохранения всех строк
-    person_df['ФИО'] = person_df.iloc[0,0]
-    person_df['Дата рождения'] = person_df.iloc[0,1]
-    person_df['Дата начала работы в ПОО'] = person_df.iloc[0,2]
-    person_df['Общий стаж работы'] = person_df.iloc[0,4]
-    person_df['Педагогический стаж'] = person_df.iloc[0,5]
-    person_df['Категория'] = person_df.iloc[0,9]
-    person_df['№ приказа на аттестацию, дата'] = person_df.iloc[0,10]
-    person_df['Наличие личного сайта, блога (ссылка)'] = person_df.iloc[0,11]
-    dis_lst = func_df['Преподаваемая дисциплина'].tolist() # список дисциплин преподавателя
+    func_df = func_df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    person_df = func_df.copy()  # создаем датафрейм для сохранения всех строк
+    person_df['ФИО'] = person_df.iloc[0, 0]
+    person_df['Дата рождения'] = person_df.iloc[0, 1]
+    person_df['Дата начала работы в ПОО'] = person_df.iloc[0, 2]
+    person_df['Общий стаж работы'] = person_df.iloc[0, 4]
+    person_df['Педагогический стаж'] = person_df.iloc[0, 5]
+    person_df['Категория'] = person_df.iloc[0, 9]
+    person_df['№ приказа на аттестацию, дата'] = person_df.iloc[0, 10]
+    person_df['Наличие личного сайта, блога (ссылка)'] = person_df.iloc[0, 11]
+    dis_lst = func_df['Преподаваемая дисциплина'].tolist()  # список дисциплин преподавателя
     # список полученных дипломов об образовании
     educ_lst = func_df['Сведения об образовании (образовательное учреждение, квалификация, год окончания)'].tolist()
-    func_df = func_df.iloc[0,:].to_frame().transpose()
-    func_df.loc[0,'Преподаваемая дисциплина'] = ';'.join(dis_lst) # превращаем в строку список дисциплин
-    func_df.loc[0,'Сведения об образовании (образовательное учреждение, квалификация, год окончания)'] = ';'.join(educ_lst) # превращаем в строку список дисциплин
-    return func_df,person_df
+    func_df = func_df.iloc[0, :].to_frame().transpose()
+    func_df.loc[0, 'Преподаваемая дисциплина'] = ';'.join(dis_lst)  # превращаем в строку список дисциплин
+    func_df.loc[0, 'Сведения об образовании (образовательное учреждение, квалификация, год окончания)'] = ';'.join(
+        educ_lst)  # превращаем в строку список дисциплин
+    return func_df, person_df
 
 
-def prepare_sheet_standart(path_to_file:str, name_sheet:str, lst_columns:list):
+def prepare_sheet_standart(path_to_file: str, name_sheet: str, lst_columns: list):
     """
     Функция для извлечения данных из листа Повышение квалификации
     :param path_to_file: путь к файлу
@@ -108,25 +110,26 @@ def prepare_sheet_standart(path_to_file:str, name_sheet:str, lst_columns:list):
     :param lst_columns: список колонок из которых будут извлекаться данные
     :return: подготовленный датафрейм
     """
-    func_df = pd.read_excel(path_to_file,sheet_name=name_sheet,usecols=lst_columns)
-    func_df.dropna(how='all',inplace=True) # удаляем пустые строки
+    func_df = pd.read_excel(path_to_file, sheet_name=name_sheet, usecols=lst_columns)
+    func_df.dropna(how='all', inplace=True)  # удаляем пустые строки
     # очищаем от пробельных символов в начале и конце каждой ячейки
-    func_df = func_df.applymap(lambda x:x.strip() if isinstance(x,str) else x)
+    func_df = func_df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
 
     return func_df
 
 
-def extract_last_date(value:str):
+def extract_last_date(value: str):
     """
     Функция для извлечения последней даты из ячейки
     :param value:значение ячейки
     :return: дата в виде строки или None
     """
-    result_lst = re.findall(r'\d{2}.\d{2}.\d{4}',value)
+    result_lst = re.findall(r'\d{2}.\d{2}.\d{4}', value)
     if result_lst:
         return result_lst[-1]
     else:
         return None
+
 
 def prepare_date(value):
     """
@@ -135,16 +138,17 @@ def prepare_date(value):
     :return: дата в формате timestamp
     """
     try:
-        prep_date = pd.to_datetime(value,dayfirst=True,format='mixed') # конвертируем в дату
+        prep_date = pd.to_datetime(value, dayfirst=True, format='mixed')  # конвертируем в дату
         return prep_date
     except:
-        value_str = str(value) # конвертируем в строку
-        prep_date = extract_last_date(value_str) # ищем последнюю дату
+        value_str = str(value)  # конвертируем в строку
+        prep_date = extract_last_date(value_str)  # ищем последнюю дату
         if prep_date:
-            prep_date = datetime.datetime.strptime(prep_date,'%d.%m.%Y')  # конвертируем в дату
+            prep_date = datetime.datetime.strptime(prep_date, '%d.%m.%Y')  # конвертируем в дату
             return prep_date
         else:
             return None
+
 
 def selection_by_date(df: pd.DataFrame, start_date: str, end_date: str, name_date_column, name_file: str,
                       name_sheet: str,
@@ -194,7 +198,7 @@ def selection_by_date(df: pd.DataFrame, start_date: str, end_date: str, name_dat
     return union_df, df, error_df
 
 
-def create_report_teacher(data_folder: str, result_folder: str,start_date:str,end_date:str):
+def create_report_teacher(data_folder: str, result_folder: str, start_date: str, end_date: str):
     """
     Функция для создания отчетности по преподавателям
     :param data_folder: папка где хранятся личные дела преподавателей
@@ -207,7 +211,7 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
                                                   'Преподаваемая дисциплина', 'Общий стаж работы',
                                                   'Педагогический стаж',
                                                   'Сведения об образовании (образовательное учреждение, квалификация, год окончания)',
-                                                  'Квалификация','Год окончания',
+                                                  'Квалификация', 'Год окончания',
                                                   'Категория', '№ приказа на аттестацию, дата',
                                                   'Наличие личного сайта, блога (ссылка)'],
                                'Повышение квалификации': ['Название программы повышения квалификации',
@@ -238,12 +242,12 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
     error_df = pd.DataFrame(
         columns=['Название файла', 'Название листа', 'Описание ошибки'])  # датафрейм для ошибок
 
-    teachers_dct = dict() # словарь в котором будут храниться словари с данными листов для каждого преподавателя
+    teachers_dct = dict()  # словарь в котором будут храниться словари с данными листов для каждого преподавателя
 
     # Создаем датафреймы для консолидации данных
     general_inf_df = pd.DataFrame(columns=required_sheets_columns['Общие сведения'])
     skills_dev_df = pd.DataFrame(columns=required_sheets_columns['Повышение квалификации'])
-    skills_dev_df.insert(0,'ФИО','')
+    skills_dev_df.insert(0, 'ФИО', '')
     internship_df = pd.DataFrame(columns=required_sheets_columns['Стажировка'])
     internship_df.insert(0, 'ФИО', '')
     method_dev_df = pd.DataFrame(columns=required_sheets_columns['Методические разработки'])
@@ -280,113 +284,146 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
                 continue
             print(name_file)
             # Обрабатываем лист Общие сведения
-            teachers_dct[name_file] = {key: pd.DataFrame() for key in required_sheets_columns.keys()} # Создаем ключи для конкретного преподавателя
-            prep_general_inf_df,teachers_dct[name_file]['Общие сведения'] = prepare_sheet_general_inf(path_to_file, 'Общие сведения', required_sheets_columns['Общие сведения'])
-            fio_teacher = teachers_dct[name_file]['Общие сведения'].iloc[0,0] # получаем ФИО преподавателя для добавления в
+            teachers_dct[name_file] = {key: pd.DataFrame() for key in
+                                       required_sheets_columns.keys()}  # Создаем ключи для конкретного преподавателя
+            prep_general_inf_df, teachers_dct[name_file]['Общие сведения'] = prepare_sheet_general_inf(path_to_file,
+                                                                                                       'Общие сведения',
+                                                                                                       required_sheets_columns[
+                                                                                                           'Общие сведения'])
+            fio_teacher = teachers_dct[name_file]['Общие сведения'].iloc[
+                0, 0]  # получаем ФИО преподавателя для добавления в
             # Отбираем данные по датам
-            general_inf_df, _, error_df = selection_by_date(prep_general_inf_df,start_date,end_date,'Дата начала работы в ПОО',
-                                                        name_file,'Общие сведения',general_inf_df,error_df,fio_teacher)
+            general_inf_df, _, error_df = selection_by_date(prep_general_inf_df, start_date, end_date,
+                                                            'Дата начала работы в ПОО',
+                                                            name_file, 'Общие сведения', general_inf_df, error_df,
+                                                            fio_teacher)
             # Обрабатываем лист Повышение квалификации
-            prep_skills_dev_df = prepare_sheet_standart(path_to_file, 'Повышение квалификации', required_sheets_columns['Повышение квалификации'])
+            prep_skills_dev_df = prepare_sheet_standart(path_to_file, 'Повышение квалификации',
+                                                        required_sheets_columns['Повышение квалификации'])
             # сохраняем в датафрейм
-            skills_dev_df,teachers_dct[name_file]['Повышение квалификации'],error_df = selection_by_date(prep_skills_dev_df,start_date,end_date,'Дата прохождения программы (с какого по какое число, месяц, год)',
-                                                        name_file,'Повышение квалификации',skills_dev_df,error_df,fio_teacher)
+            skills_dev_df, teachers_dct[name_file]['Повышение квалификации'], error_df = selection_by_date(
+                prep_skills_dev_df, start_date, end_date,
+                'Дата прохождения программы (с какого по какое число, месяц, год)',
+                name_file, 'Повышение квалификации', skills_dev_df, error_df, fio_teacher)
             # Обрабатываем лист Стажировка
-            prep_internship_df = prepare_sheet_standart(path_to_file, 'Стажировка', required_sheets_columns['Стажировка'])
-            internship_df,teachers_dct[name_file]['Стажировка'],error_df = selection_by_date(prep_internship_df,start_date,end_date,'Дата',
-                                                        name_file,'Стажировка',internship_df,error_df,fio_teacher)
+            prep_internship_df = prepare_sheet_standart(path_to_file, 'Стажировка',
+                                                        required_sheets_columns['Стажировка'])
+            internship_df, teachers_dct[name_file]['Стажировка'], error_df = selection_by_date(prep_internship_df,
+                                                                                               start_date, end_date,
+                                                                                               'Дата',
+                                                                                               name_file, 'Стажировка',
+                                                                                               internship_df, error_df,
+                                                                                               fio_teacher)
 
             # Обрабатываем лист Методические разработки
-            prep_method_dev_df = prepare_sheet_standart(path_to_file, 'Методические разработки', required_sheets_columns['Методические разработки'])
-            method_dev_df,teachers_dct[name_file]['Методические разработки'],error_df = selection_by_date(prep_method_dev_df,start_date,end_date,'Дата разработки',
-                                                        name_file,'Методические разработки',method_dev_df,error_df,fio_teacher)
+            prep_method_dev_df = prepare_sheet_standart(path_to_file, 'Методические разработки',
+                                                        required_sheets_columns['Методические разработки'])
+            method_dev_df, teachers_dct[name_file]['Методические разработки'], error_df = selection_by_date(
+                prep_method_dev_df, start_date, end_date, 'Дата разработки',
+                name_file, 'Методические разработки', method_dev_df, error_df, fio_teacher)
 
             # Обрабатываем лист Мероприятия, пров. ППС
-            prep_events_teacher_df = prepare_sheet_standart(path_to_file, 'Мероприятия, пров. ППС', required_sheets_columns['Мероприятия, пров. ППС'])
-            events_teacher_df,teachers_dct[name_file]['Мероприятия, пров. ППС'], error_df = selection_by_date(prep_events_teacher_df, start_date, end_date, 'Дата',
-                                                        name_file, 'Мероприятия, пров. ППС', events_teacher_df, error_df,fio_teacher)
+            prep_events_teacher_df = prepare_sheet_standart(path_to_file, 'Мероприятия, пров. ППС',
+                                                            required_sheets_columns['Мероприятия, пров. ППС'])
+            events_teacher_df, teachers_dct[name_file]['Мероприятия, пров. ППС'], error_df = selection_by_date(
+                prep_events_teacher_df, start_date, end_date, 'Дата',
+                name_file, 'Мероприятия, пров. ППС', events_teacher_df, error_df, fio_teacher)
 
             # Обрабатываем лист Личное выступление ППС
-            prep_personal_perf_df = prepare_sheet_standart(path_to_file, 'Личное выступление ППС', required_sheets_columns['Личное выступление ППС'])
-            personal_perf_df,teachers_dct[name_file]['Личное выступление ППС'], error_df = selection_by_date(prep_personal_perf_df, start_date, end_date, 'Дата',
-                                                            name_file, 'Личное выступление ППС', personal_perf_df,
-                                                            error_df,fio_teacher)
+            prep_personal_perf_df = prepare_sheet_standart(path_to_file, 'Личное выступление ППС',
+                                                           required_sheets_columns['Личное выступление ППС'])
+            personal_perf_df, teachers_dct[name_file]['Личное выступление ППС'], error_df = selection_by_date(
+                prep_personal_perf_df, start_date, end_date, 'Дата',
+                name_file, 'Личное выступление ППС', personal_perf_df,
+                error_df, fio_teacher)
 
             # Обрабатываем лист Публикации
-            prep_publications_df = prepare_sheet_standart(path_to_file, 'Публикации', required_sheets_columns['Публикации'])
-            publications_df,teachers_dct[name_file]['Публикации'], error_df = selection_by_date(prep_publications_df, start_date, end_date, 'Дата выпуска',
-                                                           name_file, 'Публикации', publications_df,
-                                                           error_df,fio_teacher)
+            prep_publications_df = prepare_sheet_standart(path_to_file, 'Публикации',
+                                                          required_sheets_columns['Публикации'])
+            publications_df, teachers_dct[name_file]['Публикации'], error_df = selection_by_date(prep_publications_df,
+                                                                                                 start_date, end_date,
+                                                                                                 'Дата выпуска',
+                                                                                                 name_file,
+                                                                                                 'Публикации',
+                                                                                                 publications_df,
+                                                                                                 error_df, fio_teacher)
             # Обрабатываем лис Открытые уроки
-            prep_open_lessons_df = prepare_sheet_standart(path_to_file, 'Открытые уроки', required_sheets_columns['Открытые уроки'])
-            open_lessons_df, teachers_dct[name_file]['Открытые уроки'],error_df = selection_by_date(prep_open_lessons_df, start_date, end_date, 'Дата проведения',
-                                                          name_file, 'Открытые уроки', open_lessons_df,
-                                                          error_df,fio_teacher)
+            prep_open_lessons_df = prepare_sheet_standart(path_to_file, 'Открытые уроки',
+                                                          required_sheets_columns['Открытые уроки'])
+            open_lessons_df, teachers_dct[name_file]['Открытые уроки'], error_df = selection_by_date(
+                prep_open_lessons_df, start_date, end_date, 'Дата проведения',
+                name_file, 'Открытые уроки', open_lessons_df,
+                error_df, fio_teacher)
             # Обрабатываем лист Взаимопосещение
-            prep_mutual_visits_df = prepare_sheet_standart(path_to_file, 'Взаимопосещение', required_sheets_columns['Взаимопосещение'])
-            mutual_visits_df,teachers_dct[name_file]['Взаимопосещение'] ,error_df = selection_by_date(prep_mutual_visits_df, start_date, end_date, 'Дата посещения',
-                                                          name_file, 'Взаимопосещение', mutual_visits_df,
-                                                          error_df,fio_teacher)
+            prep_mutual_visits_df = prepare_sheet_standart(path_to_file, 'Взаимопосещение',
+                                                           required_sheets_columns['Взаимопосещение'])
+            mutual_visits_df, teachers_dct[name_file]['Взаимопосещение'], error_df = selection_by_date(
+                prep_mutual_visits_df, start_date, end_date, 'Дата посещения',
+                name_file, 'Взаимопосещение', mutual_visits_df,
+                error_df, fio_teacher)
             # Обрабатываем лист УИРС
             prep_student_perf_df = prepare_sheet_standart(path_to_file, 'УИРС', required_sheets_columns['УИРС'])
-            student_perf_df,teachers_dct[name_file]['УИРС'] ,error_df = selection_by_date(prep_student_perf_df, start_date, end_date,
-                                                           'Дата проведения',
-                                                           name_file, 'УИРС', student_perf_df,
-                                                           error_df,fio_teacher)
+            student_perf_df, teachers_dct[name_file]['УИРС'], error_df = selection_by_date(prep_student_perf_df,
+                                                                                           start_date, end_date,
+                                                                                           'Дата проведения',
+                                                                                           name_file, 'УИРС',
+                                                                                           student_perf_df,
+                                                                                           error_df, fio_teacher)
             # Обрабатываем лист Работа по НМР
-            prep_nmr_df = prepare_sheet_standart(path_to_file, 'Работа по НМР', required_sheets_columns['Работа по НМР'])
-            nmr_df,teachers_dct[name_file]['Работа по НМР'] ,error_df = selection_by_date(prep_nmr_df, start_date, end_date,
-                                                          'Дата обобщения опыта',
-                                                          name_file, 'Работа по НМР', nmr_df,
-                                                          error_df,fio_teacher)
+            prep_nmr_df = prepare_sheet_standart(path_to_file, 'Работа по НМР',
+                                                 required_sheets_columns['Работа по НМР'])
+            nmr_df, teachers_dct[name_file]['Работа по НМР'], error_df = selection_by_date(prep_nmr_df, start_date,
+                                                                                           end_date,
+                                                                                           'Дата обобщения опыта',
+                                                                                           name_file, 'Работа по НМР',
+                                                                                           nmr_df,
+                                                                                           error_df, fio_teacher)
 
-    dct_df = {'Общие сведения':general_inf_df,'Повышение квалификации':skills_dev_df,
-              'Стажировка':internship_df,'Методические разработки':method_dev_df,'Мероприятия, пров. ППС':events_teacher_df,
-              'Личное выступление ППС':personal_perf_df,'Публикации':publications_df,'Открытые уроки':open_lessons_df,
-              'Взаимопосещение':mutual_visits_df,'УИРС':student_perf_df,'Работа по НМР':nmr_df}
-    return {'Общий отчет':dct_df}
+    dct_df = {'Общие сведения': general_inf_df, 'Повышение квалификации': skills_dev_df,
+              'Стажировка': internship_df, 'Методические разработки': method_dev_df,
+              'Мероприятия, пров. ППС': events_teacher_df,
+              'Личное выступление ППС': personal_perf_df, 'Публикации': publications_df,
+              'Открытые уроки': open_lessons_df,
+              'Взаимопосещение': mutual_visits_df, 'УИРС': student_perf_df, 'Работа по НМР': nmr_df}
+    return {'Общий отчет': dct_df}
 
 
-
-def generate_table_method_dev(df:pd.DataFrame):
+def generate_table_method_dev(df: pd.DataFrame):
     """
     Функция для генерации сложной таблицы методических разработок
     :param df: датафрейм
     :return: датафрейм
     """
-    main_df = pd.DataFrame(columns=df.columns) # создаем датафрейм куда будут добавляться данные
-    main_df.insert(0,'Номер','')
-    df.insert(0,'Номер',0)
-    count = 1 # счетчик строк
-    lst_type = ['методические рекомендации','методические разработки','учебное пособие','электронный курс','рабочая тетрадь',
-                'тест','видеоурок','профессиональная проба','иное']
+    main_df = pd.DataFrame(columns=df.columns)  # создаем датафрейм куда будут добавляться данные
+    main_df.insert(0, 'Номер', '')
+    df.insert(0, 'Номер', 0)
+    count = 1  # счетчик строк
+    lst_type = ['методические рекомендации', 'методические разработки', 'учебное пособие', 'электронный курс',
+                'рабочая тетрадь',
+                'тест', 'видеоурок', 'профессиональная проба', 'иное']
     for type in lst_type:
-        name_table = type.capitalize() # получаем название промежуточной таблицы
+        name_table = type.capitalize()  # получаем название промежуточной таблицы
         row_header = pd.DataFrame(columns=main_df.columns,
-                                  data=[[name_table,'','','','','','']])
-        main_df = pd.concat([main_df,row_header],axis=0,ignore_index=True)
+                                  data=[[name_table, '', '', '', '', '', '']])
+        main_df = pd.concat([main_df, row_header], axis=0, ignore_index=True)
         temp_df = df[df['Вид'] == type]
         if len(temp_df) != 0:
-            print(type)
-            print(count)
-            print(len(temp_df))
-
-
-            temp_df['Номер'] = range(count,count + len(temp_df))
-
-
+            temp_df['Номер'] = range(count, count + len(temp_df))  # присваеваем номера строк
             main_df = pd.concat([main_df, temp_df], axis=0, ignore_index=True)
             count += len(temp_df)
+
+    quantity_met = df.shape[0]  # количество метод изданий
+    quantity_teacher = len(df['ФИО'].unique())  # количество преподавателей
+    result_teacher = f'ИТОГО {quantity_teacher} преподавателей(-я)'
+    count_type = Counter(df['Вид'].tolist())
+    result_str_met = f'ИТОГО {quantity_met} изданий:\nметодические рекомендации {count_type["методические рекомендации"]}\nметодические разработки {count_type["методические разработки"]}\nучебное пособие {count_type["учебное пособие"]}\nэлектронный курс {count_type["электронный курс"]}\nрабочая тетрадь {count_type["рабочая тетрадь"]}\nтест {count_type["тест"]}\nвидеоурок {count_type["видеоурок"]}\nпрофессиональная проба {count_type["профессиональная проба"]}\nиное {count_type["иное"]}\n'
+
+    main_df.loc[len(main_df) + 1] = ['', result_teacher, '', result_str_met, '', '', '']
 
     return main_df
 
 
-
-
-
-
-
-def generate_docs(master_dct:dict,template_doc:str,result_folder:str):
+def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
     """
     Функция для генерации документов
     :param master_dct: словарь содержащий данные в формате {Ключ:{Ключ:датафрейм}}
@@ -395,33 +432,35 @@ def generate_docs(master_dct:dict,template_doc:str,result_folder:str):
     """
 
     for name_file, dct_value in master_dct.items():
-        context = dict() # словарь
+        context = dict()  # словарь
         # Создаем переменные для листов
         first_sheet_df = dct_value['Общие сведения']
         # Переименовываем колонки для удобства
-        first_sheet_df.columns = ['ФИО','Дата_рождения','Дата_ПОО','Дисциплина','Стаж','Педстаж',
-                                  'Организация','Квалификация','Год_окончания','Категория','Приказ','Сайт']
-        first_sheet_df[['Стаж', 'Педстаж']] = first_sheet_df[['Стаж', 'Педстаж']].fillna(0) # заменяем нан нулями
-        first_sheet_df[['Стаж','Педстаж']] = first_sheet_df[['Стаж','Педстаж']].applymap(lambda x: int(x) if isinstance(x,(int,float)) else x)
-        first_sheet_df.fillna('',inplace=True)
+        first_sheet_df.columns = ['ФИО', 'Дата_рождения', 'Дата_ПОО', 'Дисциплина', 'Стаж', 'Педстаж',
+                                  'Организация', 'Квалификация', 'Год_окончания', 'Категория', 'Приказ', 'Сайт']
+        first_sheet_df[['Стаж', 'Педстаж']] = first_sheet_df[['Стаж', 'Педстаж']].fillna(0)  # заменяем нан нулями
+        first_sheet_df[['Стаж', 'Педстаж']] = first_sheet_df[['Стаж', 'Педстаж']].applymap(
+            lambda x: int(x) if isinstance(x, (int, float)) else x)
+        first_sheet_df.fillna('', inplace=True)
 
-        context['Преподаватель'] = first_sheet_df.iloc[0,0] # ФИО преподавателя
-        context['Общая_информация'] = first_sheet_df[['Дисциплина','Дата_рождения','Дата_ПОО','Стаж','Педстаж',
-        'Категория','Приказ','Сайт']].to_dict('records')
-        context['Образование'] = first_sheet_df[['Организация','Квалификация','Год_окончания']].to_dict('records')
+        context['Преподаватель'] = first_sheet_df.iloc[0, 0]  # ФИО преподавателя
+        context['Общая_информация'] = first_sheet_df[['Дисциплина', 'Дата_рождения', 'Дата_ПОО', 'Стаж', 'Педстаж',
+                                                      'Категория', 'Приказ', 'Сайт']].to_dict('records')
+        context['Образование'] = first_sheet_df[['Организация', 'Квалификация', 'Год_окончания']].to_dict('records')
 
         # данные с листа Повышение квалификации
         skills_dev_df = dct_value['Повышение квалификации']
-        skills_dev_df.columns = ['ФИО','Название','Вид','Место','Дата','Часов','Документ']
+        skills_dev_df.columns = ['ФИО', 'Название', 'Вид', 'Место', 'Дата', 'Часов', 'Документ']
         # Приводим колонку
         skills_dev_df['Часов'] = skills_dev_df['Часов'].fillna(0)
-        skills_dev_df['Часов'] = skills_dev_df['Часов'].apply(lambda x: int(x) if isinstance(x,(int,float)) else x)
+        skills_dev_df['Часов'] = skills_dev_df['Часов'].apply(lambda x: int(x) if isinstance(x, (int, float)) else x)
         skills_dev_df.fillna('', inplace=True)
         context['Доп_образование'] = skills_dev_df.to_dict('records')
         # Создаем датафрейм для общего отчета с результирующей строкой
         itog_skills_dev_df = skills_dev_df.copy()  # создаем новый датафрейм
-        quantity_teacher = len(itog_skills_dev_df['ФИО'].unique()) # получаем количество уникальных преподавателей прошедших ПК
-        quantity_course = itog_skills_dev_df.shape[0] # общее количество курсов
+        quantity_teacher = len(
+            itog_skills_dev_df['ФИО'].unique())  # получаем количество уникальных преподавателей прошедших ПК
+        quantity_course = itog_skills_dev_df.shape[0]  # общее количество курсов
         count_type_course = Counter(itog_skills_dev_df['Вид'].tolist())
         # Результирующая строка по преподавателям и количеству курсов
         result_str_teacher = f'ИТОГО:\n{quantity_teacher} преподавателя(-ей)\n{quantity_course} повышений квалификаций'
@@ -430,68 +469,67 @@ def generate_docs(master_dct:dict,template_doc:str,result_folder:str):
         quantity_other = count_type_course['иное']
         result_str_course = f'ИТОГО:\n{quantity_kpk} КПК\n{quantity_pp} курсов переподготовки\n{quantity_other} Иное'
 
-        itog_skills_dev_df.loc[len(itog_skills_dev_df)+1] = [result_str_teacher,result_str_course,'','','','','']
+        itog_skills_dev_df.loc[len(itog_skills_dev_df) + 1] = [result_str_teacher, result_str_course, '', '', '', '',
+                                                               '']
         context['Доп_образование_итог'] = itog_skills_dev_df.to_dict('records')
 
         internship_df = dct_value['Стажировка']
-        internship_df.columns = ['ФИО','Место','Часов','Дата']
+        internship_df.columns = ['ФИО', 'Место', 'Часов', 'Дата']
         internship_df['Часов'] = internship_df['Часов'].fillna(0)
-        internship_df['Часов'] = internship_df['Часов'].apply(lambda x: int(x) if isinstance(x,(int,float)) else x)
+        internship_df['Часов'] = internship_df['Часов'].apply(lambda x: int(x) if isinstance(x, (int, float)) else x)
         internship_df.fillna('', inplace=True)
         context['Стажировка'] = internship_df.to_dict('records')
         itog_internship_df = internship_df.copy()
-        quantity_teacher = len(itog_internship_df['ФИО'].unique()) # получаем количество уникальных преподавателей прошедших стажировку
-        quantity_internship = itog_internship_df.shape[0] # общее количество стажировок
-        result_str_internship =(f'ИТОГО:\n'
-                                f'{quantity_internship} стажировок(-и)\n{quantity_teacher} педагогов(-а)')
-        itog_internship_df.loc[len(itog_internship_df)+1] = [result_str_internship,'','','']
+        quantity_teacher = len(
+            itog_internship_df['ФИО'].unique())  # получаем количество уникальных преподавателей прошедших стажировку
+        quantity_internship = itog_internship_df.shape[0]  # общее количество стажировок
+        result_str_internship = (f'ИТОГО:\n'
+                                 f'{quantity_internship} стажировок(-и)\n{quantity_teacher} педагогов(-а)')
+        itog_internship_df.loc[len(itog_internship_df) + 1] = [result_str_internship, '', '', '']
         context['Стажировка_итог'] = itog_internship_df.to_dict('records')
 
         method_dev_df = dct_value['Методические разработки']
-        method_dev_df.columns = ['ФИО','Вид', 'Название', 'Профессия','Дата','Утверждено']
+        method_dev_df.columns = ['ФИО', 'Вид', 'Название', 'Профессия', 'Дата', 'Утверждено']
         method_dev_df.fillna('', inplace=True)
         context['Метод_разработки'] = method_dev_df.to_dict('records')
 
         itog_method_dev_df = method_dev_df.copy()
-        context['Метод_разработки_итог'] = generate_table_method_dev(itog_method_dev_df).to_dict('records') # генерируем таблицу
-
-
-
-
-
+        context['Метод_разработки_итог'] = generate_table_method_dev(itog_method_dev_df).to_dict(
+            'records')  # генерируем таблицу
 
         events_teacher_df = dct_value['Мероприятия, пров. ППС']
-        events_teacher_df.columns = ['ФИО','Название','Дата','Уровень']
+        events_teacher_df.columns = ['ФИО', 'Название', 'Дата', 'Уровень']
         events_teacher_df.fillna('', inplace=True)
         context['Пров_мероприятия'] = events_teacher_df.to_dict('records')
 
         personal_perf_df = dct_value['Личное выступление ППС']
-        personal_perf_df.columns = ['ФИО','Дата','Название','Тема','Вид','Уровень','Способ','Результат']
+        personal_perf_df.columns = ['ФИО', 'Дата', 'Название', 'Тема', 'Вид', 'Уровень', 'Способ', 'Результат']
         personal_perf_df.fillna('', inplace=True)
         context['Выступления'] = personal_perf_df.to_dict('records')
 
         publications_df = dct_value['Публикации']
-        publications_df.columns = ['ФИО','Название','Издание','Дата']
+        publications_df.columns = ['ФИО', 'Название', 'Издание', 'Дата']
         publications_df.fillna('', inplace=True)
         context['Публикации'] = publications_df.to_dict('records')
 
         open_lessons_df = dct_value['Открытые уроки']
-        open_lessons_df.columns = ['ФИО','Дисциплина','Группа','Тема','Дата']
+        open_lessons_df.columns = ['ФИО', 'Дисциплина', 'Группа', 'Тема', 'Дата']
         open_lessons_df.fillna('', inplace=True)
         context['Открытые_уроки'] = open_lessons_df.to_dict('records')
 
         mutual_visits_df = dct_value['Взаимопосещение']
-        mutual_visits_df.columns = ['ФИО','ФИО_посещенного','Дата','Группа','Тема']
+        mutual_visits_df.columns = ['ФИО', 'ФИО_посещенного', 'Дата', 'Группа', 'Тема']
         mutual_visits_df.fillna('', inplace=True)
         context['Взаимопосещение'] = mutual_visits_df.to_dict('records')
 
         student_perf_df = dct_value['УИРС']
-        student_perf_df.columns = ['ФИО','ФИО_студента','Профессия','Группа','Вид','Название','Тема','Способ','Уровень','Дата','Результат']
+        student_perf_df.columns = ['ФИО', 'ФИО_студента', 'Профессия', 'Группа', 'Вид', 'Название', 'Тема', 'Способ',
+                                   'Уровень', 'Дата', 'Результат']
         student_perf_df.fillna('', inplace=True)
         context['УИРС'] = student_perf_df.to_dict('records')
 
         nmr_df = dct_value['Работа по НМР']
-        nmr_df.columns = ['ФИО','Тема','Обобщение','Форма','Место','Дата']
+        nmr_df.columns = ['ФИО', 'Тема', 'Обобщение', 'Форма', 'Место', 'Дата']
         nmr_df.fillna('', inplace=True)
         context['НМР'] = nmr_df.to_dict('records')
 
@@ -508,14 +546,6 @@ def generate_docs(master_dct:dict,template_doc:str,result_folder:str):
             doc.save(f'{result_folder}/Общий отчет {current_time}.docx')
 
 
-
-
-
-
-
-
-
-
 if __name__ == '__main__':
     main_data_folder = 'data/Данные'
     main_result_folder = 'data/Результат'
@@ -524,12 +554,6 @@ if __name__ == '__main__':
     main_template = 'data/Данные/Шаблон Отчет методиста отделения.docx'
 
     main_dct = create_report_teacher(main_data_folder, main_result_folder, main_start_date, main_end_date)
-    generate_docs(main_dct,main_template,main_result_folder)
-
+    generate_docs(main_dct, main_template, main_result_folder)
 
     print('Lindy Booth')
-
-
-
-
-
