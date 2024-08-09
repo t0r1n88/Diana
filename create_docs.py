@@ -620,12 +620,27 @@ def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
         context['Публикации_итог'] = itog_publications_df.to_dict('records')
 
 
-
-
         open_lessons_df = dct_value['Открытые уроки']
         open_lessons_df.columns = ['ФИО', 'Дисциплина', 'Группа', 'Тема', 'Дата']
         open_lessons_df.fillna('', inplace=True)
         context['Открытые_уроки'] = open_lessons_df.to_dict('records')
+
+        itog_open_lessons_df = open_lessons_df.copy()
+        quantity_course = len(
+            itog_open_lessons_df['Дисциплина'].unique())  # получаем количество уникальных дисциплин
+
+        quantity_open_lessons = itog_open_lessons_df.shape[0]  # общее количество открытых уроков
+        count_teach_open_lessons = Counter(itog_open_lessons_df['ФИО'].tolist())
+        lst_teacher_open = [f'{key} {value}' for key, value in count_teach_open_lessons.items()]
+        result_str_open_lessons = (f'ИТОГО:\n'
+                                   f'{quantity_open_lessons} открытых урока\n{quantity_course} дисциплин(-ы)')
+
+        itog_open_lessons_df.loc[len(itog_open_lessons_df) + 1] = ['\n'.join(lst_teacher_open), result_str_open_lessons,'', '',
+                                                                   '']
+        context['Открытые_уроки_итог'] = itog_open_lessons_df.to_dict('records')
+
+
+
 
         mutual_visits_df = dct_value['Взаимопосещение']
         mutual_visits_df.columns = ['ФИО', 'ФИО_посещенного', 'Дата', 'Группа', 'Тема']
