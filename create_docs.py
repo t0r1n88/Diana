@@ -404,6 +404,15 @@ def generate_docs(master_dct:dict,template_doc:str,result_folder:str):
         skills_dev_df.fillna('', inplace=True)
         context['Доп_образование'] = skills_dev_df.to_dict('records')
 
+        # Создаем датафрейм для общего отчета с результирующей строкой
+
+
+
+
+
+
+
+
         internship_df = dct_value['Стажировка']
         internship_df.columns = ['Место','Часов','Дата']
         skills_dev_df['Часов'] = skills_dev_df['Часов'].fillna(0)
@@ -473,7 +482,7 @@ if __name__ == '__main__':
     main_result_folder = 'data/Результат'
     main_start_date = '06.06.1900'
     main_end_date = '01.05.2100'
-    main_template = 'data/Данные/Шаблон Информация о преподавателе.docx'
+    main_template = 'data/Данные/Шаблон Отчет методиста отделения.docx'
 
     main_dct = create_report_teacher(main_data_folder, main_result_folder, main_start_date, main_end_date)
     generate_docs(main_dct,main_template,main_result_folder)

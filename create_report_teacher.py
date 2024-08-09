@@ -4,6 +4,7 @@
 import datetime
 
 from support_function_for_diana import write_df_to_excel,del_sheet
+from create_docs import generate_docs
 import pandas as pd
 import numpy as np
 import openpyxl
@@ -358,6 +359,9 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
     error_wb = write_df_to_excel({'Ошибки':error_df},write_index=False)
     del_sheet(error_wb,['Sheet'])
     error_wb.save(f'{result_folder}/Ошибки {current_time}.xlsx')
+
+    # Сохраняем файлы в формате docx
+
 
 
 if __name__ == '__main__':
