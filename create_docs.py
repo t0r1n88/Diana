@@ -414,9 +414,9 @@ def generate_table_method_dev(df: pd.DataFrame):
 
     quantity_met = df.shape[0]  # количество метод изданий
     quantity_teacher = len(df['ФИО'].unique())  # количество преподавателей
-    result_teacher = f'ИТОГО {quantity_teacher} преподавателей(-я)'
+    result_teacher = f'ИТОГО преподавателей-{quantity_teacher}'
     count_type = Counter(df['Вид'].tolist())
-    result_str_met = f'ИТОГО {quantity_met} изданий:\nметодические рекомендации {count_type["методические рекомендации"]}\nметодические разработки {count_type["методические разработки"]}\nучебное пособие {count_type["учебное пособие"]}\nэлектронный курс {count_type["электронный курс"]}\nрабочая тетрадь {count_type["рабочая тетрадь"]}\nтест {count_type["тест"]}\nвидеоурок {count_type["видеоурок"]}\nпрофессиональная проба {count_type["профессиональная проба"]}\nиное {count_type["иное"]}\n'
+    result_str_met = f'ИТОГО изданий-{quantity_met}:\nметодические рекомендации-{count_type["методические рекомендации"]}\nметодические разработки-{count_type["методические разработки"]}\nучебное пособие-{count_type["учебное пособие"]}\nэлектронный курс-{count_type["электронный курс"]}\nрабочая тетрадь-{count_type["рабочая тетрадь"]}\nтест-{count_type["тест"]}\nвидеоурок-{count_type["видеоурок"]}\nпрофессиональная проба-{count_type["профессиональная проба"]}\nиное-{count_type["иное"]}\n'
 
     main_df.loc[len(main_df) + 1] = ['', result_teacher, '', result_str_met, '', '', '']
 
@@ -457,7 +457,7 @@ def generate_table_events_teacher(df: pd.DataFrame):
     # Результирующая строка
     quantity_teacher = len(df['ФИО'].unique()) # количество педагогов
     count_type_event = Counter(df['Уровень'].tolist())
-    result_str_teacher = f'ИТОГО {quantity_teacher} преподавателей(-я)\n{count_type_event["федеральный"]} федеральных\n{count_type_event["международный"]} международных'
+    result_str_teacher = f'ИТОГО преподавателей-{quantity_teacher}\nфедеральных-{count_type_event["федеральный"]}\nмеждународных-{count_type_event["международный"]}'
     main_df.loc[len(main_df)+1] = [result_str_teacher,f'{count_type_event["внутренний"]} внутренних',f'{count_type_event["муниципальный"]} муниципальных'
                                    ,f'{count_type_event["региональный"]} региональных',f'{count_type_event["межрегиональный"]} межрегиональных']
 
@@ -489,19 +489,18 @@ def generate_table_personal_perf(df:pd.DataFrame):
         quantity_event = len(temp_df) #  количество конкурсов
         quantity_teacher = len(temp_df['ФИО'].unique()) # количество педагогов
         count_type_event = Counter(temp_df['Уровень']) # количество по уровням
-        lst_type_event = [f'{key} {value}' for key,value in count_type_event.items()]
+        lst_type_event = [f'{key}-{value}' for key,value in count_type_event.items()]
 
         count_way_event = Counter(temp_df['Способ']) # количество по способам
-        lst_way_event = [f'{key} {value}' for key,value in count_way_event.items()]
+        lst_way_event = [f'{key}-{value}' for key,value in count_way_event.items()]
 
-        count_teacher = Counter(temp_df['ФИО']) # количество по педагогам
-        lst_teacher = [f'{key} {value}' for key, value in count_teacher.items()]
+
 
         count_result = Counter(temp_df['Результат']) # количество по результатам
-        result_str_result = f'1 место {count_result["1 место"]}\n2 место {count_result["2 место"]}\n3 место {count_result["3 место"]}\nпобедитель номинации {count_result["победитель номинации"]}\nноминация {count_result["номинация"]}'
+        result_str_result = f'1 место-{count_result["1 место"]}\n2 место-{count_result["2 место"]}\n3 место-{count_result["3 место"]}\nпобедитель номинации-{count_result["победитель номинации"]}\nноминация-{count_result["номинация"]}'
         row_itog = pd.DataFrame(columns=main_df.columns,
-                                data=[['Итого','\n'.join(lst_teacher),f'мероприятий {quantity_event}',
-                                       f'преподавателей {quantity_teacher}','','','\n'.join(lst_type_event),'\n'.join(lst_way_event),result_str_result]])
+                                data=[['Итого','',f'мероприятий-{quantity_event}',
+                                       f'преподавателей-{quantity_teacher}','','','\n'.join(lst_type_event),'\n'.join(lst_way_event),result_str_result]])
         main_df = pd.concat([main_df,row_itog])
 
     return main_df
@@ -553,7 +552,27 @@ def generate_table_student_perf(df:pd.DataFrame):
         main_df = pd.concat([main_df, row_itog])
     return main_df
 
+def generate_table_pmutual_visits(df:pd.DataFrame):
+    """
+    Функция для создания таблицы взаимопосещений уроков
+    :param df: датафрейм
+    :return: датафрейм
+    """
+    main_df = pd.DataFrame(columns=['ФИО','ФИО_посещенного']) # собирающий датафрейм
+    lst_teacher = df['ФИО'].unique() # список преподавателей
+    for teacher in lst_teacher:
+        temp_df = df[df['ФИО'] == teacher]
+        lst_visitors = temp_df['ФИО_посещенного'].tolist() # получаем список всех посещенных преподавателей
+        row_df = pd.DataFrame(columns=['ФИО','ФИО_посещенного'],
+                              data=[[teacher,'\n'.join(lst_visitors)]])
+        main_df = pd.concat([main_df,row_df])
 
+    quantity_teacher = len(df['ФИО'].unique())
+    quantity_lesson = len(df)
+    row_itog = pd.DataFrame(columns=['ФИО', 'ФИО_посещенного'],
+                          data=[[f'Преподавателей-{quantity_teacher}', f'Занятий-{quantity_lesson}']])
+    main_df = pd.concat([main_df,row_itog])
+    return main_df
 
 
 
@@ -599,11 +618,11 @@ def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
         quantity_course = itog_skills_dev_df.shape[0]  # общее количество курсов
         count_type_course = Counter(itog_skills_dev_df['Вид'].tolist())
         # Результирующая строка по преподавателям и количеству курсов
-        result_str_teacher = f'ИТОГО:\n{quantity_teacher} преподавателя(-ей)\n{quantity_course} повышений квалификаций'
+        result_str_teacher = f'ИТОГО:\nпреподавателей-{quantity_teacher}\nповышений квалификаций-{quantity_course} '
         quantity_kpk = count_type_course['курс повышения квалификации']
         quantity_pp = count_type_course['профессиональная переподготовка']
         quantity_other = count_type_course['иное']
-        result_str_course = f'ИТОГО:\n{quantity_kpk} КПК\n{quantity_pp} курсов переподготовки\n{quantity_other} Иное'
+        result_str_course = f'ИТОГО:\nКПК-{quantity_kpk}\nкурсов переподготовки-{quantity_pp}\nИное-{quantity_other}'
 
         itog_skills_dev_df.loc[len(itog_skills_dev_df) + 1] = [result_str_teacher, result_str_course, '', '', '', '',
                                                                '']
@@ -620,7 +639,7 @@ def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
             itog_internship_df['ФИО'].unique())  # получаем количество уникальных преподавателей прошедших стажировку
         quantity_internship = itog_internship_df.shape[0]  # общее количество стажировок
         result_str_internship = (f'ИТОГО:\n'
-                                 f'{quantity_internship} стажировок(-и)\n{quantity_teacher} педагогов(-а)')
+                                 f'стажировок-{quantity_internship}\nпедагогов-{quantity_teacher}')
         itog_internship_df.loc[len(itog_internship_df) + 1] = [result_str_internship, '', '', '']
         context['Стажировка_итог'] = itog_internship_df.to_dict('records')
 
@@ -662,9 +681,9 @@ def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
             itog_publications_df['ФИО'].unique())  # получаем количество уникальных преподавателей прошедших стажировку
         quantity_publications = itog_publications_df.shape[0]  # общее количество стажировок
         result_str_publications = (f'ИТОГО:\n'
-                                 f'{quantity_publications} публикаций(-ии)\n{quantity_teacher} педагогов(-а)')
+                                 f'публикаций-{quantity_publications}\nпедагогов-{quantity_teacher}')
         count_teach_publ = Counter(itog_publications_df['ФИО'].tolist())
-        lst_teacher = [f'{key} {value}' for key, value in count_teach_publ.items()]
+        lst_teacher = [f'{key}-{value}' for key, value in count_teach_publ.items()]
 
         itog_publications_df.loc[len(itog_publications_df) + 1] = ['\n'.join(lst_teacher),result_str_publications , '', '']
         context['Публикации_итог'] = itog_publications_df.to_dict('records')
@@ -680,14 +699,12 @@ def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
             itog_open_lessons_df['Дисциплина'].unique())  # получаем количество уникальных дисциплин
 
         quantity_open_lessons = itog_open_lessons_df.shape[0]  # общее количество открытых уроков
-        count_teach_open_lessons = Counter(itog_open_lessons_df['ФИО'].tolist())
-        lst_teacher_open = [f'{key} {value}' for key, value in count_teach_open_lessons.items()]
 
         count_type_open_lessons = Counter(itog_open_lessons_df['Вид'].tolist())
-        lst_type_open = [f'{key} {value}' for key, value in count_type_open_lessons.items()]
-        result_str_open_lessons = f'ИТОГО:\n{quantity_open_lessons} открытых урока\n{quantity_course} дисциплин(-ы)\nПо типам занятий:\n'
+        lst_type_open = [f'{key}-{value}' for key, value in count_type_open_lessons.items()]
+        result_str_open_lessons = f'ИТОГО:\nоткрытых уроков-{quantity_open_lessons}\nдисциплин-{quantity_course}\nПо типам занятий:\n'
         type_str = '\n'.join(lst_type_open)
-        itog_open_lessons_df.loc[len(itog_open_lessons_df) + 1] = ['\n'.join(lst_teacher_open), '',result_str_open_lessons + type_str,'', '',
+        itog_open_lessons_df.loc[len(itog_open_lessons_df) + 1] = ['', '',result_str_open_lessons + type_str,'', '',
                                                                    '']
         context['Открытые_уроки_итог'] = itog_open_lessons_df.to_dict('records')
 
@@ -698,6 +715,10 @@ def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
         mutual_visits_df.columns = ['ФИО', 'ФИО_посещенного', 'Дата', 'Группа', 'Тема']
         mutual_visits_df.fillna('', inplace=True)
         context['Взаимопосещение'] = mutual_visits_df.to_dict('records')
+
+        itog_mutual_visits_df = mutual_visits_df.copy()
+        context['Взаимопосещение_итог'] = generate_table_pmutual_visits(itog_mutual_visits_df).to_dict(
+            'records')  # генерируем таблицу
 
         student_perf_df = dct_value['УИРС']
         student_perf_df.columns = ['ФИО', 'ФИО_студента', 'Профессия', 'Группа', 'Вид', 'Название', 'Тема', 'Способ',
