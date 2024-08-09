@@ -423,6 +423,47 @@ def generate_table_method_dev(df: pd.DataFrame):
     return main_df
 
 
+def generate_table_events_teacher(df: pd.DataFrame):
+    """
+    Функция для генерации сложной таблицы общего отчета по мероприятияем проведенным ППС
+    :param df:
+    :return:
+    """
+    main_df = pd.DataFrame(columns=['ФИО', 'Внутр', 'Мун', 'Рег', 'Межрег'])
+    df['Название'] = df['Название'] + ', ' + df['Дата']
+    lst_teacher = df['ФИО'].unique()  # получаем список преподавателей
+    for teacher in lst_teacher:
+        temp_df = df[df['ФИО'] == teacher]
+        # Внутренние мероприятия
+        local_df = temp_df[temp_df['Уровень'] == 'внутренний']
+        local_lst = local_df['Название'].tolist()
+        local_str = ';\n'.join(local_lst)
+        # Муниципальный уровень
+        mun_df = temp_df[temp_df['Уровень'] == 'муниципальный']
+        mun_lst = mun_df['Название'].tolist()
+        mun_str = ';\n'.join(mun_lst)
+        # Региональный уровень
+        reg_df = temp_df[temp_df['Уровень'] == 'региональный']
+        reg_lst = reg_df['Название'].tolist()
+        reg_str = ';\n'.join(reg_lst)
+        # Межрегиональный
+        meg_reg_df = temp_df[temp_df['Уровень'] == 'межрегиональный']
+        meg_reg_lst = meg_reg_df['Название'].tolist()
+        meg_reg_str = ';\n'.join(meg_reg_lst)
+        # Создаем строку для добавления в главный датафрейм
+        row_df = pd.DataFrame(columns=main_df.columns,
+                              data=[[teacher, local_str, mun_str, reg_str, meg_reg_str]])
+        main_df = pd.concat([main_df, row_df])
+    # Результирующая строка
+    quantity_teacher = len(df['ФИО'].unique()) # количество педагогов
+    count_type_event = Counter(df['Уровень'].tolist())
+    result_str_teacher = f'ИТОГО {quantity_teacher} преподавателей(-я)\n{count_type_event["федеральный"]} федеральных\n{count_type_event["международный"]} международных'
+    main_df.loc[len(main_df)+1] = [result_str_teacher,f'{count_type_event["внутренний"]} внутренних',f'{count_type_event["муниципальный"]} муниципальных'
+                                   ,f'{count_type_event["региональный"]} региональных',f'{count_type_event["межрегиональный"]} межрегиональных']
+
+    return main_df
+
+
 def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
     """
     Функция для генерации документов
@@ -501,6 +542,10 @@ def generate_docs(master_dct: dict, template_doc: str, result_folder: str):
         events_teacher_df.columns = ['ФИО', 'Название', 'Дата', 'Уровень']
         events_teacher_df.fillna('', inplace=True)
         context['Пров_мероприятия'] = events_teacher_df.to_dict('records')
+
+        itog_events_teacher_df = events_teacher_df.copy()
+        context['Пров_мероприятия_итог'] = generate_table_events_teacher(itog_events_teacher_df).to_dict(
+            'records')  # генерируем таблицу
 
         personal_perf_df = dct_value['Личное выступление ППС']
         personal_perf_df.columns = ['ФИО', 'Дата', 'Название', 'Тема', 'Вид', 'Уровень', 'Способ', 'Результат']
