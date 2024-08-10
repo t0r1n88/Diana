@@ -743,29 +743,27 @@ def generate_docs(master_dct: dict, template_folder: str, result_folder: str):
     """
     t = time.localtime()
     current_time = time.strftime('%H_%M_%S', t)
-    for name_file, dct_value in master_dct.items():
-        if name_file == 'Личные дела':
+    for name_dct, dct_value in master_dct.items():
+        if name_dct == 'Личные дела':
             for teacher,dct_data in dct_value.items():
                 context = generate_context(dct_data)
                 for file in os.listdir(template_folder):
                     if file.endswith('.docx') and not file.startswith('~$'):  # получаем только файлы docx и не временные
-
+                        name_file = file.split('.docx')[0]
+                        name_file = re.sub(r'[Шш]аблон\s*','',name_file)
                         doc = DocxTemplate(f'{template_folder}/{file}')
 
                         doc.render(context)
                         teacher = re.sub(r'[\r\b\n\t<>:"?*|\\/]', '_', teacher)  # очищаем от некорректных символов
 
-                        path_folder_teacher = f'{result_folder}/Личные дела'
-                        path_folder_stat_teacher = f'{result_folder}/Личные дела статистика'
+                        path_folder_teacher = f'{result_folder}/{teacher}'
                         # Создаем папки
                         if not os.path.exists(path_folder_teacher):
                             os.makedirs(path_folder_teacher)
 
-                        if not os.path.exists(path_folder_stat_teacher):
-                            os.makedirs(path_folder_stat_teacher)
 
                         if 'отчет' in file.lower():
-                            doc.save(f'{path_folder_stat_teacher}/{teacher} статистика.docx')
+                            doc.save(f'{path_folder_teacher}/{name_file}.docx')
                         else:
                             doc.save(f'{path_folder_teacher}/Личное дело {teacher[:40]}.docx')
         else:
@@ -779,34 +777,12 @@ def generate_docs(master_dct: dict, template_folder: str, result_folder: str):
 
 
 
-
-
-
-        # # Создаем документы
-        # for file in os.listdir(template_folder):
-        #     if file.endswith('.docx') and not file.startswith('~$'):  # получаем только файлы docx и не временные
-        #
-        #         doc = DocxTemplate(f'{template_folder}/{file}')
-        #
-        #         doc.render(context)
-        #         name_file = re.sub(r'[\r\b\n\t<>:"?*|\\/]', '_', name_file)  # очищаем от некорректных символов
-        #         t = time.localtime()
-        #         current_time = time.strftime('%H_%M_%S', t)
-        #         path_folder_teacher = f'{result_folder}/Личные дела'
-        #         if name_file != 'Общий отчет':
-        #             if not os.path.exists(path_folder_teacher):
-        #                 os.makedirs(path_folder_teacher)
-        #             doc.save(f'{path_folder_teacher}/Личное дело {name_file[:40]}.docx')
-        #         else:
-        #             doc.save(f'{result_folder}/Общий отчет {current_time}.docx')
-
-
 if __name__ == '__main__':
     main_data_folder = 'data/Данные'
     main_result_folder = 'data/Результат'
     main_start_date = '06.06.1900'
     main_end_date = '01.05.2100'
-    main_template = 'data/Данные/Шаблоны'
+    main_template = 'data/Шаблоны'
 
     main_dct = create_report_teacher(main_data_folder, main_result_folder, main_start_date, main_end_date)
     generate_docs(main_dct, main_template, main_result_folder)
