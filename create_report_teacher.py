@@ -142,7 +142,7 @@ def prepare_date(value):
     :return: дата в формате timestamp
     """
     try:
-        prep_date = pd.to_datetime(value,dayfirst=True,format='mixed') # конвертируем в дату
+        prep_date = pd.to_datetime(value,dayfirst=True) # конвертируем в дату
         return prep_date
     except:
         value_str = str(value) # конвертируем в строку
@@ -366,7 +366,7 @@ def create_report_teacher(data_folder: str,template_folder:str, result_folder: s
               'Взаимопосещение':mutual_visits_df,'УИРС':student_perf_df,'Работа по НМР':nmr_df}
     main_wb = write_df_to_excel(dct_df,write_index=False)
     del_sheet(main_wb,['Sheet'])
-    main_wb.save(f'{result_folder}/Списки {current_time}.xlsx')
+    main_wb.save(f'{result_folder}/Свод {current_time}.xlsx')
 
 
     # Сохраняем файл с ошибками
