@@ -66,3 +66,13 @@ def del_sheet(wb: openpyxl.Workbook, lst_name_sheet: list) -> openpyxl.Workbook:
             del wb[del_sheet]
 
     return wb
+
+
+
+def generate_stat_teacher(data_dct:dict):
+    """
+    Функция для генерации статистики по преподавателям
+    :param data_dct: словарь с датафреймами содержащими объединенные данные с каждого листа
+    :return: словарь с датафреймами со статистикой
+    """
+    pass

@@ -171,8 +171,8 @@ def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_colu
     """
     if name_sheet != 'Общие сведения':
         # конвертируем даты в формат дат
-        start_date = pd.to_datetime(start_date,dayfirst=True,format='mixed')
-        end_date = pd.to_datetime(end_date,dayfirst=True,format='mixed')
+        start_date = pd.to_datetime(start_date,dayfirst=True)
+        end_date = pd.to_datetime(end_date,dayfirst=True)
 
         df['_Отбор даты'] = df[name_date_column].apply(prepare_date)
         date_error_df = df[df['_Отбор даты'].isnull()] # отбираем строки с ошибками в датах
@@ -204,10 +204,11 @@ def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_colu
 
 
 
-def create_report_teacher(data_folder: str, result_folder: str,start_date:str,end_date:str):
+def create_report_teacher(data_folder: str,template_folder:str, result_folder: str,start_date:str,end_date:str):
     """
     Функция для создания отчетности по преподавателям
     :param data_folder: папка где хранятся личные дела преподавателей
+    :param template_folder: папка где лежат шаблоны отчетов
     :param result_folder: папка в которую будут сохраняться итоговые файлы
     :param start_date: начальная дата, если ничего не указано то 01.01.1900
     :param end_date: конечная дата, если ничего не указано то 01.01.2100
@@ -374,15 +375,18 @@ def create_report_teacher(data_folder: str, result_folder: str,start_date:str,en
     error_wb.save(f'{result_folder}/Ошибки {current_time}.xlsx')
 
     # Сохраняем файлы в формате docx
+    generate_docs({'Личные дела':teachers_dct,'Отчет':dct_df},template_folder,result_folder) # создаем личные дела
+
 
 
 
 if __name__ == '__main__':
     main_data_folder = 'data/Данные'
     main_result_folder = 'data/Результат'
+    main_template_folder = 'data/Шаблоны'
     main_start_date = '06.06.1900'
     main_end_date = '01.05.2100'
 
-    create_report_teacher(main_data_folder, main_result_folder, main_start_date, main_end_date)
+    create_report_teacher(main_data_folder,main_template_folder ,main_result_folder, main_start_date, main_end_date)
 
     print('Lindy Booth')
