@@ -771,9 +771,11 @@ def generate_docs(master_dct: dict, template_folder: str, result_folder: str):
             for file in os.listdir(template_folder):
                 if file.endswith('.docx') and not file.startswith('~$'):  # получаем только файлы docx и не временные
                     if 'отчет' in file.lower():
+                        name_file = file.split('.docx')[0]
+                        name_file = re.sub(r'[Шш]аблон\s*','',name_file)
                         doc = DocxTemplate(f'{template_folder}/{file}')
                         doc.render(context)
-                        doc.save(f'{result_folder}/Общий отчет.docx')
+                        doc.save(f'{result_folder}/{name_file} {current_time}.docx')
 
 
 
