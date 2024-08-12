@@ -250,13 +250,6 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
 
     teachers_dct = dict() # словарь в котором будут храниться словари с данными листов для каждого преподавателя
 
-    print(start_date)
-    print(type(start_date))
-    print(end_date)
-    print(type(end_date))
-
-
-
     # Создаем датафреймы для консолидации данных
     general_inf_df = pd.DataFrame(columns=required_sheets_columns['Общие сведения'])
     skills_dev_df = pd.DataFrame(columns=required_sheets_columns['Повышение квалификации'])
