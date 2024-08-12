@@ -5,6 +5,7 @@ import datetime
 
 from support_function_for_diana import write_df_to_excel,del_sheet
 from create_docs import generate_docs
+from generate_analytics import create_analytics_report
 import pandas as pd
 import numpy as np
 import openpyxl
@@ -366,6 +367,11 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
     main_wb = write_df_to_excel(dct_df,write_index=False)
     del_sheet(main_wb,['Sheet'])
     main_wb.save(f'{result_folder}/Свод {current_time}.xlsx')
+    # Сохраняем статистику
+    create_analytics_report(dct_df,result_folder)
+
+
+
 
 
     # Сохраняем файл с ошибками
