@@ -82,26 +82,52 @@ def create_analytics_report(dct_data:dict,result_folder:str):
     # Мероприятия проведенные ППС
     events_teacher_df = dct_data['Мероприятия, пров. ППС']
     # В разрезе преподавателей
+    teacher_events_df_one_col = pd.pivot_table(events_teacher_df, index=['ФИО'],
+                                      values=['Дата'],
+                                      aggfunc='count').rename(columns={'Дата':'Количество'})
     teacher_events_df = pd.pivot_table(events_teacher_df, index=['ФИО', 'Уровень мероприятия'],
                                       values=['Дата'],
-                                      aggfunc='count')
-    # В разрезе мест стажировки
+                                      aggfunc='count').rename(columns={'Дата':'Количество'})
+    # В разрезе уровней
+    level_events_df_one_col = pd.pivot_table(events_teacher_df, index=['Уровень мероприятия'],
+                                     values=['Дата'],
+                                     aggfunc='count').rename(columns={'Дата':'Количество'})
     level_events_df = pd.pivot_table(events_teacher_df, index=['Уровень мероприятия', 'ФИО'],
                                      values=['Дата'],
-                                     aggfunc='count')
+                                     aggfunc='count').rename(columns={'Дата':'Количество'})
     # Личное выступление ППС
     personal_perf_df = dct_data['Личное выступление ППС']
     # В разрезе преподавателей
-    teacher_personal_perf_df = pd.pivot_table(personal_perf_df, index=['ФИО', 'Уровень мероприятия','Вид мероприятия','Способ участия'],
-                                              columns=['Результат участия'],
+    teacher_personal_perf_df_one_col = pd.pivot_table(personal_perf_df, index=['ФИО'],
                                       values=['Дата'],
-                                      aggfunc='count')
+                                      aggfunc='count').rename(columns={'Дата':'Количество'})
+    teacher_personal_perf_df = pd.pivot_table(personal_perf_df, index=['ФИО','Вид мероприятия','Уровень мероприятия','Результат участия'],
+                                      values=['Дата'],
+                                      aggfunc='count').rename(columns={'Дата':'Количество'})
+
     # # В разрезе видов мероприятий
-    # course_personal_perf_df = pd.pivot_table(personal_perf_df, index=['Вид мероприятия','Уровень мероприятия', 'ФИО','Результат участия'],
-    #                                  values=['Дата'],
-    #                                  aggfunc='count')
-    # dct_df['Стажировка_места'] = course_blank_df
-    # print(course_blank_df)
+    course_personal_perf_df_one_col = pd.pivot_table(personal_perf_df, index=['Вид мероприятия'],
+                                     values=['Дата'],
+                                     aggfunc='count').rename(columns={'Дата':'Количество'})
+    course_personal_perf_df = pd.pivot_table(personal_perf_df, index=['Вид мероприятия','Уровень мероприятия', 'ФИО','Результат участия'],
+                                     values=['Дата'],
+                                     aggfunc='count').rename(columns={'Дата':'Количество'})
+    # В разрезе уровней
+    level_personal_perf_df_one_col = pd.pivot_table(personal_perf_df, index=['Уровень мероприятия'],
+                                     values=['Дата'],
+                                     aggfunc='count').rename(columns={'Дата':'Количество'})
+    level_personal_perf_df = pd.pivot_table(personal_perf_df, index=['Уровень мероприятия','Вид мероприятия', 'ФИО','Результат участия'],
+                                     values=['Дата'],
+                                     aggfunc='count').rename(columns={'Дата':'Количество'})
+    # В разрезе результатов
+    result_personal_perf_df_one_col = pd.pivot_table(personal_perf_df, index=['Результат участия'],
+                                     values=['Дата'],
+                                     aggfunc='count').rename(columns={'Дата':'Количество'})
+    result_personal_perf_df = pd.pivot_table(personal_perf_df, index=['Результат участия','Уровень мероприятия','Вид мероприятия','ФИО'],
+                                     values=['Дата'],
+                                     aggfunc='count').rename(columns={'Дата':'Количество'})
+
+
 
     # генерируем текущее время
     t = time.localtime()
@@ -124,3 +150,29 @@ def create_analytics_report(dct_data:dict,result_folder:str):
         teacher_method_dev_df.to_excel(writer, sheet_name='Методические разработки',startrow=max_row + 5)
         type_method_df.to_excel(writer, sheet_name='Методические разработки',startrow=max_row + 5,startcol=teacher_method_dev_df.shape[1] + 5)
         prof_method_df.to_excel(writer, sheet_name='Методические разработки',startcol=teacher_method_dev_df.shape[1]+type_method_df.shape[1]+10,startrow=max_row + 5)
+        # Мероприятия проведенные ППС
+        teacher_events_df_one_col.to_excel(writer, sheet_name='Мероприятия, пров. ППС')
+        level_events_df_one_col.to_excel(writer, sheet_name='Мероприятия, пров. ППС',startcol=teacher_events_df_one_col.shape[1] + 5)
+        max_row = max(len(teacher_events_df_one_col),len(level_events_df_one_col))
+        teacher_events_df.to_excel(writer, sheet_name='Мероприятия, пров. ППС',startrow=max_row+5)
+        level_events_df.to_excel(writer, sheet_name='Мероприятия, пров. ППС',startrow=max_row+5,startcol=teacher_events_df_one_col.shape[1] + 5)
+        # Личное выступление ППС
+        teacher_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС')
+        course_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС',startcol=teacher_personal_perf_df_one_col.shape[1]+5)
+        max_row = max(len(teacher_personal_perf_df_one_col),len(course_personal_perf_df_one_col))
+        teacher_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5)
+        course_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5,startcol=teacher_personal_perf_df_one_col.shape[1]+5)
+
+        max_row = max(len(teacher_personal_perf_df)+max_row,len(course_personal_perf_df)+max_row)
+        print(max_row)
+
+        # level_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5)
+        # result_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5,startcol=teacher_personal_perf_df_one_col.shape[1]+5)
+        # # max_row = max(len(level_personal_perf_df_one_col)+max_row, len(result_personal_perf_df_one_col)+max_row)
+        # level_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5)
+        # result_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5,startcol=teacher_personal_perf_df_one_col.shape[1]+5)
+
+
+
+
+
