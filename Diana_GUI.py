@@ -8,15 +8,14 @@ from create_UP_PM import create_rp_up #  функция для генераци�
 from create_PP_PM import create_rp_pp #  функция для генерации РП для ПП (учебных практик)
 from create_PRED_DIP_PRAC import create_pred_dip_prac # функция для генерации рабочей программы преддипломной практики
 from create_report_teacher import create_report_teacher # функция для генерации отчетов по преподавателям
-import tkinter
+import pandas as pd
 import sys
 import os
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import ttk
-import time
-# pd.options.mode.chained_assignment = None  # default='warn'
+from pandas._libs.tslibs.parsing import DateParseError
 import warnings
 warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 
@@ -410,10 +409,25 @@ def processing_create_report_teacher():
     try:
         start_date = var_start_date.get() # начальная дата
         end_date = var_end_date.get() # конечная дата
+
+        # Обрабатываем даты диапазона
+        # Если ничего
+        if not start_date:
+            start_date = '01.01.1900'
+        if not end_date:
+            end_date = '01.01.2100'
+        start_date = pd.to_datetime(start_date, dayfirst=True, errors='raise')
+        end_date = pd.to_datetime(end_date, dayfirst=True, errors='raise')
+
+
         create_report_teacher(path_to_templates_folder_report_teacher,path_to_data_folder_report_teacher,path_to_end_folder_report_teacher,start_date,end_date)
     except NameError:
-        messagebox.showerror('Диана Создание рабочих программ',
+        messagebox.showerror('Диана',
                              f'Выберите файлы с данными и папку куда будет генерироваться файл')
+    except DateParseError:
+        messagebox.showerror('Диана',
+                             f'Введено некорректное значение начальной или конечной даты.\n Если вам нужен конкретный диапазон '
+                             f'Вводите даты в формате 14.06.2024')
 
 
 

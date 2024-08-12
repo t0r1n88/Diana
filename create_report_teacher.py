@@ -171,8 +171,7 @@ def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_colu
     """
     if name_sheet != 'Общие сведения':
         # конвертируем даты в формат дат
-        start_date = pd.to_datetime(start_date,dayfirst=True)
-        end_date = pd.to_datetime(end_date,dayfirst=True)
+
 
         df['_Отбор даты'] = df[name_date_column].apply(prepare_date)
         date_error_df = df[df['_Отбор даты'].isnull()] # отбираем строки с ошибками в датах
@@ -204,7 +203,7 @@ def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_colu
 
 
 
-def create_report_teacher(template_folder:str,data_folder: str, result_folder: str,start_date:str,end_date:str):
+def create_report_teacher(template_folder:str,data_folder: str, result_folder: str,start_date:pd.Timestamp,end_date:pd.Timestamp):
     """
     Функция для создания отчетности по преподавателям
     :param template_folder: папка, где лежат шаблоны отчетов
@@ -251,7 +250,10 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
 
     teachers_dct = dict() # словарь в котором будут храниться словари с данными листов для каждого преподавателя
 
-
+    print(start_date)
+    print(type(start_date))
+    print(end_date)
+    print(type(end_date))
 
 
 
@@ -391,6 +393,6 @@ if __name__ == '__main__':
     main_start_date = '06.06.1900'
     main_end_date = '01.05.2100'
 
-    create_report_teacher(main_data_folder,main_template_folder ,main_result_folder, main_start_date, main_end_date)
+    create_report_teacher(main_template_folder ,main_data_folder,main_result_folder, main_start_date, main_end_date)
 
     print('Lindy Booth')

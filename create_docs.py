@@ -676,10 +676,8 @@ def generate_context(dct_value:dict):
     quantity_publications = itog_publications_df.shape[0]  # общее количество стажировок
     result_str_publications = (f'ИТОГО:\n'
                                f'публикаций-{quantity_publications}\nпедагогов-{quantity_teacher}')
-    count_teach_publ = Counter(itog_publications_df['ФИО'].tolist())
-    lst_teacher = [f'{key}-{value}' for key, value in count_teach_publ.items()]
 
-    itog_publications_df.loc[len(itog_publications_df) + 1] = ['\n'.join(lst_teacher), result_str_publications, '', '']
+    itog_publications_df.loc[len(itog_publications_df) + 1] = ['', result_str_publications, '', '']
     context['Публикации_итог'] = itog_publications_df.to_dict('records')
 
     open_lessons_df = dct_value['Открытые уроки']
