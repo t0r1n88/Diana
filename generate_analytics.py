@@ -56,17 +56,29 @@ def create_analytics_report(dct_data:dict,result_folder:str):
     # Методические разработки
     method_dev_df = dct_data['Методические разработки']
     # В разрезе преподавателей
+    teacher_method_dev_df_one_col = pd.pivot_table(method_dev_df, index=['ФИО'],
+                                           values=['Дата разработки'],
+                                           aggfunc='count').rename(columns={'Дата разработки':'Количество'})
     teacher_method_dev_df = pd.pivot_table(method_dev_df, index=['ФИО', 'Вид методического издания'],
                                            values=['Дата разработки'],
-                                           aggfunc='count')
+                                           aggfunc='count').rename(columns={'Дата разработки':'Количество'})
     # В разрезе видов
+    type_method_df_one_col = pd.pivot_table(method_dev_df, index=['Вид методического издания'],
+                                          values=['Дата разработки'],
+                                          aggfunc='count').rename(columns={'Дата разработки':'Количество'})
     type_method_df = pd.pivot_table(method_dev_df, index=['Вид методического издания', 'ФИО'],
                                           values=['Дата разработки'],
-                                          aggfunc='count')
+                                          aggfunc='count').rename(columns={'Дата разработки':'Количество'})
+
+
     # В разрезе профессий
+    prof_method_df_one_col = pd.pivot_table(method_dev_df, index=['Профессия/специальность '],
+                                          values=['Дата разработки'],
+                                          aggfunc='count').rename(columns={'Дата разработки':'Количество'})
+
     prof_method_df = pd.pivot_table(method_dev_df, index=['Профессия/специальность ','Вид методического издания', 'ФИО'],
                                           values=['Дата разработки'],
-                                          aggfunc='count')
+                                          aggfunc='count').rename(columns={'Дата разработки':'Количество'})
     # Мероприятия проведенные ППС
     events_teacher_df = dct_data['Мероприятия, пров. ППС']
     # В разрезе преподавателей
@@ -104,3 +116,13 @@ def create_analytics_report(dct_data:dict,result_folder:str):
         course_internship_df_one_col.to_excel(writer, sheet_name='Стажировка',startrow=len(teacher_internship_df_one_col)+3)
         teacher_internship_df.to_excel(writer, sheet_name='Стажировка',startrow=len(teacher_internship_df_one_col)+len(course_internship_df_one_col)+5)
         course_internship_df.to_excel(writer, sheet_name='Стажировка',startrow=len(teacher_internship_df_one_col)+len(course_internship_df_one_col)+len(teacher_internship_df)+10)
+        # Метод разработки
+        teacher_method_dev_df_one_col.to_excel(writer, sheet_name='Методические разработки')
+        type_method_df_one_col.to_excel(writer, sheet_name='Методические разработки',startcol=teacher_method_dev_df_one_col.shape[1] + 5)
+        prof_method_df_one_col.to_excel(writer, sheet_name='Методические разработки',startcol=teacher_method_dev_df_one_col.shape[1] + teacher_method_dev_df_one_col.shape[1]+10)
+
+        max_row = max(len(teacher_method_dev_df_one_col),len(type_method_df_one_col),len(prof_method_df_one_col)) # получаем строку с которой надо начинать запись второго ряда
+
+        teacher_method_dev_df.to_excel(writer, sheet_name='Методические разработки',startrow=max_row + 5)
+        type_method_df.to_excel(writer, sheet_name='Методические разработки',startrow=max_row + 5,startcol=teacher_method_dev_df.shape[1] + 5)
+        prof_method_df.to_excel(writer, sheet_name='Методические разработки',startcol=teacher_method_dev_df.shape[1]+type_method_df.shape[1]+10,startrow=max_row + 5)
