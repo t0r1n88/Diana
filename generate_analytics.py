@@ -212,6 +212,14 @@ def create_analytics_report(dct_data:dict,result_folder:str):
     theme_mutual_visits_df = pd.pivot_table(mutual_visits_df, index=['Тема','ФИО посещенного педагога'],
                                       values=['Дата посещения'],
                                       aggfunc='count').rename(columns={'Дата посещения':'Количество'})
+    # УИРС
+    student_perf_df = dct_data['УИРС']
+    teacher_student_perf_df_df_one_col = pd.pivot_table(student_perf_df, index=['ФИО обучающегося'],
+                                      values=['Дата посещения'],
+                                      aggfunc='count').rename(columns={'Дата посещения':'Количество'})
+    teacher_student_perf_df_df = pd.pivot_table(student_perf_df, index=['ФИО обучающегося','ФИО'],
+                                      values=['Дата посещения'],
+                                      aggfunc='count').rename(columns={'Дата посещения':'Количество'})
 
 
 
