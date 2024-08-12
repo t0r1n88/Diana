@@ -33,7 +33,80 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
 
     return os.path.join(base_path, relative_path)
+"""
+Функции для создания контекстного меню(Копировать,вставить,вырезать)
+"""
 
+
+def make_textmenu(root):
+    """
+    Функции для контекстного меню( вырезать,копировать,вставить)
+    взято отсюда https://gist.github.com/angeloped/91fb1bb00f1d9e0cd7a55307a801995f
+    """
+    # эта штука делает меню
+    global the_menu
+    the_menu = Menu(root, tearoff=0)
+    the_menu.add_command(label="Вырезать")
+    the_menu.add_command(label="Копировать")
+    the_menu.add_command(label="Вставить")
+    the_menu.add_separator()
+    the_menu.add_command(label="Выбрать все")
+
+
+def callback_select_all(event):
+    """
+    Функции для контекстного меню( вырезать,копировать,вставить)
+    взято отсюда https://gist.github.com/angeloped/91fb1bb00f1d9e0cd7a55307a801995f
+    """
+    # select text after 50ms
+    window.after(50, lambda: event.widget.select_range(0, 'end'))
+
+
+def show_textmenu(event):
+    """
+    Функции для контекстного меню( вырезать,копировать,вставить)
+    взято отсюда https://gist.github.com/angeloped/91fb1bb00f1d9e0cd7a55307a801995f
+    """
+    e_widget = event.widget
+    the_menu.entryconfigure("Вырезать", command=lambda: e_widget.event_generate("<<Cut>>"))
+    the_menu.entryconfigure("Копировать", command=lambda: e_widget.event_generate("<<Copy>>"))
+    the_menu.entryconfigure("Вставить", command=lambda: e_widget.event_generate("<<Paste>>"))
+    the_menu.entryconfigure("Выбрать все", command=lambda: e_widget.select_range(0, 'end'))
+    the_menu.tk.call("tk_popup", the_menu, event.x_root, event.y_root)
+
+
+def on_scroll(*args):
+    canvas.yview(*args)
+
+
+def set_window_size(window):
+    screen_width = window.winfo_screenwidth()
+    screen_height = window.winfo_screenheight()
+
+    # Устанавливаем размер окна в 80% от ширины и высоты экрана
+    if screen_width >= 3840:
+        width = int(screen_width * 0.28)
+    elif screen_width >= 2560:
+        width = int(screen_width * 0.39)
+    elif screen_width >= 1920:
+        width = int(screen_width * 0.48)
+    elif screen_width >= 1600:
+        width = int(screen_width * 0.58)
+    elif screen_width >= 1280:
+        width = int(screen_width * 0.70)
+    elif screen_width >= 1024:
+        width = int(screen_width * 0.85)
+    else:
+        width = int(screen_width * 1)
+
+    height = int(screen_height * 0.8)
+
+    # Рассчитываем координаты для центрирования окна
+    x = (screen_width - width) // 2
+    y = (screen_height - height) // 2
+
+    # Устанавливаем размер и положение окна
+    window.geometry(f"{width}x{height}+{x}+{y}")
 
 def select_folder_data():
     """
@@ -335,7 +408,9 @@ def processing_create_report_teacher():
     :return:
     """
     try:
-        create_report_teacher(path_to_templates_folder_report_teacher,path_to_data_folder_report_teacher,path_to_end_folder_report_teacher)
+        start_date = var_start_date.get() # начальная дата
+        end_date = var_end_date.get() # конечная дата
+        create_report_teacher(path_to_templates_folder_report_teacher,path_to_data_folder_report_teacher,path_to_end_folder_report_teacher,start_date,end_date)
     except NameError:
         messagebox.showerror('Диана Создание рабочих программ',
                              f'Выберите файлы с данными и папку куда будет генерироваться файл')
@@ -346,10 +421,22 @@ def processing_create_report_teacher():
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('Диана Создание рабочих программ ver 3.0')
-    window.geometry('800x760')
-    window.resizable(False, False)
+    window.title('Диана Автоматизация работы методиста СПО ver 3.0')
+    # Устанавливаем размер и положение окна
+    set_window_size(window)
+    window.resizable(True, True)
+    # Добавляем контекстное меню в поля ввода
+    make_textmenu(window)
 
+    # Создаем вертикальный скроллбар
+    scrollbar = Scrollbar(window, orient="vertical")
+
+    # Создаем холст
+    canvas = Canvas(window, yscrollcommand=scrollbar.set)
+    canvas.pack(side="left", fill="both", expand=True)
+
+    # Привязываем скроллбар к холсту
+    scrollbar.config(command=canvas.yview)
 
     # Создаем объект вкладок
 
@@ -676,17 +763,51 @@ if __name__ == '__main__':
                                                   )
     btn_choose_end_folder_report_teacher.grid(column=0, row=5, padx=10, pady=10)
 
+    # Определяем текстовую переменную для стартовой даты
+    var_start_date = StringVar()
+    # Описание поля
+    label_start_date = Label(tab_for_report_teacher,
+                                   text='Введите начальную дату диапазона за который вы хотите получить данные в формате: 10.05.2024\n'
+                                        'Если вы ничего не введете то начальной датой будет считаться 01.01.1900')
+    label_start_date.grid(column=0, row=6, padx=10, pady=10)
+    # поле ввода
+    entry_start_date = Entry(tab_for_report_teacher, textvariable=var_start_date, width=30)
+    entry_start_date.grid(column=0, row=7, padx=10, pady=10)
+
+    # Определяем текстовую переменную для конечной даты
+    var_end_date = StringVar()
+    # Описание поля
+    label_end_date = Label(tab_for_report_teacher,
+                                   text='Введите конечную дату диапазона за который вы хотите получить данные в формате: 10.05.2024\n'
+                                        'Если вы ничего не введете то конечной датой будет считаться 01.01.2100')
+    label_end_date.grid(column=0, row=8, padx=10, pady=10)
+    # поле ввода
+    entry_end_date = Entry(tab_for_report_teacher, textvariable=var_end_date, width=30)
+    entry_end_date.grid(column=0, row=9, padx=10, pady=10)
+
+
     # Создаем кнопку обработки данных
 
     btn_proccessing_report_teacher = Button(tab_for_report_teacher, text='4) Обработать данные',
                                             font=('Arial Bold', 20),
                                             command=processing_create_report_teacher
                                             )
-    btn_proccessing_report_teacher.grid(column=0, row=6, padx=10, pady=10)
+    btn_proccessing_report_teacher.grid(column=0, row=10, padx=10, pady=10)
 
 
 
 
 
+    # Создаем виджет для управления полосой прокрутки
+    canvas.create_window((0, 0), window=tab_control, anchor="nw")
 
+    # Конфигурируем холст для обработки скроллинга
+    canvas.config(yscrollcommand=scrollbar.set, scrollregion=canvas.bbox("all"))
+    scrollbar.pack(side="right", fill="y")
+
+    # Вешаем событие скроллинга
+    canvas.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+    window.bind_class("Entry", "<Button-3><ButtonRelease-3>", show_textmenu)
+    window.bind_class("Entry", "<Control-a>", callback_select_all)
     window.mainloop()

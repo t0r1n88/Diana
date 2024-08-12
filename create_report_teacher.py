@@ -204,11 +204,11 @@ def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_colu
 
 
 
-def create_report_teacher(data_folder: str,template_folder:str, result_folder: str,start_date:str,end_date:str):
+def create_report_teacher(template_folder:str,data_folder: str, result_folder: str,start_date:str,end_date:str):
     """
     Функция для создания отчетности по преподавателям
+    :param template_folder: папка, где лежат шаблоны отчетов
     :param data_folder: папка где хранятся личные дела преподавателей
-    :param template_folder: папка где лежат шаблоны отчетов
     :param result_folder: папка в которую будут сохраняться итоговые файлы
     :param start_date: начальная дата, если ничего не указано то 01.01.1900
     :param end_date: конечная дата, если ничего не указано то 01.01.2100
@@ -250,6 +250,10 @@ def create_report_teacher(data_folder: str,template_folder:str, result_folder: s
         columns=['Название файла', 'Название листа', 'Описание ошибки'])  # датафрейм для ошибок
 
     teachers_dct = dict() # словарь в котором будут храниться словари с данными листов для каждого преподавателя
+
+
+
+
 
     # Создаем датафреймы для консолидации данных
     general_inf_df = pd.DataFrame(columns=required_sheets_columns['Общие сведения'])
