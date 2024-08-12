@@ -184,6 +184,38 @@ def create_analytics_report(dct_data:dict,result_folder:str):
                                       values=['Дата проведения'],
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
 
+    # Взаимопосещения
+    mutual_visits_df = dct_data['Взаимопосещение']
+    teacher_mutual_visits_df_one_col = pd.pivot_table(mutual_visits_df, index=['ФИО'],
+                                      values=['Дата посещения'],
+                                      aggfunc='count').rename(columns={'Дата посещения':'Количество'})
+    teacher_mutual_visits_df = pd.pivot_table(mutual_visits_df, index=['ФИО','ФИО посещенного педагога'],
+                                      values=['Дата посещения'],
+                                      aggfunc='count').rename(columns={'Дата посещения':'Количество'})
+
+    teacher_visited_visits_df_one_col = pd.pivot_table(mutual_visits_df, index=['ФИО посещенного педагога'],
+                                      values=['Дата посещения'],
+                                      aggfunc='count').rename(columns={'Дата посещения':'Количество'})
+    teacher_visited_mutual_visits_df = pd.pivot_table(mutual_visits_df, index=['ФИО посещенного педагога','ФИО'],
+                                      values=['Дата посещения'],
+                                      aggfunc='count').rename(columns={'Дата посещения':'Количество'})
+
+    group_mutual_visits_df_one_col = pd.pivot_table(mutual_visits_df, index=['Группа'],
+                                      values=['Дата посещения'],
+                                      aggfunc='count').rename(columns={'Дата посещения':'Количество'})
+    group_mutual_visits_df = pd.pivot_table(mutual_visits_df, index=['Группа','ФИО посещенного педагога'],
+                                      values=['Дата посещения'],
+                                      aggfunc='count').rename(columns={'Дата посещения':'Количество'})
+    theme_mutual_visits_df_one_col = pd.pivot_table(mutual_visits_df, index=['Тема'],
+                                      values=['Дата посещения'],
+                                      aggfunc='count').rename(columns={'Дата посещения':'Количество'})
+    theme_mutual_visits_df = pd.pivot_table(mutual_visits_df, index=['Тема','ФИО посещенного педагога'],
+                                      values=['Дата посещения'],
+                                      aggfunc='count').rename(columns={'Дата посещения':'Количество'})
+
+
+
+
 
     # генерируем текущее время
     t = time.localtime()
@@ -251,6 +283,22 @@ def create_analytics_report(dct_data:dict,result_folder:str):
         lesson_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3)
         group_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3,
                                       startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
+        # Взаимопосещения
+        teacher_mutual_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение')
+        teacher_visited_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение',
+                                              startcol=teacher_mutual_visits_df_one_col.shape[1] + 5)
+        max_row = max(len(teacher_mutual_visits_df_one_col), len(teacher_visited_visits_df_one_col))
+        teacher_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3)
+        teacher_visited_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3,
+                                      startcol=teacher_mutual_visits_df_one_col.shape[1] + 5)
+        max_row = max(len(teacher_mutual_visits_df) + max_row + 5, len(teacher_visited_mutual_visits_df) + max_row + 5)
+        group_mutual_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение',startrow=max_row+3)
+        theme_mutual_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение',startrow=max_row+3,startcol=teacher_mutual_visits_df_one_col.shape[1] + 5)
+        max_row = max(len(group_mutual_visits_df_one_col) + max_row + 5, len(theme_mutual_visits_df_one_col) + max_row + 5)
+        group_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3)
+        theme_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3,
+                                      startcol=teacher_mutual_visits_df_one_col.shape[1] + 5)
+
 
 
 
