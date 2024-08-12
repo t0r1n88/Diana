@@ -134,6 +134,24 @@ def create_analytics_report(dct_data:dict,result_folder:str):
                                      values=['Дата'],
                                      aggfunc='count').rename(columns={'Дата':'Количество'})
 
+    # Публикации
+    publications_df = dct_data['Публикации']
+    # В разрезе преподавателей
+    teacher_publications_df_one_col = pd.pivot_table(publications_df, index=['ФИО'],
+                                      values=['Дата выпуска'],
+                                      aggfunc='count').rename(columns={'Дата выпуска':'Количество'})
+    teacher_publications_df = pd.pivot_table(publications_df, index=['ФИО','Издание'],
+                                      values=['Дата выпуска'],
+                                      aggfunc='count').rename(columns={'Дата выпуска':'Количество'})
+    # В разрезе изданий
+    publ_publications_df_one_col = pd.pivot_table(publications_df, index=['Издание'],
+                                      values=['Дата выпуска'],
+                                      aggfunc='count').rename(columns={'Дата выпуска':'Количество'})
+    publ_publications_df = pd.pivot_table(publications_df, index=['Издание','ФИО'],
+                                      values=['Дата выпуска'],
+                                      aggfunc='count').rename(columns={'Дата выпуска':'Количество'})
+
+
 
 
     # генерируем текущее время
@@ -169,19 +187,22 @@ def create_analytics_report(dct_data:dict,result_folder:str):
         max_row = max(len(teacher_personal_perf_df_one_col),len(course_personal_perf_df_one_col))
         teacher_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5)
         course_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5,startcol=teacher_personal_perf_df_one_col.shape[1]+5)
-
         max_row = max(len(teacher_personal_perf_df)+max_row+5,len(course_personal_perf_df)+max_row+5)
-
         level_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5)
         result_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5,startcol=teacher_personal_perf_df_one_col.shape[1]+5)
         max_row = max(len(level_personal_perf_df_one_col)+max_row+3, len(result_personal_perf_df_one_col)+max_row+3)
         level_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5)
         result_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5,startcol=teacher_personal_perf_df_one_col.shape[1]+5)
-
         max_row =  max(len(level_personal_perf_df)+max_row+3, len(result_personal_perf_df)+max_row+3)
         way_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5)
         way_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5,startcol=teacher_personal_perf_df_one_col.shape[1]+5)
 
+        # Публикации
+        teacher_publications_df_one_col.to_excel(writer, sheet_name='Публикации')
+        publ_publications_df_one_col.to_excel(writer, sheet_name='Публикации',startcol=teacher_publications_df_one_col.shape[1]+5)
+        max_row = max(len(teacher_publications_df_one_col),len(publ_publications_df_one_col))
+        teacher_publications_df.to_excel(writer, sheet_name='Публикации',startrow=max_row+3)
+        publ_publications_df.to_excel(writer, sheet_name='Публикации',startrow=max_row+3,startcol=teacher_publications_df_one_col.shape[1]+5)
 
 
 
