@@ -152,6 +152,37 @@ def create_analytics_report(dct_data:dict,result_folder:str):
                                       aggfunc='count').rename(columns={'Дата выпуска':'Количество'})
 
 
+    # Открытые уроки
+    open_lessons_df = dct_data['Открытые уроки']
+    # В разрезе преподавателей
+    teacher_open_lessons_df_one_col = pd.pivot_table(open_lessons_df, index=['ФИО'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+    teacher_open_lessons_df = pd.pivot_table(open_lessons_df, index=['ФИО','Вид занятия'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+    # В разрезе видов занятий
+    type_open_lessons_df_one_col = pd.pivot_table(open_lessons_df, index=['Вид занятия'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+    type_open_lessons_df = pd.pivot_table(open_lessons_df, index=['Вид занятия','ФИО'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+
+    # В разрезе дисциплин
+    lesson_open_lessons_df_one_col = pd.pivot_table(open_lessons_df, index=['Дисциплина'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+    lesson_open_lessons_df = pd.pivot_table(open_lessons_df, index=['Дисциплина','Группа'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+    # В разрезе групп
+    group_open_lessons_df_one_col = pd.pivot_table(open_lessons_df, index=['Группа'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+    group_open_lessons_df = pd.pivot_table(open_lessons_df, index=['Группа','Дисциплина'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
 
 
     # генерируем текущее время
@@ -203,6 +234,23 @@ def create_analytics_report(dct_data:dict,result_folder:str):
         max_row = max(len(teacher_publications_df_one_col),len(publ_publications_df_one_col))
         teacher_publications_df.to_excel(writer, sheet_name='Публикации',startrow=max_row+3)
         publ_publications_df.to_excel(writer, sheet_name='Публикации',startrow=max_row+3,startcol=teacher_publications_df_one_col.shape[1]+5)
+        # Открытые уроки
+        teacher_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки')
+        type_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки',
+                                              startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
+        max_row = max(len(teacher_open_lessons_df_one_col), len(type_open_lessons_df_one_col))
+        teacher_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3)
+        type_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3,
+                                      startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
+
+        max_row = max(len(teacher_open_lessons_df)+max_row+5, len(teacher_open_lessons_df)+ max_row+5)
+        lesson_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки',startrow=max_row+3)
+        group_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки',startrow=max_row+3,
+                                              startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
+        max_row = max(len(lesson_open_lessons_df_one_col)+max_row+5, len(group_open_lessons_df_one_col)+max_row+5)
+        lesson_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3)
+        group_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3,
+                                      startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
 
 
 
