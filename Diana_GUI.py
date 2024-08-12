@@ -7,6 +7,7 @@ from create_PM import create_pm # функция для генерации пр�
 from create_UP_PM import create_rp_up #  функция для генерации РП для УП (учебных практик)
 from create_PP_PM import create_rp_pp #  функция для генерации РП для ПП (учебных практик)
 from create_PRED_DIP_PRAC import create_pred_dip_prac # функция для генерации рабочей программы преддипломной практики
+from create_report_teacher import create_report_teacher # функция для генерации отчетов по преподавателям
 import tkinter
 import sys
 import os
@@ -225,6 +226,38 @@ def select_file_data_xlsx_pp_prac():
     file_data_xlsx_pp_prac = filedialog.askopenfilename(filetypes=(('Excel files', '*.xlsx'), ('all files', '*.*')))
 
 
+"""
+Функции для генерации отчетов по преподавателям
+"""
+def select_templates_folder_report_teacher():
+    """
+    Функция для выбора папки с шаблонами
+    :return:
+    """
+    global path_to_templates_folder_report_teacher
+    path_to_templates_folder_report_teacher = filedialog.askdirectory()
+
+
+def select_data_folder_report_teacher():
+    """
+    Функция для выбора папки с шаблонами
+    :return:
+    """
+    global path_to_data_folder_report_teacher
+    path_to_data_folder_report_teacher = filedialog.askdirectory()
+
+
+def select_end_folder_report_teacher():
+    """
+    Функция для выбора папки с шаблонами
+    :return:
+    """
+    global path_to_end_folder_report_teacher
+    path_to_end_folder_report_teacher = filedialog.askdirectory()
+
+
+
+
 
 
 def processing_create_RP_for_UD():
@@ -296,10 +329,24 @@ def processing_create_RP_for_PP_prac():
                              f'Выберите файлы с данными и папку куда будет генерироваться файл')
 
 
+def processing_create_report_teacher():
+    """
+    Фугкция для создания отчетов по преподавателям
+    :return:
+    """
+    try:
+        create_report_teacher(path_to_templates_folder_report_teacher,path_to_data_folder_report_teacher,path_to_end_folder_report_teacher)
+    except NameError:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'Выберите файлы с данными и папку куда будет генерироваться файл')
+
+
+
+
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('Диана Создание рабочих программ ver 2.71')
+    window.title('Диана Создание рабочих программ ver 3.0')
     window.geometry('800x760')
     window.resizable(False, False)
 
@@ -310,13 +357,13 @@ if __name__ == '__main__':
 
     # Создаем вкладку обработки данных для Приложения 6
     tab_rp_for_ud = ttk.Frame(tab_control)
-    tab_control.add(tab_rp_for_ud, text='Создание РП для УД')
+    tab_control.add(tab_rp_for_ud, text='Создание РП\n для УД')
     tab_control.pack(expand=1, fill='both')
     # Добавляем виджеты на вкладку Создание РП для УД
     # Создаем метку для описания назначения программы
     lbl_hello = Label(tab_rp_for_ud,
                       text='Центр опережающей профессиональной подготовки Республики Бурятия\n'
-                           'Создание рабочей программы для учебной дисциплины с помощью шаблона')
+                           'Создание рабочей программы для учебной дисциплины\n с помощью шаблона')
     lbl_hello.grid(column=0, row=0, padx=10, pady=25)
 
     # Картинка
@@ -357,7 +404,7 @@ if __name__ == '__main__':
     Интерфейс для УД ООД
     """
     tab_rp_for_ood = ttk.Frame(tab_control)
-    tab_control.add(tab_rp_for_ood, text='Создание РП для ООД')
+    tab_control.add(tab_rp_for_ood, text='Создание РП\n для ООД')
     tab_control.pack(expand=1, fill='both')
     # Добавляем виджеты на вкладку Создание РП для ООД
     # Создаем метку для описания назначения программы
@@ -404,7 +451,7 @@ if __name__ == '__main__':
     Интерфейс для РП профессионального модуля
     """
     tab_rp_for_pm = ttk.Frame(tab_control)
-    tab_control.add(tab_rp_for_pm, text='Создание РП для ПМ')
+    tab_control.add(tab_rp_for_pm, text='Создание РП\n для ПМ')
     tab_control.pack(expand=1, fill='both')
     # Добавляем виджеты на вкладку Создание РП для ООД
     # Создаем метку для описания назначения программы
@@ -451,7 +498,7 @@ if __name__ == '__main__':
     Интерфейс для РП учебной практики профессионального модуля
     """
     tab_rp_for_up_pm = ttk.Frame(tab_control)
-    tab_control.add(tab_rp_for_up_pm, text='Создание РП для УП')
+    tab_control.add(tab_rp_for_up_pm, text='Создание РП\n для УП')
     tab_control.pack(expand=1, fill='both')
     # Добавляем виджеты на вкладку Создание РП для УП
     # Создаем метку для описания назначения программы
@@ -498,7 +545,7 @@ if __name__ == '__main__':
     Интерфейс для РП производственной практики профессионального модуля
     """
     tab_rp_for_pp_pm = ttk.Frame(tab_control)
-    tab_control.add(tab_rp_for_pp_pm, text='Создание РП для ПП')
+    tab_control.add(tab_rp_for_pp_pm, text='Создание РП\n для ПП')
     tab_control.pack(expand=1, fill='both')
     # Добавляем виджеты на вкладку Создание РП для УП
     # Создаем метку для описания назначения программы
@@ -545,7 +592,7 @@ if __name__ == '__main__':
     Интерфейс для РП преддипломной практики
     """
     tab_rp_for_pp_prac = ttk.Frame(tab_control)
-    tab_control.add(tab_rp_for_pp_prac, text='Создание РП для ПдП')
+    tab_control.add(tab_rp_for_pp_prac, text='Создание РП\n для ПдП')
     tab_control.pack(expand=1, fill='both')
     # Добавляем виджеты на вкладку Создание РП для УП
     # Создаем метку для описания назначения программы
@@ -588,6 +635,57 @@ if __name__ == '__main__':
                                      command=processing_create_RP_for_PP_prac
                                      )
     btn_proccessing_pp_prac.grid(column=0, row=5, padx=10, pady=10)
+
+    tab_for_report_teacher = ttk.Frame(tab_control)
+    tab_control.add(tab_for_report_teacher, text='Отчеты по\n преподавателям')
+    tab_control.pack(expand=1, fill='both')
+    # Создаем метку для описания назначения программы
+    lbl_hello = Label(tab_for_report_teacher,
+                      text='Центр опережающей профессиональной подготовки Республики Бурятия\n'
+                           'Создание отчетов и личных дел для преподавателей')
+    lbl_hello.grid(column=0, row=0, padx=10, pady=25)
+
+    # Картинка
+    path_to_img_report_teacher = resource_path('logo.png')
+
+    img_report_teacher = PhotoImage(file=path_to_img_report_teacher)
+    Label(tab_for_report_teacher,
+          image=img_report_teacher
+          ).grid(column=1, row=0, padx=10, pady=25)
+
+    # Создаем кнопку Выбрать файл с данными для шаблона
+    btn_choose_template_report_teacher = Button(tab_for_report_teacher, text='1) Выберите папку с шаблонами',
+                                            font=('Arial Bold', 20),
+                                            command=select_templates_folder_report_teacher
+                                            )
+    btn_choose_template_report_teacher.grid(column=0, row=3, padx=10, pady=10)
+
+    # Создаем кнопку для выбора папки c данными в формате xlsx
+
+    btn_choose_data_folder_report_teacher = Button(tab_for_report_teacher, text='2) Выберите папку с данными',
+                                                  font=('Arial Bold', 20),
+                                                  command=select_data_folder_report_teacher
+                                                  )
+    btn_choose_data_folder_report_teacher.grid(column=0, row=4, padx=10, pady=10)
+
+    # Создаем кнопку для выбора папки куда будут генерироваться файлы
+
+    btn_choose_end_folder_report_teacher = Button(tab_for_report_teacher, text='3) Выберите конечную папку',
+                                                  font=('Arial Bold', 20),
+                                                  command=select_end_folder_report_teacher
+                                                  )
+    btn_choose_end_folder_report_teacher.grid(column=0, row=5, padx=10, pady=10)
+
+    # Создаем кнопку обработки данных
+
+    btn_proccessing_report_teacher = Button(tab_for_report_teacher, text='4) Обработать данные',
+                                            font=('Arial Bold', 20),
+                                            command=processing_create_report_teacher
+                                            )
+    btn_proccessing_report_teacher.grid(column=0, row=6, padx=10, pady=10)
+
+
+
 
 
 
