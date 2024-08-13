@@ -279,114 +279,178 @@ def create_analytics_report(dct_data:dict,result_folder:str):
     t = time.localtime()
     current_time = time.strftime('%H_%M_%S', t)
     with pd.ExcelWriter(f'{result_folder}/Статистика {current_time}.xlsx') as writer:
-        teacher_skills_dev_df_one_col.to_excel(writer,sheet_name='Повышение квалификации')
-        course_skills_dev_df_one_col.to_excel(writer,sheet_name='Повышение квалификации',startrow=len(teacher_skills_dev_df_one_col)+3)
-        teacher_skills_dev_df.to_excel(writer,sheet_name='Повышение квалификации',startrow=len(teacher_skills_dev_df_one_col)+len(course_skills_dev_df_one_col)+5)
-        course_skills_dev_df.to_excel(writer,sheet_name='Повышение квалификации',startrow=len(teacher_skills_dev_df_one_col)+len(course_skills_dev_df_one_col)+len(teacher_skills_dev_df)+10)
+        if len(teacher_skills_dev_df_one_col) != 0:
+            teacher_skills_dev_df_one_col.to_excel(writer,sheet_name='Повышение квалификации')
+        if len(course_skills_dev_df_one_col) != 0:
+            course_skills_dev_df_one_col.to_excel(writer,sheet_name='Повышение квалификации',startrow=len(teacher_skills_dev_df_one_col)+3)
+        if len(teacher_skills_dev_df) !=0:
+            teacher_skills_dev_df.to_excel(writer,sheet_name='Повышение квалификации',startrow=len(teacher_skills_dev_df_one_col)+len(course_skills_dev_df_one_col)+5)
+        if len(course_skills_dev_df) != 0:
+            course_skills_dev_df.to_excel(writer,sheet_name='Повышение квалификации',startrow=len(teacher_skills_dev_df_one_col)+len(course_skills_dev_df_one_col)+len(teacher_skills_dev_df)+10)
         # Стажировка
-        teacher_internship_df_one_col.to_excel(writer, sheet_name='Стажировка')
-        course_internship_df_one_col.to_excel(writer, sheet_name='Стажировка',startrow=len(teacher_internship_df_one_col)+3)
-        teacher_internship_df.to_excel(writer, sheet_name='Стажировка',startrow=len(teacher_internship_df_one_col)+len(course_internship_df_one_col)+5)
-        course_internship_df.to_excel(writer, sheet_name='Стажировка',startrow=len(teacher_internship_df_one_col)+len(course_internship_df_one_col)+len(teacher_internship_df)+10)
+        if len(teacher_internship_df_one_col) != 0:
+            teacher_internship_df_one_col.to_excel(writer, sheet_name='Стажировка')
+        if len(course_internship_df_one_col) != 0:
+            course_internship_df_one_col.to_excel(writer, sheet_name='Стажировка',startrow=len(teacher_internship_df_one_col)+3)
+        if len(teacher_internship_df) != 0:
+            teacher_internship_df.to_excel(writer, sheet_name='Стажировка',startrow=len(teacher_internship_df_one_col)+len(course_internship_df_one_col)+5)
+        if len(course_internship_df) != 0:
+            course_internship_df.to_excel(writer, sheet_name='Стажировка',startrow=len(teacher_internship_df_one_col)+len(course_internship_df_one_col)+len(teacher_internship_df)+10)
         # Метод разработки
-        teacher_method_dev_df_one_col.to_excel(writer, sheet_name='Методические разработки')
-        type_method_df_one_col.to_excel(writer, sheet_name='Методические разработки',startcol=teacher_method_dev_df_one_col.shape[1] + 5)
-        prof_method_df_one_col.to_excel(writer, sheet_name='Методические разработки',startcol=teacher_method_dev_df_one_col.shape[1] + teacher_method_dev_df_one_col.shape[1]+10)
+        if len(teacher_method_dev_df_one_col) != 0:
+            teacher_method_dev_df_one_col.to_excel(writer, sheet_name='Методические разработки')
+        if len(type_method_df_one_col) != 0:
+            type_method_df_one_col.to_excel(writer, sheet_name='Методические разработки',startcol=teacher_method_dev_df_one_col.shape[1] + 5)
+        if len(prof_method_df_one_col) != 0:
+            prof_method_df_one_col.to_excel(writer, sheet_name='Методические разработки',startcol=teacher_method_dev_df_one_col.shape[1] + teacher_method_dev_df_one_col.shape[1]+10)
         max_row = max(len(teacher_method_dev_df_one_col),len(type_method_df_one_col),len(prof_method_df_one_col)) # получаем строку с которой надо начинать запись второго ряда
-        teacher_method_dev_df.to_excel(writer, sheet_name='Методические разработки',startrow=max_row + 5)
-        type_method_df.to_excel(writer, sheet_name='Методические разработки',startrow=max_row + 5,startcol=teacher_method_dev_df.shape[1] + 5)
-        prof_method_df.to_excel(writer, sheet_name='Методические разработки',startcol=teacher_method_dev_df.shape[1]+type_method_df.shape[1]+10,startrow=max_row + 5)
+        if len(teacher_method_dev_df) != 0:
+            teacher_method_dev_df.to_excel(writer, sheet_name='Методические разработки',startrow=max_row + 5)
+        if len(type_method_df) != 0:
+            type_method_df.to_excel(writer, sheet_name='Методические разработки',startrow=max_row + 5,startcol=teacher_method_dev_df.shape[1] + 5)
+        if len(prof_method_df) != 0:
+            prof_method_df.to_excel(writer, sheet_name='Методические разработки',startcol=teacher_method_dev_df.shape[1]+type_method_df.shape[1]+10,startrow=max_row + 5)
         # Мероприятия проведенные ППС
-        teacher_events_df_one_col.to_excel(writer, sheet_name='Мероприятия, пров. ППС')
-        level_events_df_one_col.to_excel(writer, sheet_name='Мероприятия, пров. ППС',startcol=teacher_events_df_one_col.shape[1] + 5)
+        if len(teacher_events_df_one_col) != 0:
+            teacher_events_df_one_col.to_excel(writer, sheet_name='Мероприятия, пров. ППС')
+        if len(level_events_df_one_col) != 0:
+            level_events_df_one_col.to_excel(writer, sheet_name='Мероприятия, пров. ППС',startcol=teacher_events_df_one_col.shape[1] + 5)
         max_row = max(len(teacher_events_df_one_col),len(level_events_df_one_col))
-        teacher_events_df.to_excel(writer, sheet_name='Мероприятия, пров. ППС',startrow=max_row+5)
-        level_events_df.to_excel(writer, sheet_name='Мероприятия, пров. ППС',startrow=max_row+5,startcol=teacher_events_df_one_col.shape[1] + 5)
+        if len(teacher_events_df) != 0:
+            teacher_events_df.to_excel(writer, sheet_name='Мероприятия, пров. ППС',startrow=max_row+5)
+        if len(level_events_df) != 0:
+            level_events_df.to_excel(writer, sheet_name='Мероприятия, пров. ППС',startrow=max_row+5,startcol=teacher_events_df_one_col.shape[1] + 5)
         # Личное выступление ППС
-        teacher_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС')
-        course_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС',startcol=teacher_personal_perf_df_one_col.shape[1]+5)
+        if len(teacher_personal_perf_df_one_col) != 0:
+            teacher_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС')
+        if len(course_personal_perf_df_one_col) != 0:
+            course_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС',startcol=teacher_personal_perf_df_one_col.shape[1]+5)
         max_row = max(len(teacher_personal_perf_df_one_col),len(course_personal_perf_df_one_col))
-        teacher_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5)
-        course_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5,startcol=teacher_personal_perf_df_one_col.shape[1]+5)
+        if len(teacher_personal_perf_df) != 0:
+            teacher_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5)
+        if len(course_personal_perf_df) != 0:
+            course_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5,startcol=teacher_personal_perf_df_one_col.shape[1]+5)
         max_row = max(len(teacher_personal_perf_df)+max_row+5,len(course_personal_perf_df)+max_row+5)
-        level_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5)
-        result_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5,startcol=teacher_personal_perf_df_one_col.shape[1]+5)
+        if len(level_personal_perf_df_one_col) != 0:
+            level_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5)
+        if len(result_personal_perf_df_one_col) != 0:
+            result_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5,startcol=teacher_personal_perf_df_one_col.shape[1]+5)
         max_row = max(len(level_personal_perf_df_one_col)+max_row+3, len(result_personal_perf_df_one_col)+max_row+3)
-        level_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5)
-        result_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5,startcol=teacher_personal_perf_df_one_col.shape[1]+5)
+        if len(level_personal_perf_df) != 0:
+            level_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5)
+        if len(result_personal_perf_df) != 0:
+            result_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5,startcol=teacher_personal_perf_df_one_col.shape[1]+5)
         max_row =  max(len(level_personal_perf_df)+max_row+3, len(result_personal_perf_df)+max_row+3)
-        way_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5)
-        way_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5,startcol=teacher_personal_perf_df_one_col.shape[1]+5)
+        if len(way_personal_perf_df_one_col) != 0:
+            way_personal_perf_df_one_col.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5)
+        if len(way_personal_perf_df) != 0:
+            way_personal_perf_df.to_excel(writer, sheet_name='Личное выступление ППС',startrow=max_row+5,startcol=teacher_personal_perf_df_one_col.shape[1]+5)
 
         # Публикации
-        teacher_publications_df_one_col.to_excel(writer, sheet_name='Публикации')
-        publ_publications_df_one_col.to_excel(writer, sheet_name='Публикации',startcol=teacher_publications_df_one_col.shape[1]+5)
+        if len(teacher_publications_df_one_col) != 0:
+            teacher_publications_df_one_col.to_excel(writer, sheet_name='Публикации')
+        if len(publ_publications_df_one_col) != 0:
+            publ_publications_df_one_col.to_excel(writer, sheet_name='Публикации',startcol=teacher_publications_df_one_col.shape[1]+5)
         max_row = max(len(teacher_publications_df_one_col),len(publ_publications_df_one_col))
-        teacher_publications_df.to_excel(writer, sheet_name='Публикации',startrow=max_row+3)
-        publ_publications_df.to_excel(writer, sheet_name='Публикации',startrow=max_row+3,startcol=teacher_publications_df_one_col.shape[1]+5)
+        if len(teacher_publications_df) != 0:
+            teacher_publications_df.to_excel(writer, sheet_name='Публикации',startrow=max_row+3)
+        if len(publ_publications_df) != 0:
+            publ_publications_df.to_excel(writer, sheet_name='Публикации',startrow=max_row+3,startcol=teacher_publications_df_one_col.shape[1]+5)
         # Открытые уроки
-        teacher_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки')
-        type_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки',
+        if len(teacher_open_lessons_df_one_col) != 0:
+            teacher_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки')
+        if len(type_open_lessons_df_one_col) != 0:
+            type_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки',
                                               startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
         max_row = max(len(teacher_open_lessons_df_one_col), len(type_open_lessons_df_one_col))
-        teacher_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3)
-        type_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3,
+        if len(teacher_open_lessons_df) != 0:
+            teacher_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3)
+        if len(type_open_lessons_df) != 0:
+            type_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3,
                                       startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
 
         max_row = max(len(teacher_open_lessons_df)+max_row+5, len(teacher_open_lessons_df)+ max_row+5)
-        lesson_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки',startrow=max_row+3)
-        group_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки',startrow=max_row+3,
+        if len(lesson_open_lessons_df_one_col) != 0:
+            lesson_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки',startrow=max_row+3)
+        if len(group_open_lessons_df_one_col) != 0:
+            group_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки',startrow=max_row+3,
                                               startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
         max_row = max(len(lesson_open_lessons_df_one_col)+max_row+5, len(group_open_lessons_df_one_col)+max_row+5)
-        lesson_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3)
-        group_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3,
+        if len(lesson_open_lessons_df) != 0:
+            lesson_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3)
+        if len(group_open_lessons_df) != 0:
+            group_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3,
                                       startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
         # Взаимопосещения
-        teacher_mutual_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение')
-        teacher_visited_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение',
+        if len(teacher_mutual_visits_df_one_col) != 0:
+            teacher_mutual_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение')
+        if len(teacher_visited_visits_df_one_col) != 0:
+            teacher_visited_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение',
                                               startcol=teacher_mutual_visits_df_one_col.shape[1] + 5)
         max_row = max(len(teacher_mutual_visits_df_one_col), len(teacher_visited_visits_df_one_col))
-        teacher_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3)
-        teacher_visited_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3,
+        if len(teacher_mutual_visits_df) != 0:
+            teacher_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3)
+        if len(teacher_visited_mutual_visits_df) != 0:
+            teacher_visited_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3,
                                       startcol=teacher_mutual_visits_df_one_col.shape[1] + 5)
         max_row = max(len(teacher_mutual_visits_df) + max_row + 5, len(teacher_visited_mutual_visits_df) + max_row + 5)
-        group_mutual_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение',startrow=max_row+3)
-        theme_mutual_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение',startrow=max_row+3,startcol=teacher_mutual_visits_df_one_col.shape[1] + 5)
+        if len(group_mutual_visits_df_one_col) != 0:
+            group_mutual_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение',startrow=max_row+3)
+        if len(theme_mutual_visits_df_one_col) != 0:
+            theme_mutual_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение',startrow=max_row+3,startcol=teacher_mutual_visits_df_one_col.shape[1] + 5)
         max_row = max(len(group_mutual_visits_df_one_col) + max_row + 5, len(theme_mutual_visits_df_one_col) + max_row + 5)
-        group_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3)
-        theme_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3,
+        if len(group_mutual_visits_df) != 0:
+            group_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3)
+        if len(theme_mutual_visits_df) != 0:
+            theme_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3,
                                       startcol=teacher_mutual_visits_df_one_col.shape[1] + 5)
         #УИРС
-        teacher_student_perf_df_one_col.to_excel(writer, sheet_name='УИРС')
-        prof_student_perf_df_one_col.to_excel(writer, sheet_name='УИРС',
+        if len(teacher_student_perf_df_one_col) != 0:
+            teacher_student_perf_df_one_col.to_excel(writer, sheet_name='УИРС')
+        if len(prof_student_perf_df_one_col) != 0:
+            prof_student_perf_df_one_col.to_excel(writer, sheet_name='УИРС',
                                               startcol=teacher_student_perf_df_one_col.shape[1] + 5)
         max_row = max(len(teacher_student_perf_df_one_col), len(prof_student_perf_df_one_col))
-        teacher_student_perf_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3)
-        prof_student_perf_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3,
+        if len(teacher_student_perf_df) != 0:
+            teacher_student_perf_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3)
+        if len(prof_student_perf_df) != 0:
+            prof_student_perf_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3,
                                       startcol=teacher_student_perf_df_one_col.shape[1] + 5)
 
         max_row = max(len(teacher_student_perf_df) + max_row + 5, len(prof_student_perf_df) + max_row + 5)
-        type_student_perf_df_one_col.to_excel(writer, sheet_name='УИРС',startrow=max_row+3)
-        level_student_perf_df_one_col.to_excel(writer, sheet_name='УИРС',startrow=max_row+3,startcol=teacher_student_perf_df_one_col.shape[1] + 5)
+        if len(type_student_perf_df_one_col) != 0:
+            type_student_perf_df_one_col.to_excel(writer, sheet_name='УИРС',startrow=max_row+3)
+        if len(level_student_perf_df_one_col) != 0:
+            level_student_perf_df_one_col.to_excel(writer, sheet_name='УИРС',startrow=max_row+3,startcol=teacher_student_perf_df_one_col.shape[1] + 5)
         max_row = max(len(type_student_perf_df_one_col) + max_row + 5,len(level_student_perf_df_one_col) + max_row + 5)
-        type_student_perf_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3)
-        level_student_perf_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3,
+        if len(type_student_perf_df) != 0:
+            type_student_perf_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3)
+        if len(level_student_perf_df) != 0:
+            level_student_perf_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3,
                                         startcol=teacher_student_perf_df_one_col.shape[1] + 5)
         # Работа по НМР
-        teacher_nmr_df_one_col.to_excel(writer, sheet_name='Работа по НМР')
-        form_nmr_df_one_col.to_excel(writer, sheet_name='Работа по НМР',
+        if len(teacher_nmr_df_one_col) != 0:
+            teacher_nmr_df_one_col.to_excel(writer, sheet_name='Работа по НМР')
+        if len(form_nmr_df_one_col) != 0:
+            form_nmr_df_one_col.to_excel(writer, sheet_name='Работа по НМР',
                                               startcol=teacher_nmr_df_one_col.shape[1] + 5)
         max_row = max(len(teacher_nmr_df_one_col), len(form_nmr_df_one_col))
-        teacher_nmr_df.to_excel(writer, sheet_name='Работа по НМР', startrow=max_row + 3)
-        form_nmr_df.to_excel(writer, sheet_name='Работа по НМР', startrow=max_row + 3,
+        if len(teacher_nmr_df) != 0:
+            teacher_nmr_df.to_excel(writer, sheet_name='Работа по НМР', startrow=max_row + 3)
+        if len(form_nmr_df) != 0:
+            form_nmr_df.to_excel(writer, sheet_name='Работа по НМР', startrow=max_row + 3,
                                       startcol=teacher_nmr_df_one_col.shape[1] + 5)
 
         max_row = max(len(teacher_nmr_df) + max_row + 5, len(form_nmr_df) + max_row + 5)
-        bool_nmr_df_one_col.to_excel(writer, sheet_name='Работа по НМР',startrow=max_row+3)
-        place_nmr_df_one_col.to_excel(writer, sheet_name='Работа по НМР',startrow=max_row+3,startcol=teacher_nmr_df_one_col.shape[1] + 5)
+        if len(bool_nmr_df_one_col) != 0:
+            bool_nmr_df_one_col.to_excel(writer, sheet_name='Работа по НМР',startrow=max_row+3)
+        if len(place_nmr_df_one_col) != 0:
+            place_nmr_df_one_col.to_excel(writer, sheet_name='Работа по НМР',startrow=max_row+3,startcol=teacher_nmr_df_one_col.shape[1] + 5)
         max_row = max(len(bool_nmr_df_one_col) + max_row + 5,len(place_nmr_df_one_col) + max_row + 5)
-        bool_nmr_df.to_excel(writer, sheet_name='Работа по НМР', startrow=max_row + 3)
-        place_nmr_df.to_excel(writer, sheet_name='Работа по НМР', startrow=max_row + 3,
+        if len(bool_nmr_df) != 0:
+            bool_nmr_df.to_excel(writer, sheet_name='Работа по НМР', startrow=max_row + 3)
+        if len(place_nmr_df) != 0:
+            place_nmr_df.to_excel(writer, sheet_name='Работа по НМР', startrow=max_row + 3,
                                         startcol=teacher_nmr_df_one_col.shape[1] + 5)
 
 
