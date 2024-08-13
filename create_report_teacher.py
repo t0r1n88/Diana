@@ -28,7 +28,10 @@ warnings.filterwarnings('ignore', category=UserWarning, module='openpyxl')
 warnings.filterwarnings('ignore', category=FutureWarning, module='openpyxl')
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-
+class NotFileInFolder(Exception):
+    """
+    Исключение для случаев когда отсутствуют файлы эксель в папке с данными
+    """
 def check_required_sheet_in_file(path_to_checked_file: str, func_required_sheets_columns: dict, func_name_file: str):
     """
     Функция для проверки наличия обязательных листов в файле
@@ -275,7 +278,10 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
     nmr_df.insert(0, 'ФИО', '')
 
     try:
-
+        # Проверяем наличие файлов xlsx
+        count_xlsx_in_folder = [name_file for name_file in os.listdir(data_folder) if not name_file.startswith('~$') and name_file.endswith('.xlsx')]
+        if len(count_xlsx_in_folder) == 0:
+            raise NotFileInFolder
         for idx, file in enumerate(os.listdir(data_folder)):
             if not file.startswith('~$') and file.endswith('.xlsx'):
                 name_file = file.split('.xlsx')[0]  # Получаем название файла
@@ -383,7 +389,10 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
 
         # Сохраняем файлы в формате docx
         generate_docs({'Личные дела':teachers_dct,'Отчет':dct_df},template_folder,result_folder) # создаем личные дела
-
+    except NotFileInFolder as e:
+        messagebox.showerror('Диана',
+                             f'В папке {data_folder} не найдено ни одного файла с расширением XLSX!\n'
+                             f'Данные по каждому преподавателю должны храниться в файлах  с расширением XLSX (Excel или его аналоги).')
     except KeyError as e:
         messagebox.showerror('Диана',
                              f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
