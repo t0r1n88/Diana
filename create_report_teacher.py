@@ -373,6 +373,12 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
         # генерируем текущее время
         t = time.localtime()
         current_time = time.strftime('%H_%M_%S', t)
+
+        # Сохраняем файл с ошибками
+        error_wb = write_df_to_excel({'Ошибки':error_df},write_index=False)
+        del_sheet(error_wb,['Sheet'])
+        error_wb.save(f'{result_folder}/Ошибки {current_time}.xlsx')
+
         # Сохраняем файл эксель с данными
         # Словарь для передачи в функцию форматирования
 
@@ -385,15 +391,6 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
         main_wb.save(f'{result_folder}/Свод {current_time}.xlsx')
         # Сохраняем статистику
         create_analytics_report(dct_df,result_folder)
-
-
-
-
-
-        # Сохраняем файл с ошибками
-        error_wb = write_df_to_excel({'Ошибки':error_df},write_index=False)
-        del_sheet(error_wb,['Sheet'])
-        error_wb.save(f'{result_folder}/Ошибки {current_time}.xlsx')
 
         # Сохраняем файлы в формате docx
         generate_docs({'Личные дела':teachers_dct,'Отчет':dct_df},template_folder,result_folder) # создаем личные дела
