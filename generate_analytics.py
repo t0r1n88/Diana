@@ -214,35 +214,64 @@ def create_analytics_report(dct_data:dict,result_folder:str):
                                       aggfunc='count').rename(columns={'Дата посещения':'Количество'})
     # УИРС
     student_perf_df = dct_data['УИРС']
-    teacher_student_perf_df_df_one_col = pd.pivot_table(student_perf_df, index=['ФИО обучающегося','Результат участия'],
+    teacher_student_perf_df_one_col = pd.pivot_table(student_perf_df, index=['ФИО обучающегося','Результат участия'],
                                       values=['Дата проведения'],
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
-    teacher_student_perf_df_df = pd.pivot_table(student_perf_df, index=['ФИО','ФИО обучающегося','Результат участия'],
-                                      values=['Дата проведения'],
-                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
-
-    prof_student_perf_df_df_one_col = pd.pivot_table(student_perf_df, index=['Профессия/специальность','Группа'],
-                                      values=['Дата проведения'],
-                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
-    prof_student_perf_df_df = pd.pivot_table(student_perf_df, index=['Профессия/специальность','Группа', 'ФИО обучающегося', 'Результат участия'],
+    teacher_student_perf_df = pd.pivot_table(student_perf_df, index=['ФИО','ФИО обучающегося','Результат участия'],
                                       values=['Дата проведения'],
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
 
-    type_student_perf_df_df_one_col = pd.pivot_table(student_perf_df, index=['Вид мероприятия'],
+    prof_student_perf_df_one_col = pd.pivot_table(student_perf_df, index=['Профессия/специальность','Группа'],
                                       values=['Дата проведения'],
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
-    type_student_perf_df_df = pd.pivot_table(student_perf_df, index=['Вид мероприятия','Уровень мероприятия', 'ФИО обучающегося', 'Результат участия'],
-                                      values=['Дата проведения'],
-                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
-
-    level_student_perf_df_df_one_col = pd.pivot_table(student_perf_df, index=['Уровень мероприятия'],
-                                      values=['Дата проведения'],
-                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
-    level_student_perf_df_df = pd.pivot_table(student_perf_df, index=['Уровень мероприятия','Вид мероприятия','ФИО обучающегося', 'Результат участия'],
+    prof_student_perf_df = pd.pivot_table(student_perf_df, index=['Профессия/специальность','Группа', 'ФИО обучающегося', 'Результат участия'],
                                       values=['Дата проведения'],
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
 
+    type_student_perf_df_one_col = pd.pivot_table(student_perf_df, index=['Вид мероприятия'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+    type_student_perf_df = pd.pivot_table(student_perf_df, index=['Вид мероприятия','Уровень мероприятия', 'ФИО обучающегося', 'Результат участия'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
 
+    level_student_perf_df_one_col = pd.pivot_table(student_perf_df, index=['Уровень мероприятия'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+    level_student_perf_df = pd.pivot_table(student_perf_df, index=['Уровень мероприятия','Вид мероприятия','ФИО обучающегося', 'Результат участия'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+
+    # Работа по НМР
+    nmr_df = dct_data['Работа по НМР']
+    teacher_nmr_df_one_col = pd.pivot_table(nmr_df, index=['ФИО'],
+                                      values=['Дата обобщения опыта'],
+                                      aggfunc='count').rename(columns={'Дата обобщения опыта':'Количество'})
+    teacher_nmr_df = pd.pivot_table(nmr_df, index=['ФИО','Форма обобщения опыта','Проведено ли обобщение опыта'],
+                                      values=['Дата обобщения опыта'],
+                                      aggfunc='count').rename(columns={'Дата обобщения опыта':'Количество'})
+
+    form_nmr_df_one_col = pd.pivot_table(nmr_df, index=['Форма обобщения опыта'],
+                                      values=['Дата обобщения опыта'],
+                                      aggfunc='count').rename(columns={'Дата обобщения опыта':'Количество'})
+    form_nmr_df = pd.pivot_table(nmr_df, index=['Форма обобщения опыта','ФИО','Проведено ли обобщение опыта'],
+                                      values=['Дата обобщения опыта'],
+                                      aggfunc='count').rename(columns={'Дата обобщения опыта':'Количество'})
+
+
+    bool_nmr_df_one_col = pd.pivot_table(nmr_df, index=['Проведено ли обобщение опыта'],
+                                      values=['Дата обобщения опыта'],
+                                      aggfunc='count').rename(columns={'Дата обобщения опыта':'Количество'})
+    bool_nmr_df = pd.pivot_table(nmr_df, index=['Проведено ли обобщение опыта','Форма обобщения опыта','ФИО'],
+                                      values=['Дата обобщения опыта'],
+                                      aggfunc='count').rename(columns={'Дата обобщения опыта':'Количество'})
+
+    place_nmr_df_one_col = pd.pivot_table(nmr_df, index=['Место обобщения опыта'],
+                                         values=['Дата обобщения опыта'],
+                                         aggfunc='count').rename(columns={'Дата обобщения опыта': 'Количество'})
+    place_nmr_df = pd.pivot_table(nmr_df, index=['Место обобщения опыта','Форма обобщения опыта', 'ФИО','Проведено ли обобщение опыта'],
+                                 values=['Дата обобщения опыта'],
+                                 aggfunc='count').rename(columns={'Дата обобщения опыта': 'Количество'})
 
 
 
@@ -328,21 +357,37 @@ def create_analytics_report(dct_data:dict,result_folder:str):
         theme_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3,
                                       startcol=teacher_mutual_visits_df_one_col.shape[1] + 5)
         #УИРС
-        teacher_student_perf_df_df_one_col.to_excel(writer, sheet_name='УИРС')
-        prof_student_perf_df_df_one_col.to_excel(writer, sheet_name='УИРС',
-                                              startcol=teacher_student_perf_df_df_one_col.shape[1] + 5)
-        max_row = max(len(teacher_student_perf_df_df_one_col), len(prof_student_perf_df_df_one_col))
-        teacher_student_perf_df_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3)
-        prof_student_perf_df_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3,
-                                      startcol=teacher_student_perf_df_df_one_col.shape[1] + 5)
+        teacher_student_perf_df_one_col.to_excel(writer, sheet_name='УИРС')
+        prof_student_perf_df_one_col.to_excel(writer, sheet_name='УИРС',
+                                              startcol=teacher_student_perf_df_one_col.shape[1] + 5)
+        max_row = max(len(teacher_student_perf_df_one_col), len(prof_student_perf_df_one_col))
+        teacher_student_perf_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3)
+        prof_student_perf_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3,
+                                      startcol=teacher_student_perf_df_one_col.shape[1] + 5)
 
-        max_row = max(len(teacher_student_perf_df_df) + max_row + 5, len(prof_student_perf_df_df) + max_row + 5)
-        type_student_perf_df_df_one_col.to_excel(writer, sheet_name='УИРС',startrow=max_row+3)
-        level_student_perf_df_df_one_col.to_excel(writer, sheet_name='УИРС',startrow=max_row+3,startcol=teacher_student_perf_df_df_one_col.shape[1] + 5)
-        max_row = max(len(type_student_perf_df_df_one_col) + max_row + 5,len(level_student_perf_df_df_one_col) + max_row + 5)
-        type_student_perf_df_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3)
-        level_student_perf_df_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3,
-                                        startcol=teacher_student_perf_df_df_one_col.shape[1] + 5)
+        max_row = max(len(teacher_student_perf_df) + max_row + 5, len(prof_student_perf_df) + max_row + 5)
+        type_student_perf_df_one_col.to_excel(writer, sheet_name='УИРС',startrow=max_row+3)
+        level_student_perf_df_one_col.to_excel(writer, sheet_name='УИРС',startrow=max_row+3,startcol=teacher_student_perf_df_one_col.shape[1] + 5)
+        max_row = max(len(type_student_perf_df_one_col) + max_row + 5,len(level_student_perf_df_one_col) + max_row + 5)
+        type_student_perf_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3)
+        level_student_perf_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3,
+                                        startcol=teacher_student_perf_df_one_col.shape[1] + 5)
+        # Работа по НМР
+        teacher_nmr_df_one_col.to_excel(writer, sheet_name='Работа по НМР')
+        form_nmr_df_one_col.to_excel(writer, sheet_name='Работа по НМР',
+                                              startcol=teacher_nmr_df_one_col.shape[1] + 5)
+        max_row = max(len(teacher_nmr_df_one_col), len(form_nmr_df_one_col))
+        teacher_nmr_df.to_excel(writer, sheet_name='Работа по НМР', startrow=max_row + 3)
+        form_nmr_df.to_excel(writer, sheet_name='Работа по НМР', startrow=max_row + 3,
+                                      startcol=teacher_nmr_df_one_col.shape[1] + 5)
+
+        max_row = max(len(teacher_nmr_df) + max_row + 5, len(form_nmr_df) + max_row + 5)
+        bool_nmr_df_one_col.to_excel(writer, sheet_name='Работа по НМР',startrow=max_row+3)
+        place_nmr_df_one_col.to_excel(writer, sheet_name='Работа по НМР',startrow=max_row+3,startcol=teacher_nmr_df_one_col.shape[1] + 5)
+        max_row = max(len(bool_nmr_df_one_col) + max_row + 5,len(place_nmr_df_one_col) + max_row + 5)
+        bool_nmr_df.to_excel(writer, sheet_name='Работа по НМР', startrow=max_row + 3)
+        place_nmr_df.to_excel(writer, sheet_name='Работа по НМР', startrow=max_row + 3,
+                                        startcol=teacher_nmr_df_one_col.shape[1] + 5)
 
 
 
