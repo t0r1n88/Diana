@@ -33,6 +33,10 @@ class NotFileInFolder(Exception):
     Исключение для случаев когда отсутствуют файлы эксель в папке с данными
     """
     pass
+class SameFolder(Exception):
+    """
+    Исключение для случаев если совпадают начальная и конечная папки
+    """
 def check_required_sheet_in_file(path_to_checked_file: str, func_required_sheets_columns: dict, func_name_file: str):
     """
     Функция для проверки наличия обязательных листов в файле
@@ -279,6 +283,9 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
     nmr_df.insert(0, 'ФИО', '')
 
     try:
+        # проверяем совпадение папок
+        if data_folder == result_folder:
+            raise SameFolder
         # Проверяем наличие файлов xlsx
         count_xlsx_in_folder = [name_file for name_file in os.listdir(data_folder) if not name_file.startswith('~$') and name_file.endswith('.xlsx')]
         if len(count_xlsx_in_folder) == 0:
@@ -394,6 +401,10 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
         messagebox.showerror('Диана',
                              f'В папке {data_folder} не найдено ни одного файла с расширением XLSX!\n'
                              f'Данные по каждому преподавателю должны храниться в файлах  с расширением XLSX (Excel или его аналоги).')
+    except SameFolder as e:
+        messagebox.showerror('Диана',
+                             f'Выбрана одна и та же папка в качестве папки с данными и конечной папки. Должно быть 2 разных папки !'
+                            )
     except KeyError as e:
         messagebox.showerror('Диана',
                              f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
