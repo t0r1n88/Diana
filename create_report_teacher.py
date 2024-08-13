@@ -419,7 +419,7 @@ if __name__ == '__main__':
     main_data_folder = 'data/Данные'
     main_result_folder = 'data/Результат'
     main_template_folder = 'data/Шаблоны'
-    main_start_date = '06.06.1900'
+    main_start_date = '12.12.2024'
     main_end_date = '01.05.2100'
 
     create_report_teacher(main_template_folder ,main_data_folder,main_result_folder, main_start_date, main_end_date)
