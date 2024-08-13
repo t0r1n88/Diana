@@ -452,6 +452,9 @@ def create_analytics_report(dct_data:dict,result_folder:str):
         if len(place_nmr_df) != 0:
             place_nmr_df.to_excel(writer, sheet_name='Работа по НМР', startrow=max_row + 3,
                                         startcol=teacher_nmr_df_one_col.shape[1] + 5)
+        end_df = pd.DataFrame(columns=['Информация'],
+                              data=[[None]])
+        end_df.to_excel(writer,sheet_name='1')
 
 
 
