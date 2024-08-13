@@ -32,6 +32,7 @@ class NotFileInFolder(Exception):
     """
     Исключение для случаев когда отсутствуют файлы эксель в папке с данными
     """
+    pass
 def check_required_sheet_in_file(path_to_checked_file: str, func_required_sheets_columns: dict, func_name_file: str):
     """
     Функция для проверки наличия обязательных листов в файле
