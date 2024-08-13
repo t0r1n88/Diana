@@ -390,6 +390,9 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
     except ValueError as e:
         messagebox.showerror('Диана',
                              f'В таблице не найден лист,колонка или значение {e.args}!\nПроверьте написание названий')
+    except TypeError as e:
+        messagebox.showerror('Диана',
+                             f'Проверьте правильность введенной даты. Возможно вы ввели 31.02.2024 или 35.06.2024')
 
     except FileNotFoundError:
         messagebox.showerror('Диана',
@@ -419,7 +422,7 @@ if __name__ == '__main__':
     main_data_folder = 'data/Данные'
     main_result_folder = 'data/Результат'
     main_template_folder = 'data/Шаблоны'
-    main_start_date = '12.12.2024'
+    main_start_date = '30.06.2024'
     main_end_date = '01.05.2100'
 
     create_report_teacher(main_template_folder ,main_data_folder,main_result_folder, main_start_date, main_end_date)
