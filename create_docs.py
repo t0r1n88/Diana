@@ -418,7 +418,7 @@ def generate_table_method_dev(df: pd.DataFrame):
     count_type = Counter(df['Вид'].tolist())
     result_str_met = f'ИТОГО изданий-{quantity_met}:\nметодические рекомендации-{count_type["методические рекомендации"]}\nметодические разработки-{count_type["методические разработки"]}\nучебное пособие-{count_type["учебное пособие"]}\nэлектронный курс-{count_type["электронный курс"]}\nрабочая тетрадь-{count_type["рабочая тетрадь"]}\nтест-{count_type["тест"]}\nвидеоурок-{count_type["видеоурок"]}\nпрофессиональная проба-{count_type["профессиональная проба"]}\nиное-{count_type["иное"]}\n'
 
-    main_df.loc[len(main_df) + 1] = ['', result_teacher, '', result_str_met, '', '', '']
+    main_df.loc[-1] = ['', result_teacher, '', result_str_met, '', '', '']
 
     return main_df
 
@@ -458,7 +458,7 @@ def generate_table_events_teacher(df: pd.DataFrame):
     quantity_teacher = len(df['ФИО'].unique()) # количество педагогов
     count_type_event = Counter(df['Уровень'].tolist())
     result_str_teacher = f'ИТОГО преподавателей-{quantity_teacher}\nфедеральных-{count_type_event["федеральный"]}\nмеждународных-{count_type_event["международный"]}'
-    main_df.loc[len(main_df)+1] = [result_str_teacher,f'{count_type_event["внутренний"]} внутренних',f'{count_type_event["муниципальный"]} муниципальных'
+    main_df.loc[-1] = [result_str_teacher,f'{count_type_event["внутренний"]} внутренних',f'{count_type_event["муниципальный"]} муниципальных'
                                    ,f'{count_type_event["региональный"]} региональных',f'{count_type_event["межрегиональный"]} межрегиональных']
 
     return main_df
@@ -619,7 +619,7 @@ def generate_context(dct_value:dict):
     quantity_other = count_type_course['иное']
     result_str_course = f'ИТОГО:\nКПК-{quantity_kpk}\nкурсов переподготовки-{quantity_pp}\nИное-{quantity_other}'
 
-    itog_skills_dev_df.loc[len(itog_skills_dev_df) + 1] = [result_str_teacher, result_str_course, '', '', '', '',
+    itog_skills_dev_df.loc[-1] = [result_str_teacher, result_str_course, '', '', '', '',
                                                            '']
     context['Доп_образование_итог'] = itog_skills_dev_df.to_dict('records')
 
@@ -635,7 +635,7 @@ def generate_context(dct_value:dict):
     quantity_internship = itog_internship_df.shape[0]  # общее количество стажировок
     result_str_internship = (f'ИТОГО:\n'
                              f'стажировок-{quantity_internship}\nпедагогов-{quantity_teacher}')
-    itog_internship_df.loc[len(itog_internship_df) + 1] = [result_str_internship, '', '', '']
+    itog_internship_df.loc[-1] = [result_str_internship, '', '', '']
     context['Стажировка_итог'] = itog_internship_df.to_dict('records')
 
     method_dev_df = dct_value['Методические разработки']
@@ -677,7 +677,7 @@ def generate_context(dct_value:dict):
     result_str_publications = (f'ИТОГО:\n'
                                f'публикаций-{quantity_publications}\nпедагогов-{quantity_teacher}')
 
-    itog_publications_df.loc[len(itog_publications_df) + 1] = ['', result_str_publications, '', '']
+    itog_publications_df.loc[-1] = ['', result_str_publications, '', '']
     context['Публикации_итог'] = itog_publications_df.to_dict('records')
 
     open_lessons_df = dct_value['Открытые уроки']
@@ -695,7 +695,7 @@ def generate_context(dct_value:dict):
     lst_type_open = [f'{key}-{value}' for key, value in count_type_open_lessons.items()]
     result_str_open_lessons = f'ИТОГО:\nоткрытых уроков-{quantity_open_lessons}\nдисциплин-{quantity_course}\nПо типам занятий:\n'
     type_str = '\n'.join(lst_type_open)
-    itog_open_lessons_df.loc[len(itog_open_lessons_df) + 1] = ['', '', result_str_open_lessons + type_str, '', '',
+    itog_open_lessons_df.loc[-1] = ['', '', result_str_open_lessons + type_str, '', '',
                                                                '']
     context['Открытые_уроки_итог'] = itog_open_lessons_df.to_dict('records')
 
@@ -725,7 +725,7 @@ def generate_context(dct_value:dict):
 
     itog_nmr_df = nmr_df.copy()
     quantity_teacher = len(itog_nmr_df['ФИО'].unique())
-    itog_nmr_df.loc[len(itog_nmr_df) + 1] = [f'ИТОГО преподавателей-{quantity_teacher}', '', '', '', '', '']
+    itog_nmr_df.loc[-1] = [f'ИТОГО преподавателей-{quantity_teacher}', '', '', '', '', '']
     context['НМР_итог'] = itog_nmr_df.to_dict('records')
 
     return context
