@@ -274,113 +274,143 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
     nmr_df = pd.DataFrame(columns=required_sheets_columns['Работа по НМР'])
     nmr_df.insert(0, 'ФИО', '')
 
-    for idx, file in enumerate(os.listdir(data_folder)):
-        if not file.startswith('~$') and file.endswith('.xlsx'):
-            name_file = file.split('.xlsx')[0]  # Получаем название файла
-            path_to_file = f'{data_folder}/{file}'
-            # Проверяем наличие нужных листов в файле
-            error_req_sheet_df = check_required_sheet_in_file(path_to_file, required_sheets_columns, name_file)
-            if error_req_sheet_df is not None:
-                error_df = pd.concat([error_df, error_req_sheet_df], axis=0, ignore_index=True)
-                continue
-            # Проверка наличия нужных колонок в листах
-            error_req_columns_sheet_df = check_required_columns_in_sheet(path_to_file, required_sheets_columns,
-                                                                         name_file)
-            if error_req_columns_sheet_df is not None:
-                error_df = pd.concat([error_df, error_req_columns_sheet_df], axis=0, ignore_index=True)
-                continue
-            print(name_file)
-            # Обрабатываем лист Общие сведения
-            teachers_dct[name_file] = {key: pd.DataFrame() for key in required_sheets_columns.keys()} # Создаем ключи для конкретного преподавателя
-            prep_general_inf_df,teachers_dct[name_file]['Общие сведения'] = prepare_sheet_general_inf(path_to_file, 'Общие сведения', required_sheets_columns['Общие сведения'])
-            fio_teacher = teachers_dct[name_file]['Общие сведения'].iloc[0,0] # получаем ФИО преподавателя для добавления в
-            # Отбираем данные по датам
-            general_inf_df, _, error_df = selection_by_date(prep_general_inf_df,start_date,end_date,'Дата начала работы в ПОО',
-                                                        name_file,'Общие сведения',general_inf_df,error_df,fio_teacher)
-            # Обрабатываем лист Повышение квалификации
-            prep_skills_dev_df = prepare_sheet_standart(path_to_file, 'Повышение квалификации', required_sheets_columns['Повышение квалификации'])
-            # сохраняем в датафрейм
-            skills_dev_df,teachers_dct[name_file]['Повышение квалификации'],error_df = selection_by_date(prep_skills_dev_df,start_date,end_date,'Дата прохождения программы (с какого по какое число, месяц, год)',
-                                                        name_file,'Повышение квалификации',skills_dev_df,error_df,fio_teacher)
-            # Обрабатываем лист Стажировка
-            prep_internship_df = prepare_sheet_standart(path_to_file, 'Стажировка', required_sheets_columns['Стажировка'])
-            internship_df,teachers_dct[name_file]['Стажировка'],error_df = selection_by_date(prep_internship_df,start_date,end_date,'Дата',
-                                                        name_file,'Стажировка',internship_df,error_df,fio_teacher)
+    try:
 
-            # Обрабатываем лист Методические разработки
-            prep_method_dev_df = prepare_sheet_standart(path_to_file, 'Методические разработки', required_sheets_columns['Методические разработки'])
-            method_dev_df,teachers_dct[name_file]['Методические разработки'],error_df = selection_by_date(prep_method_dev_df,start_date,end_date,'Дата разработки',
-                                                        name_file,'Методические разработки',method_dev_df,error_df,fio_teacher)
+        for idx, file in enumerate(os.listdir(data_folder)):
+            if not file.startswith('~$') and file.endswith('.xlsx'):
+                name_file = file.split('.xlsx')[0]  # Получаем название файла
+                path_to_file = f'{data_folder}/{file}'
+                # Проверяем наличие нужных листов в файле
+                error_req_sheet_df = check_required_sheet_in_file(path_to_file, required_sheets_columns, name_file)
+                if error_req_sheet_df is not None:
+                    error_df = pd.concat([error_df, error_req_sheet_df], axis=0, ignore_index=True)
+                    continue
+                # Проверка наличия нужных колонок в листах
+                error_req_columns_sheet_df = check_required_columns_in_sheet(path_to_file, required_sheets_columns,
+                                                                             name_file)
+                if error_req_columns_sheet_df is not None:
+                    error_df = pd.concat([error_df, error_req_columns_sheet_df], axis=0, ignore_index=True)
+                    continue
+                print(name_file)
+                # Обрабатываем лист Общие сведения
+                teachers_dct[name_file] = {key: pd.DataFrame() for key in required_sheets_columns.keys()} # Создаем ключи для конкретного преподавателя
+                prep_general_inf_df,teachers_dct[name_file]['Общие сведения'] = prepare_sheet_general_inf(path_to_file, 'Общие сведения', required_sheets_columns['Общие сведения'])
+                fio_teacher = teachers_dct[name_file]['Общие сведения'].iloc[0,0] # получаем ФИО преподавателя для добавления в
+                # Отбираем данные по датам
+                general_inf_df, _, error_df = selection_by_date(prep_general_inf_df,start_date,end_date,'Дата начала работы в ПОО',
+                                                            name_file,'Общие сведения',general_inf_df,error_df,fio_teacher)
+                # Обрабатываем лист Повышение квалификации
+                prep_skills_dev_df = prepare_sheet_standart(path_to_file, 'Повышение квалификации', required_sheets_columns['Повышение квалификации'])
+                # сохраняем в датафрейм
+                skills_dev_df,teachers_dct[name_file]['Повышение квалификации'],error_df = selection_by_date(prep_skills_dev_df,start_date,end_date,'Дата прохождения программы (с какого по какое число, месяц, год)',
+                                                            name_file,'Повышение квалификации',skills_dev_df,error_df,fio_teacher)
+                # Обрабатываем лист Стажировка
+                prep_internship_df = prepare_sheet_standart(path_to_file, 'Стажировка', required_sheets_columns['Стажировка'])
+                internship_df,teachers_dct[name_file]['Стажировка'],error_df = selection_by_date(prep_internship_df,start_date,end_date,'Дата',
+                                                            name_file,'Стажировка',internship_df,error_df,fio_teacher)
 
-            # Обрабатываем лист Мероприятия, пров. ППС
-            prep_events_teacher_df = prepare_sheet_standart(path_to_file, 'Мероприятия, пров. ППС', required_sheets_columns['Мероприятия, пров. ППС'])
-            events_teacher_df,teachers_dct[name_file]['Мероприятия, пров. ППС'], error_df = selection_by_date(prep_events_teacher_df, start_date, end_date, 'Дата',
-                                                        name_file, 'Мероприятия, пров. ППС', events_teacher_df, error_df,fio_teacher)
+                # Обрабатываем лист Методические разработки
+                prep_method_dev_df = prepare_sheet_standart(path_to_file, 'Методические разработки', required_sheets_columns['Методические разработки'])
+                method_dev_df,teachers_dct[name_file]['Методические разработки'],error_df = selection_by_date(prep_method_dev_df,start_date,end_date,'Дата разработки',
+                                                            name_file,'Методические разработки',method_dev_df,error_df,fio_teacher)
 
-            # Обрабатываем лист Личное выступление ППС
-            prep_personal_perf_df = prepare_sheet_standart(path_to_file, 'Личное выступление ППС', required_sheets_columns['Личное выступление ППС'])
-            personal_perf_df,teachers_dct[name_file]['Личное выступление ППС'], error_df = selection_by_date(prep_personal_perf_df, start_date, end_date, 'Дата',
-                                                            name_file, 'Личное выступление ППС', personal_perf_df,
-                                                            error_df,fio_teacher)
+                # Обрабатываем лист Мероприятия, пров. ППС
+                prep_events_teacher_df = prepare_sheet_standart(path_to_file, 'Мероприятия, пров. ППС', required_sheets_columns['Мероприятия, пров. ППС'])
+                events_teacher_df,teachers_dct[name_file]['Мероприятия, пров. ППС'], error_df = selection_by_date(prep_events_teacher_df, start_date, end_date, 'Дата',
+                                                            name_file, 'Мероприятия, пров. ППС', events_teacher_df, error_df,fio_teacher)
 
-            # Обрабатываем лист Публикации
-            prep_publications_df = prepare_sheet_standart(path_to_file, 'Публикации', required_sheets_columns['Публикации'])
-            publications_df,teachers_dct[name_file]['Публикации'], error_df = selection_by_date(prep_publications_df, start_date, end_date, 'Дата выпуска',
-                                                           name_file, 'Публикации', publications_df,
-                                                           error_df,fio_teacher)
-            # Обрабатываем лис Открытые уроки
-            prep_open_lessons_df = prepare_sheet_standart(path_to_file, 'Открытые уроки', required_sheets_columns['Открытые уроки'])
-            open_lessons_df, teachers_dct[name_file]['Открытые уроки'],error_df = selection_by_date(prep_open_lessons_df, start_date, end_date, 'Дата проведения',
-                                                          name_file, 'Открытые уроки', open_lessons_df,
-                                                          error_df,fio_teacher)
-            # Обрабатываем лист Взаимопосещение
-            prep_mutual_visits_df = prepare_sheet_standart(path_to_file, 'Взаимопосещение', required_sheets_columns['Взаимопосещение'])
-            mutual_visits_df,teachers_dct[name_file]['Взаимопосещение'] ,error_df = selection_by_date(prep_mutual_visits_df, start_date, end_date, 'Дата посещения',
-                                                          name_file, 'Взаимопосещение', mutual_visits_df,
-                                                          error_df,fio_teacher)
-            # Обрабатываем лист УИРС
-            prep_student_perf_df = prepare_sheet_standart(path_to_file, 'УИРС', required_sheets_columns['УИРС'])
-            student_perf_df,teachers_dct[name_file]['УИРС'] ,error_df = selection_by_date(prep_student_perf_df, start_date, end_date,
-                                                           'Дата проведения',
-                                                           name_file, 'УИРС', student_perf_df,
-                                                           error_df,fio_teacher)
-            # Обрабатываем лист Работа по НМР
-            prep_nmr_df = prepare_sheet_standart(path_to_file, 'Работа по НМР', required_sheets_columns['Работа по НМР'])
-            nmr_df,teachers_dct[name_file]['Работа по НМР'] ,error_df = selection_by_date(prep_nmr_df, start_date, end_date,
-                                                          'Дата обобщения опыта',
-                                                          name_file, 'Работа по НМР', nmr_df,
-                                                          error_df,fio_teacher)
+                # Обрабатываем лист Личное выступление ППС
+                prep_personal_perf_df = prepare_sheet_standart(path_to_file, 'Личное выступление ППС', required_sheets_columns['Личное выступление ППС'])
+                personal_perf_df,teachers_dct[name_file]['Личное выступление ППС'], error_df = selection_by_date(prep_personal_perf_df, start_date, end_date, 'Дата',
+                                                                name_file, 'Личное выступление ППС', personal_perf_df,
+                                                                error_df,fio_teacher)
 
-
-
-
-    # генерируем текущее время
-    t = time.localtime()
-    current_time = time.strftime('%H_%M_%S', t)
-    # Сохраняем файл эксель с данными
-    # Словарь для передачи в функцию форматирования
-
-    dct_df = {'Общие сведения':general_inf_df,'Повышение квалификации':skills_dev_df,
-              'Стажировка':internship_df,'Методические разработки':method_dev_df,'Мероприятия, пров. ППС':events_teacher_df,
-              'Личное выступление ППС':personal_perf_df,'Публикации':publications_df,'Открытые уроки':open_lessons_df,
-              'Взаимопосещение':mutual_visits_df,'УИРС':student_perf_df,'Работа по НМР':nmr_df}
-    main_wb = write_df_to_excel(dct_df,write_index=False)
-    del_sheet(main_wb,['Sheet'])
-    main_wb.save(f'{result_folder}/Свод {current_time}.xlsx')
-    # Сохраняем статистику
-    create_analytics_report(dct_df,result_folder)
+                # Обрабатываем лист Публикации
+                prep_publications_df = prepare_sheet_standart(path_to_file, 'Публикации', required_sheets_columns['Публикации'])
+                publications_df,teachers_dct[name_file]['Публикации'], error_df = selection_by_date(prep_publications_df, start_date, end_date, 'Дата выпуска',
+                                                               name_file, 'Публикации', publications_df,
+                                                               error_df,fio_teacher)
+                # Обрабатываем лис Открытые уроки
+                prep_open_lessons_df = prepare_sheet_standart(path_to_file, 'Открытые уроки', required_sheets_columns['Открытые уроки'])
+                open_lessons_df, teachers_dct[name_file]['Открытые уроки'],error_df = selection_by_date(prep_open_lessons_df, start_date, end_date, 'Дата проведения',
+                                                              name_file, 'Открытые уроки', open_lessons_df,
+                                                              error_df,fio_teacher)
+                # Обрабатываем лист Взаимопосещение
+                prep_mutual_visits_df = prepare_sheet_standart(path_to_file, 'Взаимопосещение', required_sheets_columns['Взаимопосещение'])
+                mutual_visits_df,teachers_dct[name_file]['Взаимопосещение'] ,error_df = selection_by_date(prep_mutual_visits_df, start_date, end_date, 'Дата посещения',
+                                                              name_file, 'Взаимопосещение', mutual_visits_df,
+                                                              error_df,fio_teacher)
+                # Обрабатываем лист УИРС
+                prep_student_perf_df = prepare_sheet_standart(path_to_file, 'УИРС', required_sheets_columns['УИРС'])
+                student_perf_df,teachers_dct[name_file]['УИРС'] ,error_df = selection_by_date(prep_student_perf_df, start_date, end_date,
+                                                               'Дата проведения',
+                                                               name_file, 'УИРС', student_perf_df,
+                                                               error_df,fio_teacher)
+                # Обрабатываем лист Работа по НМР
+                prep_nmr_df = prepare_sheet_standart(path_to_file, 'Работа по НМР', required_sheets_columns['Работа по НМР'])
+                nmr_df,teachers_dct[name_file]['Работа по НМР'] ,error_df = selection_by_date(prep_nmr_df, start_date, end_date,
+                                                              'Дата обобщения опыта',
+                                                              name_file, 'Работа по НМР', nmr_df,
+                                                              error_df,fio_teacher)
 
 
 
 
+        # генерируем текущее время
+        t = time.localtime()
+        current_time = time.strftime('%H_%M_%S', t)
+        # Сохраняем файл эксель с данными
+        # Словарь для передачи в функцию форматирования
 
-    # Сохраняем файл с ошибками
-    error_wb = write_df_to_excel({'Ошибки':error_df},write_index=False)
-    del_sheet(error_wb,['Sheet'])
-    error_wb.save(f'{result_folder}/Ошибки {current_time}.xlsx')
+        dct_df = {'Общие сведения':general_inf_df,'Повышение квалификации':skills_dev_df,
+                  'Стажировка':internship_df,'Методические разработки':method_dev_df,'Мероприятия, пров. ППС':events_teacher_df,
+                  'Личное выступление ППС':personal_perf_df,'Публикации':publications_df,'Открытые уроки':open_lessons_df,
+                  'Взаимопосещение':mutual_visits_df,'УИРС':student_perf_df,'Работа по НМР':nmr_df}
+        main_wb = write_df_to_excel(dct_df,write_index=False)
+        del_sheet(main_wb,['Sheet'])
+        main_wb.save(f'{result_folder}/Свод {current_time}.xlsx')
+        # Сохраняем статистику
+        create_analytics_report(dct_df,result_folder)
 
-    # Сохраняем файлы в формате docx
-    generate_docs({'Личные дела':teachers_dct,'Отчет':dct_df},template_folder,result_folder) # создаем личные дела
+
+
+
+
+        # Сохраняем файл с ошибками
+        error_wb = write_df_to_excel({'Ошибки':error_df},write_index=False)
+        del_sheet(error_wb,['Sheet'])
+        error_wb.save(f'{result_folder}/Ошибки {current_time}.xlsx')
+
+        # Сохраняем файлы в формате docx
+        generate_docs({'Личные дела':teachers_dct,'Отчет':dct_df},template_folder,result_folder) # создаем личные дела
+
+    except KeyError as e:
+        messagebox.showerror('Диана',
+                             f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
+    except ValueError as e:
+        messagebox.showerror('Диана',
+                             f'В таблице не найден лист,колонка или значение {e.args}!\nПроверьте написание названий')
+
+    except FileNotFoundError:
+        messagebox.showerror('Диана',
+                             f'Перенесите файлы которые вы хотите обработать в корень диска. Проблема может быть\n '
+                             f'в слишком длинном пути к обрабатываемым файлам')
+
+    except exceptions.TemplateSyntaxError:
+        messagebox.showerror('Диана',
+                             f'Ошибка в оформлении вставляемых значений в шаблоне\n'
+                             f'Проверьте свой шаблон на наличие следующих ошибок:\n'
+                             f'1) Вставляемые значения должны быть оформлены двойными фигурными скобками\n'
+                             f'{{{{Вставляемое_значение}}}}\n'
+                             f'2) В названии колонки в таблице откуда берутся данные - есть пробелы,цифры,знаки пунктуации и т.п.\n'
+                             f'в названии колонки должны быть только буквы и нижнее подчеркивание.\n'
+                             f'{{{{Дата_рождения}}}}')
+    else:
+        if len(error_df) != 0:
+            messagebox.showwarning('Диана', 'Обнаружены ошибки в некоторых строках.\nДанные в этих строках не обработаны !!!\n'
+                                            'Откройте файл Ошибки.xlsx и исправьте ошибки чтобы получить корректный результат.')
+        else:
+            messagebox.showinfo('Диана', 'Данные успешно обработаны')
 
 
 

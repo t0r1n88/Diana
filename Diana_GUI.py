@@ -340,7 +340,7 @@ def processing_create_RP_for_UD():
     try:
         create_RP_for_UD(file_template,file_data_xlsx,path_to_end_folder)
     except NameError:
-        messagebox.showerror('Диана Создание рабочих программ',
+        messagebox.showerror('Диана',
                              f'Выберите файлы с данными и папку куда будет генерироваться файл')
 
 def processing_create_RP_for_OOD():
@@ -351,7 +351,7 @@ def processing_create_RP_for_OOD():
     try:
         create_RP_for_UD_OOD(file_template_ood,file_data_xlsx_ood,path_to_end_folder_ood)
     except NameError:
-        messagebox.showerror('Диана Создание рабочих программ',
+        messagebox.showerror('Диана',
                              f'Выберите файлы с данными и папку куда будет генерироваться файл')
 
 
@@ -363,7 +363,7 @@ def processing_create_RP_for_PM():
     try:
         create_pm(file_template_pm,file_data_xlsx_pm,path_to_end_folder_pm)
     except NameError:
-        messagebox.showerror('Диана Создание рабочих программ',
+        messagebox.showerror('Диана',
                              f'Выберите файлы с данными и папку куда будет генерироваться файл')
 
 def processing_create_RP_for_UP():
@@ -374,7 +374,7 @@ def processing_create_RP_for_UP():
     try:
         create_rp_up(file_template_up_pm,file_data_xlsx_up_pm,path_to_end_folder_up_pm)
     except NameError:
-        messagebox.showerror('Диана Создание рабочих программ',
+        messagebox.showerror('Диана',
                              f'Выберите файлы с данными и папку куда будет генерироваться файл')
 
 def processing_create_RP_for_PP():
@@ -385,7 +385,7 @@ def processing_create_RP_for_PP():
     try:
         create_rp_pp(file_template_pp_pm,file_data_xlsx_pp_pm,path_to_end_folder_pp_pm)
     except NameError:
-        messagebox.showerror('Диана Создание рабочих программ',
+        messagebox.showerror('Диана',
                              f'Выберите файлы с данными и папку куда будет генерироваться файл')
 
 
@@ -397,7 +397,7 @@ def processing_create_RP_for_PP_prac():
     try:
         create_pred_dip_prac(file_template_pp_prac,file_data_xlsx_pp_prac,path_to_end_folder_pp_prac)
     except NameError:
-        messagebox.showerror('Диана Создание рабочих программ',
+        messagebox.showerror('Диана',
                              f'Выберите файлы с данными и папку куда будет генерироваться файл')
 
 
