@@ -57,28 +57,28 @@ def create_analytics_report(dct_data:dict,result_folder:str):
     method_dev_df = dct_data['Методические разработки']
     # В разрезе преподавателей
     teacher_method_dev_df_one_col = pd.pivot_table(method_dev_df, index=['ФИО'],
-                                           values=['Дата разработки'],
-                                           aggfunc='count').rename(columns={'Дата разработки':'Количество'})
+                                           values=['Дата утверждения'],
+                                           aggfunc='count').rename(columns={'Дата утверждения':'Количество'})
     teacher_method_dev_df = pd.pivot_table(method_dev_df, index=['ФИО', 'Вид методического издания'],
-                                           values=['Дата разработки'],
-                                           aggfunc='count').rename(columns={'Дата разработки':'Количество'})
+                                           values=['Дата утверждения'],
+                                           aggfunc='count').rename(columns={'Дата утверждения':'Количество'})
     # В разрезе видов
     type_method_df_one_col = pd.pivot_table(method_dev_df, index=['Вид методического издания'],
-                                          values=['Дата разработки'],
-                                          aggfunc='count').rename(columns={'Дата разработки':'Количество'})
+                                          values=['Дата утверждения'],
+                                          aggfunc='count').rename(columns={'Дата утверждения':'Количество'})
     type_method_df = pd.pivot_table(method_dev_df, index=['Вид методического издания', 'ФИО'],
-                                          values=['Дата разработки'],
-                                          aggfunc='count').rename(columns={'Дата разработки':'Количество'})
+                                          values=['Дата утверждения'],
+                                          aggfunc='count').rename(columns={'Дата утверждения':'Количество'})
 
 
     # В разрезе профессий
-    prof_method_df_one_col = pd.pivot_table(method_dev_df, index=['Профессия/специальность '],
-                                          values=['Дата разработки'],
-                                          aggfunc='count').rename(columns={'Дата разработки':'Количество'})
+    prof_method_df_one_col = pd.pivot_table(method_dev_df, index=['Профессия/специальность'],
+                                          values=['Дата утверждения'],
+                                          aggfunc='count').rename(columns={'Дата утверждения':'Количество'})
 
-    prof_method_df = pd.pivot_table(method_dev_df, index=['Профессия/специальность ','Вид методического издания', 'ФИО'],
-                                          values=['Дата разработки'],
-                                          aggfunc='count').rename(columns={'Дата разработки':'Количество'})
+    prof_method_df = pd.pivot_table(method_dev_df, index=['Профессия/специальность','Вид методического издания', 'ФИО'],
+                                          values=['Дата утверждения'],
+                                          aggfunc='count').rename(columns={'Дата утверждения':'Количество'})
     # Мероприятия проведенные ППС
     events_teacher_df = dct_data['Мероприятия, пров. ППС']
     # В разрезе преподавателей
@@ -126,11 +126,11 @@ def create_analytics_report(dct_data:dict,result_folder:str):
     result_personal_perf_df = pd.pivot_table(personal_perf_df, index=['Результат участия','Уровень мероприятия','Вид мероприятия','ФИО'],
                                      values=['Дата'],
                                      aggfunc='count').rename(columns={'Дата':'Количество'})
-    # В разрезе способов
-    way_personal_perf_df_one_col = pd.pivot_table(personal_perf_df, index=['Способ участия'],
+    # В разрезе форм участия
+    way_personal_perf_df_one_col = pd.pivot_table(personal_perf_df, index=['Форма участия'],
                                      values=['Дата'],
                                      aggfunc='count').rename(columns={'Дата':'Количество'})
-    way_personal_perf_df = pd.pivot_table(personal_perf_df, index=['Способ участия','Результат участия','Уровень мероприятия','Вид мероприятия','ФИО'],
+    way_personal_perf_df = pd.pivot_table(personal_perf_df, index=['Форма участия','Результат участия','Уровень мероприятия','Вид мероприятия','ФИО'],
                                      values=['Дата'],
                                      aggfunc='count').rename(columns={'Дата':'Количество'})
 
