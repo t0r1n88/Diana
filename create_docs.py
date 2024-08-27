@@ -248,9 +248,11 @@ def generate_context(dct_value:dict):
     first_sheet_df.fillna('', inplace=True)
 
     context['Преподаватель'] = first_sheet_df.iloc[0, 0]  # ФИО преподавателя
+    context['Образование'] = first_sheet_df[['Организация', 'Квалификация', 'Год_окончания']].to_dict('records')
+    first_sheet_df=first_sheet_df[first_sheet_df['Дисциплина'] !='']
     context['Общая_информация'] = first_sheet_df[['Дисциплина', 'Дата_рождения', 'Дата_ПОО', 'Стаж', 'Педстаж','Стаж_в_ПОО',
                                                   'Категория', 'Приказ', 'Сайт']].to_dict('records')
-    context['Образование'] = first_sheet_df[['Организация', 'Квалификация', 'Год_окончания']].to_dict('records')
+
 
     # данные с листа Повышение квалификации
     skills_dev_df = dct_value['Повышение квалификации']
