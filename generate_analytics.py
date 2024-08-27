@@ -152,37 +152,43 @@ def create_analytics_report(dct_data:dict,result_folder:str):
                                       aggfunc='count').rename(columns={'Дата выпуска':'Количество'})
 
 
-    # Открытые уроки
-    open_lessons_df = dct_data['Открытые уроки']
+    # Открытые уроки_мастер_классы
+    open_lessons_df = dct_data['Открытые уроки_мастер_классы']
     # В разрезе преподавателей
     teacher_open_lessons_df_one_col = pd.pivot_table(open_lessons_df, index=['ФИО'],
                                       values=['Дата проведения'],
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
-    teacher_open_lessons_df = pd.pivot_table(open_lessons_df, index=['ФИО','Вид занятия'],
+    teacher_open_lessons_df = pd.pivot_table(open_lessons_df, index=['ФИО','Наименование цикла'],
                                       values=['Дата проведения'],
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
     # В разрезе видов занятий
-    type_open_lessons_df_one_col = pd.pivot_table(open_lessons_df, index=['Вид занятия'],
+    type_open_lessons_df_one_col = pd.pivot_table(open_lessons_df, index=['Наименование цикла'],
                                       values=['Дата проведения'],
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
-    type_open_lessons_df = pd.pivot_table(open_lessons_df, index=['Вид занятия','ФИО'],
+    type_open_lessons_df = pd.pivot_table(open_lessons_df, index=['Наименование цикла','ФИО'],
                                       values=['Дата проведения'],
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
 
     # В разрезе дисциплин
-    lesson_open_lessons_df_one_col = pd.pivot_table(open_lessons_df, index=['Дисциплина'],
+    lesson_open_lessons_df_one_col = pd.pivot_table(open_lessons_df, index=['Дисциплина/МДК/учебная практика'],
                                       values=['Дата проведения'],
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
-    lesson_open_lessons_df = pd.pivot_table(open_lessons_df, index=['Дисциплина','Группа'],
+    lesson_open_lessons_df = pd.pivot_table(open_lessons_df, index=['Дисциплина/МДК/учебная практика','Группа'],
                                       values=['Дата проведения'],
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
     # В разрезе групп
     group_open_lessons_df_one_col = pd.pivot_table(open_lessons_df, index=['Группа'],
                                       values=['Дата проведения'],
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
-    group_open_lessons_df = pd.pivot_table(open_lessons_df, index=['Группа','Дисциплина'],
+    group_open_lessons_df = pd.pivot_table(open_lessons_df, index=['Группа','Дисциплина/МДК/учебная практика'],
                                       values=['Дата проведения'],
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+
+    # В разрезе курсов
+    # TODO
+    # В разрезе профессий специальностей
+    # TODO
+
 
     # Взаимопосещения
     mutual_visits_df = dct_data['Взаимопосещение']
@@ -206,12 +212,17 @@ def create_analytics_report(dct_data:dict,result_folder:str):
     group_mutual_visits_df = pd.pivot_table(mutual_visits_df, index=['Группа','ФИО посещенного педагога'],
                                       values=['Дата посещения'],
                                       aggfunc='count').rename(columns={'Дата посещения':'Количество'})
-    theme_mutual_visits_df_one_col = pd.pivot_table(mutual_visits_df, index=['Тема'],
+    theme_mutual_visits_df_one_col = pd.pivot_table(mutual_visits_df, index=['Дисциплина/МДК/учебная практика'],
                                       values=['Дата посещения'],
                                       aggfunc='count').rename(columns={'Дата посещения':'Количество'})
-    theme_mutual_visits_df = pd.pivot_table(mutual_visits_df, index=['Тема','ФИО посещенного педагога'],
+    theme_mutual_visits_df = pd.pivot_table(mutual_visits_df, index=['Дисциплина/МДК/учебная практика','ФИО посещенного педагога'],
                                       values=['Дата посещения'],
                                       aggfunc='count').rename(columns={'Дата посещения':'Количество'})
+    # В разрезе курсов
+    # TODO
+    # В разрезе профессий специальностей
+    # TODO
+
     # УИРС
     student_perf_df = dct_data['УИРС']
     teacher_student_perf_df_one_col = pd.pivot_table(student_perf_df, index=['ФИО обучающегося','Результат участия'],
@@ -241,6 +252,9 @@ def create_analytics_report(dct_data:dict,result_folder:str):
     level_student_perf_df = pd.pivot_table(student_perf_df, index=['Уровень мероприятия','Вид мероприятия','ФИО обучающегося', 'Результат участия'],
                                       values=['Дата проведения'],
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+
+    # TODO по форме участия
+    # TODO по курсам
 
     # Работа по НМР
     nmr_df = dct_data['Работа по НМР']
@@ -358,28 +372,28 @@ def create_analytics_report(dct_data:dict,result_folder:str):
             publ_publications_df.to_excel(writer, sheet_name='Публикации',startrow=max_row+3,startcol=teacher_publications_df_one_col.shape[1]+5)
         # Открытые уроки
         if len(teacher_open_lessons_df_one_col) != 0:
-            teacher_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки')
+            teacher_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки_мастер_классы')
         if len(type_open_lessons_df_one_col) != 0:
-            type_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки',
+            type_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки_мастер_классы',
                                               startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
         max_row = max(len(teacher_open_lessons_df_one_col), len(type_open_lessons_df_one_col))
         if len(teacher_open_lessons_df) != 0:
-            teacher_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3)
+            teacher_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки_мастер_классы', startrow=max_row + 3)
         if len(type_open_lessons_df) != 0:
-            type_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3,
+            type_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки_мастер_классы', startrow=max_row + 3,
                                       startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
 
         max_row = max(len(teacher_open_lessons_df)+max_row+5, len(teacher_open_lessons_df)+ max_row+5)
         if len(lesson_open_lessons_df_one_col) != 0:
-            lesson_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки',startrow=max_row+3)
+            lesson_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки_мастер_классы',startrow=max_row+3)
         if len(group_open_lessons_df_one_col) != 0:
-            group_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки',startrow=max_row+3,
+            group_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки_мастер_классы',startrow=max_row+3,
                                               startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
         max_row = max(len(lesson_open_lessons_df_one_col)+max_row+5, len(group_open_lessons_df_one_col)+max_row+5)
         if len(lesson_open_lessons_df) != 0:
-            lesson_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3)
+            lesson_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки_мастер_классы', startrow=max_row + 3)
         if len(group_open_lessons_df) != 0:
-            group_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки', startrow=max_row + 3,
+            group_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки_мастер_классы', startrow=max_row + 3,
                                       startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
         # Взаимопосещения
         if len(teacher_mutual_visits_df_one_col) != 0:

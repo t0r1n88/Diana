@@ -416,9 +416,9 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
     # except KeyError as e:
     #     messagebox.showerror('Диана',
     #                          f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
-    except ValueError as e:
-        messagebox.showerror('Диана',
-                             f'В таблице не найден лист,колонка или значение {e.args}!\nПроверьте написание названий')
+    # except ValueError as e:
+    #     messagebox.showerror('Диана',
+    #                          f'В таблице не найден лист,колонка или значение {e.args}!\nПроверьте написание названий')
     except TypeError as e:
         messagebox.showerror('Диана',
                              f'Проверьте правильность введенной даты. Возможно вы ввели 31.02.2024 или 35.06.2024')
