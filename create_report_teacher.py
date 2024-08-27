@@ -104,15 +104,28 @@ def prepare_sheet_general_inf(path_to_file:str, name_sheet:str, lst_columns:list
     person_df['Дата начала работы в ПОО'] = person_df.iloc[0,2]
     person_df['Общий стаж работы'] = person_df.iloc[0,4]
     person_df['Педагогический стаж'] = person_df.iloc[0,5]
-    person_df['Категория'] = person_df.iloc[0,9]
-    person_df['№ приказа на аттестацию, дата'] = person_df.iloc[0,10]
-    person_df['Наличие личного сайта, блога (ссылка)'] = person_df.iloc[0,11]
+    person_df['Стаж работы в ПОО'] = person_df.iloc[0,6]
+    person_df['Квалификационная категория'] = person_df.iloc[0,10]
+    person_df['№ приказа на аттестацию, дата'] = person_df.iloc[0,11]
+    person_df['Наличие личного сайта, блога (ссылка)'] = person_df.iloc[0,12]
     dis_lst = func_df['Преподаваемая дисциплина'].tolist() # список дисциплин преподавателя
+    dis_lst = [str(value) for value in dis_lst if not pd.isna(value)]
+
     # список полученных дипломов об образовании
-    educ_lst = func_df['Сведения об образовании (образовательное учреждение, квалификация, год окончания)'].tolist()
+    educ_lst = func_df['Сведения об образовании (образовательное учреждение)'].tolist()
+    educ_lst = [str(value) for value in educ_lst if not pd.isna(value)]
+
+    qual_teacher_lst = func_df['Квалификация'].tolist() # квалификации преподавателя
+    qual_teacher_lst = [str(value) for value in qual_teacher_lst if not pd.isna(value)]
+
+    year_lst = func_df['Год окончания'].tolist() # годы окончания
+    year_lst = [str(value) for value in year_lst if not pd.isna(value)]
+
     func_df = func_df.iloc[0,:].to_frame().transpose()
     func_df.loc[0,'Преподаваемая дисциплина'] = ';'.join(dis_lst) # превращаем в строку список дисциплин
-    func_df.loc[0,'Сведения об образовании (образовательное учреждение, квалификация, год окончания)'] = ';'.join(educ_lst) # превращаем в строку список дисциплин
+    func_df.loc[0,'Квалификация'] = ';'.join(qual_teacher_lst) # превращаем в строку список квалификаций
+    func_df.loc[0,'Год окончания'] = ';'.join(year_lst) # превращаем в строку список годов обучения
+    func_df.loc[0,'Сведения об образовании (образовательное учреждение)'] = ';'.join(educ_lst) # превращаем в строку список дисциплин
     return func_df,person_df
 
 
@@ -212,7 +225,7 @@ def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_colu
 
 
 
-def create_report_teacher(template_folder:str,data_folder: str, result_folder: str,start_date:pd.Timestamp,end_date:pd.Timestamp):
+def create_report_teacher(template_folder:str,data_folder: str, result_folder: str,start_date,end_date):
     """
     Функция для создания отчетности по преподавателям
     :param template_folder: папка, где лежат шаблоны отчетов
@@ -224,34 +237,33 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
     # обязательные листы
     required_sheets_columns = {'Общие сведения': ['ФИО', 'Дата рождения', 'Дата начала работы в ПОО',
                                                   'Преподаваемая дисциплина', 'Общий стаж работы',
-                                                  'Педагогический стаж',
-                                                  'Сведения об образовании (образовательное учреждение, квалификация, год окончания)',
+                                                  'Педагогический стаж','Стаж работы в ПОО',
+                                                  'Сведения об образовании (образовательное учреждение)',
                                                   'Квалификация','Год окончания',
-                                                  'Категория', '№ приказа на аттестацию, дата',
+                                                  'Квалификационная категория', '№ приказа на аттестацию, дата',
                                                   'Наличие личного сайта, блога (ссылка)'],
-                               'Повышение квалификации': ['Название программы повышения квалификации',
-                                                          'Вид повышения квалификации',
+                               'Повышение квалификации': ['Вид повышения квалификации','Название программы повышения квалификации',
                                                           'Место прохождения программы',
                                                           'Дата прохождения программы (с какого по какое число, месяц, год)',
                                                           'Количество академических часов',
                                                           'Наименование подтверждающего документа, его номер и дата выдачи'],
-                               'Стажировка': ['Место стажировки', 'Кол-во часов', 'Дата'],
+                               'Стажировка': ['Место стажировки','Наименование стажировки', 'Кол-во часов', 'Дата'],
                                'Методические разработки': ['Вид методического издания', 'Название издания',
                                                            'Профессия/специальность ',
-                                                           'Дата разработки', 'Кем утверждена'],
+                                                           'Дата утверждения', 'Кем утверждена'],
                                'Мероприятия, пров. ППС': ['Название мероприятия', 'Дата', 'Уровень мероприятия'],
-                               'Личное выступление ППС': ['Дата', 'Название мероприятия', 'Тема', 'Вид мероприятия',
-                                                          'Уровень мероприятия',
-                                                          'Способ участия', 'Результат участия'],
+                               'Личное выступление ППС': ['Дата','Форма участия','Уровень мероприятия','Вид мероприятия',
+                                                          'Название мероприятия', 'Тема','Результат участия','Наименование номинации'
+                                                          ],
                                'Публикации': ['Полное название статьи', 'Издание', 'Дата выпуска'],
-                               'Открытые уроки': ['Вид занятия','Дисциплина', 'Группа', 'Тема', 'Дата проведения'],
-                               'Взаимопосещение': ['ФИО посещенного педагога', 'Дата посещения', 'Группа', 'Тема'],
-                               'УИРС': ['ФИО обучающегося', 'Профессия/специальность', 'Группа', 'Вид мероприятия',
-                                        'Название мероприятия',
-                                        'Тема', 'Способ участия', 'Уровень мероприятия', 'Дата проведения',
-                                        'Результат участия'],
+                               'Открытые уроки_мастер_классы': ['Наименование цикла','Дисциплина/МДК/учебная практика','Курс','Профессия/специальность ', 'Группа', 'Тема', 'Дата проведения'],
+                               'Взаимопосещение': ['ФИО посещенного педагога', 'Дата посещения','Дисциплина/МДК/учебная практика','Курс','Профессия/специальность ', 'Группа', 'Тема'],
+                               'УИРС': ['Дата проведения','Форма участия','Уровень мероприятия','Вид мероприятия','Название мероприятия',
+                                        'Тема','ФИО обучающегося','Курс', 'Профессия/специальность', 'Группа', 'Результат участия',
+                                        'Наименование номинации'
+                                        ],
                                'Работа по НМР': ['Тема НИРП', 'Проведено ли обобщение опыта', 'Форма обобщения опыта',
-                                                 'Место обобщения опыта', 'Дата обобщения опыта'],
+                                                 'Тема доклада/Наименование мероприятия','Место обобщения опыта', 'Дата обобщения опыта'],
                                'Данные для списков': []
                                }
     error_df = pd.DataFrame(
@@ -273,7 +285,7 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
     personal_perf_df.insert(0, 'ФИО', '')
     publications_df = pd.DataFrame(columns=required_sheets_columns['Публикации'])
     publications_df.insert(0, 'ФИО', '')
-    open_lessons_df = pd.DataFrame(columns=required_sheets_columns['Открытые уроки'])
+    open_lessons_df = pd.DataFrame(columns=required_sheets_columns['Открытые уроки_мастер_классы'])
     open_lessons_df.insert(0, 'ФИО', '')
     mutual_visits_df = pd.DataFrame(columns=required_sheets_columns['Взаимопосещение'])
     mutual_visits_df.insert(0, 'ФИО', '')
@@ -325,7 +337,7 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
 
                 # Обрабатываем лист Методические разработки
                 prep_method_dev_df = prepare_sheet_standart(path_to_file, 'Методические разработки', required_sheets_columns['Методические разработки'])
-                method_dev_df,teachers_dct[name_file]['Методические разработки'],error_df = selection_by_date(prep_method_dev_df,start_date,end_date,'Дата разработки',
+                method_dev_df,teachers_dct[name_file]['Методические разработки'],error_df = selection_by_date(prep_method_dev_df,start_date,end_date,'Дата утверждения',
                                                             name_file,'Методические разработки',method_dev_df,error_df,fio_teacher)
 
                 # Обрабатываем лист Мероприятия, пров. ППС
@@ -345,8 +357,8 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
                                                                name_file, 'Публикации', publications_df,
                                                                error_df,fio_teacher)
                 # Обрабатываем лис Открытые уроки
-                prep_open_lessons_df = prepare_sheet_standart(path_to_file, 'Открытые уроки', required_sheets_columns['Открытые уроки'])
-                open_lessons_df, teachers_dct[name_file]['Открытые уроки'],error_df = selection_by_date(prep_open_lessons_df, start_date, end_date, 'Дата проведения',
+                prep_open_lessons_df = prepare_sheet_standart(path_to_file, 'Открытые уроки_мастер_классы', required_sheets_columns['Открытые уроки_мастер_классы'])
+                open_lessons_df, teachers_dct[name_file]['Открытые уроки_мастер_классы'],error_df = selection_by_date(prep_open_lessons_df, start_date, end_date, 'Дата проведения',
                                                               name_file, 'Открытые уроки', open_lessons_df,
                                                               error_df,fio_teacher)
                 # Обрабатываем лист Взаимопосещение
@@ -373,7 +385,7 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
         # генерируем текущее время
         t = time.localtime()
         current_time = time.strftime('%H_%M_%S', t)
-
+        print(error_df)
         # Сохраняем файл с ошибками
         error_wb = write_df_to_excel({'Ошибки':error_df},write_index=False)
         del_sheet(error_wb,['Sheet'])
@@ -384,7 +396,7 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
 
         dct_df = {'Общие сведения':general_inf_df,'Повышение квалификации':skills_dev_df,
                   'Стажировка':internship_df,'Методические разработки':method_dev_df,'Мероприятия, пров. ППС':events_teacher_df,
-                  'Личное выступление ППС':personal_perf_df,'Публикации':publications_df,'Открытые уроки':open_lessons_df,
+                  'Личное выступление ППС':personal_perf_df,'Публикации':publications_df,'Открытые уроки_мастер_классы':open_lessons_df,
                   'Взаимопосещение':mutual_visits_df,'УИРС':student_perf_df,'Работа по НМР':nmr_df}
         main_wb = write_df_to_excel(dct_df,write_index=False)
         del_sheet(main_wb,['Sheet'])
@@ -440,7 +452,7 @@ if __name__ == '__main__':
     main_data_folder = 'data/Данные'
     main_result_folder = 'data/Результат'
     main_template_folder = 'data/Шаблоны'
-    main_start_date = '30.06.2024'
+    main_start_date = '01.01.2024'
     main_end_date = '01.05.2100'
 
     create_report_teacher(main_template_folder ,main_data_folder,main_result_folder, main_start_date, main_end_date)
