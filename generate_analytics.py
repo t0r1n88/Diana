@@ -185,9 +185,19 @@ def create_analytics_report(dct_data:dict,result_folder:str):
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
 
     # В разрезе курсов
-    # TODO
+    kurs_open_lessons_df_one_col = pd.pivot_table(open_lessons_df, index=['Курс'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+    kurs_open_lessons_df = pd.pivot_table(open_lessons_df, index=['Курс','Группа','Дисциплина/МДК/учебная практика'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
     # В разрезе профессий специальностей
-    # TODO
+    prof_open_lessons_df_one_col = pd.pivot_table(open_lessons_df, index=['Профессия/специальность'],
+                                                  values=['Дата проведения'],
+                                                  aggfunc='count').rename(columns={'Дата проведения': 'Количество'})
+    prof_open_lessons_df = pd.pivot_table(open_lessons_df, index=['Профессия/специальность', 'Группа', 'Дисциплина/МДК/учебная практика'],
+                                          values=['Дата проведения'],
+                                          aggfunc='count').rename(columns={'Дата проведения': 'Количество'})
 
 
     # Взаимопосещения
@@ -219,9 +229,20 @@ def create_analytics_report(dct_data:dict,result_folder:str):
                                       values=['Дата посещения'],
                                       aggfunc='count').rename(columns={'Дата посещения':'Количество'})
     # В разрезе курсов
-    # TODO
+    kurs_mutual_visits_df_one_col = pd.pivot_table(mutual_visits_df, index=['Курс'],
+                                                  values=['Дата посещения'],
+                                                  aggfunc='count').rename(columns={'Дата посещения': 'Количество'})
+    kurs_mutual_visits_df = pd.pivot_table(mutual_visits_df, index=['Курс', 'Группа', 'Дисциплина/МДК/учебная практика'],
+                                          values=['Дата посещения'],
+                                          aggfunc='count').rename(columns={'Дата посещения': 'Количество'})
     # В разрезе профессий специальностей
-    # TODO
+    prof_mutual_visits_df_one_col = pd.pivot_table(mutual_visits_df, index=['Профессия/специальность'],
+                                                  values=['Дата посещения'],
+                                                  aggfunc='count').rename(columns={'Дата посещения': 'Количество'})
+    prof_mutual_visits_df = pd.pivot_table(mutual_visits_df, index=['Профессия/специальность', 'Группа',
+                                                                  'Дисциплина/МДК/учебная практика'],
+                                          values=['Дата посещения'],
+                                          aggfunc='count').rename(columns={'Дата посещения': 'Количество'})
 
     # УИРС
     student_perf_df = dct_data['УИРС']
@@ -253,8 +274,21 @@ def create_analytics_report(dct_data:dict,result_folder:str):
                                       values=['Дата проведения'],
                                       aggfunc='count').rename(columns={'Дата проведения':'Количество'})
 
-    # TODO по форме участия
-    # TODO по курсам
+    # По форме участия
+    form_student_perf_df_one_col = pd.pivot_table(student_perf_df, index=['Форма участия'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+    form_student_perf_df = pd.pivot_table(student_perf_df, index=['Форма участия','Вид мероприятия','ФИО обучающегося', 'Результат участия'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+
+    # По курсу
+    kurs_student_perf_df_one_col = pd.pivot_table(student_perf_df, index=['Курс'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
+    kurs_student_perf_df = pd.pivot_table(student_perf_df, index=['Курс','Вид мероприятия','ФИО обучающегося', 'Результат участия'],
+                                      values=['Дата проведения'],
+                                      aggfunc='count').rename(columns={'Дата проведения':'Количество'})
 
     # Работа по НМР
     nmr_df = dct_data['Работа по НМР']
@@ -395,6 +429,21 @@ def create_analytics_report(dct_data:dict,result_folder:str):
         if len(group_open_lessons_df) != 0:
             group_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки_мастер_классы', startrow=max_row + 3,
                                       startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
+        max_row = max(len(lesson_open_lessons_df) + max_row + 5,
+                      len(group_open_lessons_df) + max_row + 5)
+        if len(kurs_open_lessons_df_one_col) != 0:
+            kurs_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки_мастер_классы',startrow=max_row+3)
+        if len(prof_open_lessons_df_one_col) != 0:
+            prof_open_lessons_df_one_col.to_excel(writer, sheet_name='Открытые уроки_мастер_классы',startrow=max_row+3,
+                                              startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
+        max_row = max(len(kurs_open_lessons_df_one_col) + max_row + 5,
+                      len(prof_open_lessons_df_one_col) + max_row + 5)
+        if len(kurs_open_lessons_df) != 0:
+            kurs_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки_мастер_классы', startrow=max_row + 3)
+        if len(prof_open_lessons_df) != 0:
+            prof_open_lessons_df.to_excel(writer, sheet_name='Открытые уроки_мастер_классы', startrow=max_row + 3,
+                                      startcol=teacher_open_lessons_df_one_col.shape[1] + 5)
+
         # Взаимопосещения
         if len(teacher_mutual_visits_df_one_col) != 0:
             teacher_mutual_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение')
@@ -407,6 +456,7 @@ def create_analytics_report(dct_data:dict,result_folder:str):
         if len(teacher_visited_mutual_visits_df) != 0:
             teacher_visited_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3,
                                       startcol=teacher_mutual_visits_df_one_col.shape[1] + 5)
+
         max_row = max(len(teacher_mutual_visits_df) + max_row + 5, len(teacher_visited_mutual_visits_df) + max_row + 5)
         if len(group_mutual_visits_df_one_col) != 0:
             group_mutual_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение',startrow=max_row+3)
@@ -418,6 +468,24 @@ def create_analytics_report(dct_data:dict,result_folder:str):
         if len(theme_mutual_visits_df) != 0:
             theme_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3,
                                       startcol=teacher_mutual_visits_df_one_col.shape[1] + 5)
+
+        max_row = max(len(group_mutual_visits_df) + max_row + 5,
+                      len(theme_mutual_visits_df) + max_row + 5)
+        if len(kurs_mutual_visits_df_one_col) != 0:
+            kurs_mutual_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение',startrow=max_row+3)
+        if len(prof_mutual_visits_df_one_col) != 0:
+            prof_mutual_visits_df_one_col.to_excel(writer, sheet_name='Взаимопосещение',startrow=max_row+3,
+                                              startcol=teacher_mutual_visits_df_one_col.shape[1] + 5)
+        max_row = max(len(kurs_open_lessons_df_one_col) + max_row + 5,
+                      len(prof_open_lessons_df_one_col) + max_row + 5)
+        if len(kurs_mutual_visits_df) != 0:
+            kurs_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3)
+        if len(prof_mutual_visits_df) != 0:
+            prof_mutual_visits_df.to_excel(writer, sheet_name='Взаимопосещение', startrow=max_row + 3,
+                                      startcol=teacher_mutual_visits_df_one_col.shape[1] + 5)
+
+
+
         #УИРС
         if len(teacher_student_perf_df_one_col) != 0:
             teacher_student_perf_df_one_col.to_excel(writer, sheet_name='УИРС')
@@ -442,6 +510,21 @@ def create_analytics_report(dct_data:dict,result_folder:str):
         if len(level_student_perf_df) != 0:
             level_student_perf_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3,
                                         startcol=teacher_student_perf_df_one_col.shape[1] + 5)
+
+        max_row = max(len(type_student_perf_df) + max_row + 5, len(level_student_perf_df) + max_row + 5)
+        if len(form_student_perf_df_one_col) != 0:
+            form_student_perf_df_one_col.to_excel(writer, sheet_name='УИРС',startrow=max_row+3)
+        if len(kurs_student_perf_df_one_col) != 0:
+            kurs_student_perf_df_one_col.to_excel(writer, sheet_name='УИРС',startrow=max_row+3,startcol=teacher_student_perf_df_one_col.shape[1] + 5)
+
+        max_row = max(len(form_student_perf_df_one_col) + max_row + 5, len(kurs_student_perf_df_one_col) + max_row + 5)
+        if len(form_student_perf_df) != 0:
+            form_student_perf_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3)
+        if len(kurs_student_perf_df) != 0:
+            kurs_student_perf_df.to_excel(writer, sheet_name='УИРС', startrow=max_row + 3,
+                                        startcol=teacher_student_perf_df_one_col.shape[1] + 5)
+
+
         # Работа по НМР
         if len(teacher_nmr_df_one_col) != 0:
             teacher_nmr_df_one_col.to_excel(writer, sheet_name='Работа по НМР')
