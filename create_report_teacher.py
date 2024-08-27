@@ -404,7 +404,7 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
         create_analytics_report(dct_df,result_folder)
 
         # Сохраняем файлы в формате docx
-        #generate_docs({'Личные дела':teachers_dct,'Отчет':dct_df},template_folder,result_folder) # создаем личные дела
+        generate_docs({'Личные дела':teachers_dct,'Отчет':dct_df},template_folder,result_folder) # создаем личные дела
     except NotFileInFolder as e:
         messagebox.showerror('Диана',
                              f'В папке {data_folder} не найдено ни одного файла с расширением XLSX!\n'
