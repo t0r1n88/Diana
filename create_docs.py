@@ -397,10 +397,10 @@ def generate_table_method_dev(df: pd.DataFrame):
     main_df = pd.DataFrame(columns=df.columns)  # создаем датафрейм куда будут добавляться данные
     main_df.insert(0, 'Номер', '')
     df.insert(0, 'Номер', 0)
+    quantity_met = df.shape[0]  # количество метод изданий
     count = 1  # счетчик строк
-    lst_type = ['методические рекомендации', 'методические разработки', 'учебное пособие', 'электронный курс',
-                'рабочая тетрадь',
-                'тест', 'видеоурок', 'профессиональная проба', 'иное']
+    lst_type = sorted(df['Вид'].unique())
+    result_str_met = f'ИТОГО изданий-{quantity_met}:'
     for type in lst_type:
         name_table = type.capitalize()  # получаем название промежуточной таблицы
         row_header = pd.DataFrame(columns=main_df.columns,
@@ -410,13 +410,14 @@ def generate_table_method_dev(df: pd.DataFrame):
         if len(temp_df) != 0:
             temp_df['Номер'] = range(count, count + len(temp_df))  # присваеваем номера строк
             main_df = pd.concat([main_df, temp_df], axis=0, ignore_index=True)
+            result_str_met +=f'\n{type}-{str(len(temp_df))}'
             count += len(temp_df)
 
-    quantity_met = df.shape[0]  # количество метод изданий
+
     quantity_teacher = len(df['ФИО'].unique())  # количество преподавателей
     result_teacher = f'ИТОГО преподавателей-{quantity_teacher}'
     count_type = Counter(df['Вид'].tolist())
-    result_str_met = f'ИТОГО изданий-{quantity_met}:\nметодические рекомендации-{count_type["методические рекомендации"]}\nметодические разработки-{count_type["методические разработки"]}\nучебное пособие-{count_type["учебное пособие"]}\nэлектронный курс-{count_type["электронный курс"]}\nрабочая тетрадь-{count_type["рабочая тетрадь"]}\nтест-{count_type["тест"]}\nвидеоурок-{count_type["видеоурок"]}\nпрофессиональная проба-{count_type["профессиональная проба"]}\nиное-{count_type["иное"]}\n'
+    #result_str_met = f'ИТОГО изданий-{quantity_met}:\nметодические рекомендации-{count_type["методические рекомендации"]}\nметодические разработки-{count_type["методические разработки"]}\nучебное пособие-{count_type["учебное пособие"]}\nэлектронный курс-{count_type["электронный курс"]}\nрабочая тетрадь-{count_type["рабочая тетрадь"]}\nтест-{count_type["тест"]}\nвидеоурок-{count_type["видеоурок"]}\nпрофессиональная проба-{count_type["профессиональная проба"]}\nиное-{count_type["иное"]}\n'
 
     main_df.loc[-1] = ['', result_teacher, '', result_str_met, '', '', '']
 
@@ -472,9 +473,11 @@ def generate_table_personal_perf(df:pd.DataFrame):
     main_df = pd.DataFrame(columns=df.columns)  # создаем датафрейм куда будут добавляться данные
     main_df.insert(0, 'Номер', '')
     df.insert(0, 'Номер', 0)
+    result_df = df.copy()  # копируем датафрейм чтобы потом посчитать общую результирующую строку
     df['Название'] = df['Название'] + '\nТема '+ df['Тема']
     count = 1  # счетчик строк
-    lst_type = ['конкурс', 'научно-практическая конференция', 'олимпиада','конкурс профессионального мастерства', 'иное']
+    lst_type = df['Вид'].unique()
+    #lst_type = ['конкурс', 'научно-практическая конференция', 'олимпиада','конкурс профессионального мастерства', 'иное']
     for type in lst_type:
         name_table = type.capitalize()  # получаем название промежуточной таблицы
         row_header = pd.DataFrame(columns=main_df.columns,
@@ -505,17 +508,17 @@ def generate_table_personal_perf(df:pd.DataFrame):
 
     # Результирующая строка для всего датафрейма
     # Результирующая строка
-    quantity_event = len(main_df)  # количество конкурсов
-    quantity_teacher = len(main_df['ФИО'].unique())  # количество педагогов
-    count_type_event = Counter(main_df['Уровень'])  # количество по уровням
+    quantity_event = len(result_df)  # количество конкурсов
+    quantity_teacher = len(result_df['ФИО'].unique())  # количество педагогов
+    count_type_event = Counter(result_df['Уровень'])  # количество по уровням
     lst_type_event = [f'{key}-{value}' for key, value in count_type_event.items()]
 
-    count_way_event = Counter(main_df['Форма'])  # количество по формам участия
+    count_way_event = Counter(result_df['Форма'])  # количество по формам участия
     lst_way_event = [f'{key}-{value}' for key, value in count_way_event.items()]
 
-    count_result = Counter(main_df['Результат'])  # количество по результатам
+    count_result = Counter(result_df['Результат'])  # количество по результатам
     result_str_result = f'1 место-{count_result["1 место"]}\n2 место-{count_result["2 место"]}\n3 место-{count_result["3 место"]}\nноминация-{count_result["номинация"]}'
-    row_itog = pd.DataFrame(columns=main_df.columns,
+    row_itog = pd.DataFrame(columns=result_df.columns,
                             data=[['Итого по всем выступлениям', '', f'выступлений-{quantity_event}',
                                    f'преподавателей-{quantity_teacher}', '', '', '\n'.join(lst_type_event),
                                    '\n'.join(lst_way_event), result_str_result, '']])
