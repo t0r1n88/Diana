@@ -164,14 +164,17 @@ def prepare_date(value):
     :return: дата в формате timestamp
     """
     try:
-        prep_date = pd.to_datetime(value,dayfirst=True) # конвертируем в дату
+        prep_date = pd.to_datetime(value,dayfirst=True,errors='raise') # конвертируем в дату
         return prep_date
     except:
         value_str = str(value) # конвертируем в строку
         prep_date = extract_last_date(value_str) # ищем последнюю дату
         if prep_date:
-            prep_date = datetime.datetime.strptime(prep_date,'%d.%m.%Y')  # конвертируем в дату
-            return prep_date
+            prep_date = pd.to_datetime(prep_date,format='%d.%m.%Y',errors='coerce')  # конвертируем в дату
+            if prep_date:
+                return prep_date
+            else:
+                return None
         else:
             return None
 
@@ -201,7 +204,7 @@ def selection_by_date(df:pd.DataFrame,start_date:str,end_date:str,name_date_colu
             number_row_error = list(map(lambda x:str(x+2),date_error_df.index)) # получаем номера строк с ошибками прибавляя 2
             temp_error_df = pd.DataFrame(data=[[f'{name_file}', name_sheet,
                                                 f'В колонке {name_date_column} в указанных строках неправильно записаны даты: {";".join(number_row_error)}. Требуемый формат: 21.05.2024'
-                                                f' или 05.06.2024-15.08.2024']],
+                                                f' или 05.06.2024-15.08.2024. Возможно вы написали 16.14.2024 или 30.02.2025']],
                                          columns=['Название файла', 'Название листа',
                                                   'Описание ошибки'])
             error_df = pd.concat([error_df, temp_error_df], axis=0,
@@ -416,9 +419,9 @@ def create_report_teacher(template_folder:str,data_folder: str, result_folder: s
     except KeyError as e:
         messagebox.showerror('Диана',
                              f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
-    except ValueError as e:
-        messagebox.showerror('Диана',
-                             f'В таблице не найден лист,колонка или значение {e.args}!\nПроверьте написание названий')
+    # except ValueError as e:
+    #     messagebox.showerror('Диана',
+    #                          f'В таблице не найден лист,колонка или значение {e.args}!\nПроверьте написание названий')
     except TypeError as e:
         messagebox.showerror('Диана',
                              f'Проверьте правильность введенной даты. Возможно вы ввели 31.02.2024 или 35.06.2024')
