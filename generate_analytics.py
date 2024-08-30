@@ -55,6 +55,7 @@ def create_analytics_report(dct_data:dict,result_folder:str):
 
     # Методические разработки
     method_dev_df = dct_data['Методические разработки']
+    method_dev_df.drop_duplicates(subset='Название издания', keep="last",inplace=True)
     # В разрезе преподавателей
     teacher_method_dev_df_one_col = pd.pivot_table(method_dev_df, index=['ФИО'],
                                            values=['Дата утверждения'],

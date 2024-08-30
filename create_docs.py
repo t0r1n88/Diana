@@ -31,7 +31,7 @@ def generate_table_method_dev(df: pd.DataFrame):
     main_df = pd.DataFrame(columns=df.columns)  # создаем датафрейм куда будут добавляться данные
     main_df.insert(0, 'Номер', '')
     df.insert(0, 'Номер', 0)
-    quantity_met = df.shape[0]  # количество метод изданий
+    quantity_met = len(df['Название'].unique())  # количество метод изданий
     count = 1  # счетчик строк
     lst_type = sorted(df['Вид'].unique())
     result_str_met = f'ИТОГО изданий-{quantity_met}:'
@@ -44,7 +44,7 @@ def generate_table_method_dev(df: pd.DataFrame):
         if len(temp_df) != 0:
             temp_df['Номер'] = range(count, count + len(temp_df))  # присваеваем номера строк
             main_df = pd.concat([main_df, temp_df], axis=0, ignore_index=True)
-            result_str_met += f'\n{type}-{str(len(temp_df))}'
+            result_str_met += f'\n{type}-{str(len(temp_df["Название"].unique()))}'
             count += len(temp_df)
 
     quantity_teacher = len(df['ФИО'].unique())  # количество преподавателей
