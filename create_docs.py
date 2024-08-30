@@ -129,12 +129,13 @@ def generate_table_personal_perf(df: pd.DataFrame):
         count_way_event = Counter(temp_df['Форма'])  # количество по формам участия
         lst_way_event = [f'{key}-{value}' for key, value in count_way_event.items()]
 
+
         count_result = Counter(temp_df['Результат'])  # количество по результатам
         result_str_result = f'1 место-{count_result.get("1 место", 0)}\n2 место-{count_result.get("2 место", 0)}\n3 место-{count_result.get("3 место", 0)}\nноминация-{count_result.get("номинация", 0)}\nгран-при-{count_result.get("гран-при", 0)}'
         row_itog = pd.DataFrame(columns=main_df.columns,
                                 data=[['Итого', f'преподавателей выступило-{quantity_teacher}',
-                                       f'выступлений-{quantity_event}', ''
-                                          , '\n'.join(lst_type_event), '', '', '\n'.join(lst_way_event),
+                                       f'выступлений-{quantity_event}', '\n'.join(lst_way_event)
+                                          , '\n'.join(lst_type_event), '', '', '',
                                        result_str_result, '']])
         main_df = pd.concat([main_df, row_itog])
 
@@ -154,8 +155,8 @@ def generate_table_personal_perf(df: pd.DataFrame):
     row_itog = pd.DataFrame(columns=result_df.columns,
                             data=[['Итого по всем выступлениям', f'преподавателей выступило-{quantity_teacher}',
                                    f'выступлений-{quantity_event}',
-                                   '', result_type_event_str, '', '',
-                                   '\n'.join(lst_way_event), result_str_result, '']])
+                                   '\n'.join(lst_way_event), result_type_event_str, '', '',
+                                   '', result_str_result, '']])
     main_df = pd.concat([main_df, row_itog])
 
     return main_df
@@ -197,12 +198,15 @@ def generate_table_student_perf(df: pd.DataFrame):
         # считаем по уровням
         count_type = Counter(temp_df['Уровень'])
         result_str_type = f'Внутренние-{count_type["внутренний"]}\nМуниципальные-{count_type["муниципальный"]}\nРегиональные-{count_type["региональный"]}\nМежрегиональные-{count_type["межрегиональный"]}\nВсероссийские-{count_type["всероссийский"]}\nМеждународные-{count_type["международный"]}'
+
+        count_way_event = Counter(temp_df['Форма'])  # количество по формам участия
+        lst_way_event = [f'{key}-{value}' for key, value in count_way_event.items()]
         # Считаем результат
         count_result = Counter(temp_df['Результат'])  # количество по результатам
         result_str_result = f'1 место-{count_result.get("1 место", 0)}\n2 место-{count_result.get("2 место", 0)}\n3 место-{count_result.get("3 место", 0)}\nноминация-{count_result.get("номинация", 0)}\nгран-при-{count_result.get("гран-при", 0)}'
 
         row_itog = pd.DataFrame(columns=main_df.columns,
-                                data=[['ИТОГО', f'руководителей-{quantity_teacher}', '', '', result_str_type, '', '',
+                                data=[['ИТОГО', f'руководителей-{quantity_teacher}', '','\n'.join(lst_way_event) , result_str_type, '', '',
                                        '', result_student, '', '', '', result_str_result, '']])
 
         main_df = pd.concat([main_df, row_itog])
@@ -216,12 +220,14 @@ def generate_table_student_perf(df: pd.DataFrame):
     # считаем по уровням
     count_type = Counter(result_df['Уровень'])
     result_str_type = f'Внутренние-{count_type["внутренний"]}\nМуниципальные-{count_type["муниципальный"]}\nРегиональные-{count_type["региональный"]}\nМежрегиональные-{count_type["межрегиональный"]}\nВсероссийские-{count_type["всероссийский"]}\nМеждународные-{count_type["международный"]}'
+    count_way_event = Counter(result_df['Форма'])  # количество по формам участия
+    lst_way_event = [f'{key}-{value}' for key, value in count_way_event.items()]
     # Считаем результат
     count_result = Counter(result_df['Результат'])  # количество по результатам
     result_str_result = f'1 место-{count_result.get("1 место", 0)}\n2 место-{count_result.get("2 место", 0)}\n3 место-{count_result.get("3 место", 0)}\nноминация-{count_result.get("номинация", 0)}\nгран-при-{count_result.get("гран-при", 0)}'
 
     row_itog = pd.DataFrame(columns=main_df.columns,
-                            data=[['ИТОГО по всем выступлениям', f'руководителей-{quantity_teacher}', '', '',
+                            data=[['ИТОГО по всем выступлениям', f'руководителей-{quantity_teacher}', '', '\n'.join(lst_way_event),
                                    result_str_type, '', '',
                                    '', result_student, '', '', '', result_str_result, '']])
     main_df = pd.concat([main_df, row_itog])
