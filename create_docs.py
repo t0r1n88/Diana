@@ -90,7 +90,7 @@ def generate_table_events_teacher(df: pd.DataFrame):
     # Результирующая строка
     quantity_teacher = len(df['ФИО'].unique()) # количество педагогов
     count_type_event = Counter(df['Уровень'].tolist())
-    result_str_teacher = f'ИТОГО преподавателей-{quantity_teacher}\nМероприятий:\nфедеральных-{count_type_event["федеральный"]}\nмеждународных-{count_type_event["международный"]}'
+    result_str_teacher = f'ИТОГО преподавателей-{quantity_teacher}\nМероприятий:\nвсероссийских-{count_type_event["всероссийский"]}\nмеждународных-{count_type_event["международный"]}'
     main_df.loc[-1] = [result_str_teacher,f'{count_type_event["внутренний"]} внутренних',f'{count_type_event["муниципальный"]} муниципальных'
                                    ,f'{count_type_event["региональный"]} региональных',f'{count_type_event["межрегиональный"]} межрегиональных']
 
@@ -131,7 +131,7 @@ def generate_table_personal_perf(df:pd.DataFrame):
 
 
         count_result = Counter(temp_df['Результат']) # количество по результатам
-        result_str_result = f'1 место-{count_result["1 место"]}\n2 место-{count_result["2 место"]}\n3 место-{count_result["3 место"]}\nноминация-{count_result["номинация"]}'
+        result_str_result = f'1 место-{count_result.get("1 место",0)}\n2 место-{count_result.get("2 место",0)}\n3 место-{count_result.get("3 место",0)}\nноминация-{count_result.get("номинация",0)}\nгран-при-{count_result.get("гран-при",0)}'
         row_itog = pd.DataFrame(columns=main_df.columns,
                                 data=[['Итого','',f'выступлений-{quantity_event}',
                                        f'преподавателей-{quantity_teacher}','','','\n'.join(lst_type_event),'\n'.join(lst_way_event),result_str_result,'']])
@@ -148,7 +148,7 @@ def generate_table_personal_perf(df:pd.DataFrame):
     lst_way_event = [f'{key}-{value}' for key, value in count_way_event.items()]
 
     count_result = Counter(result_df['Результат'])  # количество по результатам
-    result_str_result = f'1 место-{count_result["1 место"]}\n2 место-{count_result["2 место"]}\n3 место-{count_result["3 место"]}\nноминация-{count_result["номинация"]}'
+    result_str_result = f'1 место-{count_result.get("1 место",0)}\n2 место-{count_result.get("2 место",0)}\n3 место-{count_result.get("3 место",0)}\nноминация-{count_result.get("номинация",0)}\nгран-при-{count_result.get("гран-при",0)}'
     result_type_event_str = 'По уровню мероприятий '+'\n'.join(lst_type_event)
     row_itog = pd.DataFrame(columns=result_df.columns,
                             data=[['Итого по всем выступлениям', '', f'выступлений-{quantity_event}',
@@ -192,10 +192,10 @@ def generate_table_student_perf(df:pd.DataFrame):
 
         # считаем по уровням
         count_type = Counter(temp_df['Уровень'])
-        result_str_type = f'Внутренние-{count_type["внутренний"]}\nМуниципальные-{count_type["муниципальный"]}\nРегиональные-{count_type["региональный"]}\nМежрегиональные-{count_type["межрегиональный"]}\nФедеральные-{count_type["федеральный"]}\nМеждународные-{count_type["международный"]}'
+        result_str_type = f'Внутренние-{count_type["внутренний"]}\nМуниципальные-{count_type["муниципальный"]}\nРегиональные-{count_type["региональный"]}\nМежрегиональные-{count_type["межрегиональный"]}\nВсероссийские-{count_type["всероссийский"]}\nМеждународные-{count_type["международный"]}'
         # Считаем результат
         count_result = Counter(temp_df['Результат'])  # количество по результатам
-        result_str_result = f'1 место-{count_result["1 место"]}\n2 место-{count_result["2 место"]}\n3 место-{count_result["3 место"]}\nноминация-{count_result["номинация"]}'
+        result_str_result = f'1 место-{count_result.get("1 место",0)}\n2 место-{count_result.get("2 место",0)}\n3 место-{count_result.get("3 место",0)}\nноминация-{count_result.get("номинация",0)}\nгран-при-{count_result.get("гран-при",0)}'
 
 
 
