@@ -351,9 +351,10 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
     second_publ = 'ДИ'
     ii_publ = 'ИИ'
     control = 'Контроль'
+    plan_results = 'Планируемые результаты'
     # необходимые колонки
     try:
-        etalon_cols_lst = [desc_rp,plan,structure,target,result,uupd,content,main_publ,second_publ,ii_publ,control]
+        etalon_cols_lst = [desc_rp,plan,structure,target,result,uupd,content,main_publ,second_publ,ii_publ,control,plan_results]
         etalon_cols = set(etalon_cols_lst)
         temp_wb = openpyxl.load_workbook(data_work_program,read_only=True)
         file_cols = set(temp_wb.sheetnames)
@@ -491,9 +492,9 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
         """
             Обрабатываем лист Контроль и Оценка
             """
-        df_control = pd.read_excel(data_work_program, sheet_name=control, usecols='A:B')
+        df_control = pd.read_excel(data_work_program, sheet_name=control, usecols='A')
         df_control.dropna(inplace=True, thresh=1)  # удаляем пустые строки
-        df_control.columns = ['Результаты_обучения', 'Контроль_обучения']
+        df_control.columns = ['Результаты_обучения']
         _lst_result_educ = df_control['Результаты_обучения'].dropna().tolist()  # создаем список
         if 'Знания:' not in _lst_result_educ:
             messagebox.showerror('Диана Создание рабочих программ','На листе Контроль в первой колонке должно быть слово Знание:\n'
@@ -506,6 +507,14 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
         lst_knowledge = processing_punctuation_end_string(lst_knowledge, ';\n', '- ', '.')  # форматируем выходную строку
         df_control.fillna('', inplace=True)
 
+        """
+        Обрабатываем лист Планируемые результаты
+        """
+        df_plan_result = pd.read_excel(data_work_program, sheet_name=plan_results, usecols='A:E')
+        df_plan_result.dropna(inplace=True, how='all')  # удаляем пустые строки
+        df_plan_result.columns = ['ОК_ПК','Общие_рез','Дис_рез','Раздел_тема','Тип']
+        df_plan_result.fillna('', inplace=True)
+
         # Конвертируем датафрейм с описанием программы в список словарей и добавляем туда нужные элементы
         data_program = df_desc_rp.to_dict('records')
         context = data_program[0]
@@ -514,6 +523,8 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
         context['Контроль_оценка'] = df_control.to_dict('records')
         context['Знать'] = lst_knowledge
         context['Уметь'] = lst_skill
+
+        context['План_результаты'] = df_plan_result.to_dict('records')
 
         # добавляем единичные переменные
         context['Макс_нагрузка'] = max_load
@@ -592,9 +603,9 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
 
 if __name__ == '__main__':
 
-    template_work_program = 'data/Шаблон автозаполнения ООД 08_09_23.docx'
+    template_work_program = 'data/Шаблон автозаполнения ООД.docx'
     # data_work_program = 'data/ПРИМЕР заполнения таблицы  ООД 13_09.xlsx'
-    data_work_program = 'data/ПРИМЕР заполнения таблицы РП ООД 16_11.xlsx'
+    data_work_program = 'data/ПРИМЕР заполнения таблицы РП ООД 20_12.xlsx'
     end_folder = 'data'
 
 
