@@ -329,6 +329,38 @@ def extract_data_plan(data_ud, sheet_name):
 
     return (main_df,dct_all_sum_result,part_dct_sum) # возвращаем кортеж
 
+def find_part_themes(value:str):
+    """
+    Функция для извлечения из ячеек в колонке Раздел_тема разделов и тем где используется то или иное ОК или ПК
+    :param value: строка
+    :return: словарь
+    """
+    dct_competence = {}  # словарь для хранения разделов и тем
+
+    lst_part = value.split(';')
+    print(lst_part)
+    for part in lst_part:
+        temp_part = part.split(':')  # извлекаем название раздела и часть с темами
+        if len(temp_part) != 2:  # если отсутствует двоеточиее не обрабатываем
+            if len(temp_part) == 1:
+                result_part = re.search(r'Раздел\s*\d+', temp_part[0])  # Выделяем название раздела
+                if result_part:
+                    dct_competence[result_part.group(0)] = []
+
+        else:
+            temp_part = list(map(str.strip, temp_part))  # очищаем от пробелов в начале и конце
+            result_part = re.search(r'Раздел\s+\d+', temp_part[0])  # Выделяем название раздела
+            if result_part:
+                lst_result_themes = re.findall(r'\b\d+\.\d+\b', temp_part[1])
+                print(lst_result_themes)
+                dct_competence[result_part.group(0)] = lst_result_themes
+
+    print(dct_competence)
+
+
+
+
+
 def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_folder:str):
     """
     Скрипт для генерации рабочей програамы для учебной дисциплины ООД (общеобразовательной) с помощью DocxTemplate
@@ -406,6 +438,17 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
         if len(sam_df) == 0:
             print('Проверьте наличие строки Самостоятельная работа обучающегося (всего)')
         sam_load = sam_df.iloc[0, 1]
+
+        """
+        Обрабатываем лист Планируемые результаты
+        для того чтобы при обработке листа План УД добавить колонку с ОК и ПК
+        """
+        df_plan_result = pd.read_excel(data_work_program, sheet_name=plan_results, usecols='A:E')
+        df_plan_result.dropna(inplace=True, how='all')  # удаляем пустые строки
+        df_plan_result.columns = ['ОК_ПК','Общие_рез','Дис_рез','Раздел_тема','Тип']
+        df_plan_result.fillna('', inplace=True)
+        dct_part_themes = extract_data_part_themes(df_plan_result)
+
 
         """
             Обрабатываем лист План УД
@@ -507,13 +550,11 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
         lst_knowledge = processing_punctuation_end_string(lst_knowledge, ';\n', '- ', '.')  # форматируем выходную строку
         df_control.fillna('', inplace=True)
 
-        """
-        Обрабатываем лист Планируемые результаты
-        """
-        df_plan_result = pd.read_excel(data_work_program, sheet_name=plan_results, usecols='A:E')
-        df_plan_result.dropna(inplace=True, how='all')  # удаляем пустые строки
-        df_plan_result.columns = ['ОК_ПК','Общие_рез','Дис_рез','Раздел_тема','Тип']
-        df_plan_result.fillna('', inplace=True)
+
+
+
+
+
 
         # Конвертируем датафрейм с описанием программы в список словарей и добавляем туда нужные элементы
         data_program = df_desc_rp.to_dict('records')
@@ -603,9 +644,9 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
 
 if __name__ == '__main__':
 
-    template_work_program = 'data/Шаблон автозаполнения ООД.docx'
+    template_work_program = 'data/Шаблон автозаполнения ООД 10_09_24.docx'
     # data_work_program = 'data/ПРИМЕР заполнения таблицы  ООД 13_09.xlsx'
-    data_work_program = 'data/ПРИМЕР заполнения таблицы РП ООД 20_12.xlsx'
+    data_work_program = 'data/ПРИМЕР заполнения таблицы РП ООД 10_09_24.xlsx'
     end_folder = 'data'
 
 
