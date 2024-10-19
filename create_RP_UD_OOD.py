@@ -197,11 +197,12 @@ def create_check_error_df(dct:dict)->pd.DataFrame:
     df.at['Сумма', 'Семестр'] = 'Итого'
     return df
 
-def extract_data_plan(data_ud, sheet_name):
+def extract_data_plan_ood(data_ud, sheet_name,dct_competence:dict):
     """
     Функция для получения датафрейма из листа файла
     :param data_ud: путь к файлу
     :param sheet_name: имя листа
+    :param dct_competence: словарь где указано в каких разделах и темах содержится то или иное ОК, ПК
     :return: датафрейм
     """
     print(sheet_name)
@@ -210,12 +211,13 @@ def extract_data_plan(data_ud, sheet_name):
     dct_all_sum_result = {key: 0 for key in lst_type_lesson}  # создаем словарь для подсчета значений
 
 
-
+    # Создаем датафрейм
     df_plan_pm = pd.read_excel(data_ud,sheet_name=sheet_name, usecols='A:H')
     if df_plan_pm.shape[0] == 0:
         raise NotDataMdk
     df_plan_pm.dropna(inplace=True, thresh=1)  # удаляем пустые строки
 
+    # Устанавливаем стандартные колонки
     df_plan_pm.columns = ['Курс_семестр', 'Раздел', 'Тема', 'Содержание', 'Количество_часов', 'Прак_подготовка', 'Вид_занятия',
                           'СРС']
     df_plan_pm['Курс_семестр'].fillna('Пусто', inplace=True)
@@ -239,7 +241,7 @@ def extract_data_plan(data_ud, sheet_name):
         df_plan_pm['Курс_семестр'].str.contains('семестр')].index  # получаем индексы строк где есть слово семестр
 
     if len(borders) == 0:
-        raise ControlSemestr
+        raise ControlSemestr # если не находим ни одной ячейки где есть слово семестр то вызываем исключение
 
     name_borders = [] # лист для хранения названий семестров(границ разделов)
     for idx in borders:
@@ -327,6 +329,8 @@ def extract_data_plan(data_ud, sheet_name):
     main_df['Содержание'] = main_df['Курс_семестр'] + main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
     main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
 
+    main_df.to_excel('data/tres.xlsx',index=False)
+
     return (main_df,dct_all_sum_result,part_dct_sum) # возвращаем кортеж
 
 def find_part_themes(value:str,dct_competence:dict,competence:str):
@@ -391,10 +395,9 @@ def extract_data_part_themes(df:pd.DataFrame):
     dct_competence = {} # словарь для хранения данных
     for row in df.itertuples():
         if row[1] not in ('ОК','ПК'): # отсекаем обозначения разделов
-            find_part_themes(row[4],dct_competence,row[1])
+            find_part_themes(row[4],dct_competence,row[1]) # находим в каких разделах и темах используется данная ОК или ПК
 
-    print(dct_competence)
-    raise ZeroDivisionError
+    return dct_competence
 
 
 
@@ -487,14 +490,15 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
         df_plan_result.dropna(inplace=True, how='all')  # удаляем пустые строки
         df_plan_result.columns = ['ОК_ПК','Общие_рез','Дис_рез','Раздел_тема','Тип']
         df_plan_result.fillna('', inplace=True)
+        # создаем словарь где указываем в каких разделах и темах используются данные ОК и ПК
         dct_part_themes = extract_data_part_themes(df_plan_result)
 
 
         """
             Обрабатываем лист План УД
             """
-        main_df, temp_all_result, temp_part_result = extract_data_plan(data_work_program,
-                                                                           plan)  # извлекаем данные из датафрейма
+        main_df, temp_all_result, temp_part_result = extract_data_plan_ood(data_work_program,
+                                                                           plan,dct_part_themes)  # извлекаем данные из датафрейма
         #
         check_error_df = create_check_error_df(temp_part_result)
 
