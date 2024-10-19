@@ -558,6 +558,7 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
         df_plan_result.dropna(inplace=True, how='all')  # удаляем пустые строки
         df_plan_result.columns = ['ОК_ПК','Общие_рез','Дис_рез','Раздел_тема','Тип']
         df_plan_result.fillna('', inplace=True)
+        df_plan_result = df_plan_result.astype(str)
         # создаем словарь где указываем в каких разделах и темах используются данные ОК и ПК
         dct_part_themes = extract_data_part_themes(df_plan_result)
 
