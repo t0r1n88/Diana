@@ -329,33 +329,73 @@ def extract_data_plan(data_ud, sheet_name):
 
     return (main_df,dct_all_sum_result,part_dct_sum) # возвращаем кортеж
 
-def find_part_themes(value:str):
+def find_part_themes(value:str,dct_competence:dict,competence:str):
     """
     Функция для извлечения из ячеек в колонке Раздел_тема разделов и тем где используется то или иное ОК или ПК
     :param value: строка
+    :param dct_competence: словарь где будут храниться данные
+    :param competence: наименование ПК или ОК
     :return: словарь
     """
-    dct_competence = {}  # словарь для хранения разделов и тем
 
-    lst_part = value.split(';')
-    print(lst_part)
+    lst_part = value.split(',')
     for part in lst_part:
         temp_part = part.split(':')  # извлекаем название раздела и часть с темами
         if len(temp_part) != 2:  # если отсутствует двоеточиее не обрабатываем
             if len(temp_part) == 1:
                 result_part = re.search(r'Раздел\s*\d+', temp_part[0])  # Выделяем название раздела
                 if result_part:
-                    dct_competence[result_part.group(0)] = []
+                    name_chapter = result_part.group(0) # название раздела
+                    # Проверяем наличие такого ключа в словаре
+                    if name_chapter not in dct_competence:
+                        dct_competence[name_chapter] = {}  # если нет то создаем такой ключ где значением будет словарь
+                    # Проверяем есть ключ с названием раздела внутри
+                    if name_chapter not in dct_competence[name_chapter]:
+                        dct_competence[name_chapter][name_chapter] = [competence]
+                    else:
+                        dct_competence[name_chapter][name_chapter].append(competence)
+
 
         else:
             temp_part = list(map(str.strip, temp_part))  # очищаем от пробелов в начале и конце
-            result_part = re.search(r'Раздел\s+\d+', temp_part[0])  # Выделяем название раздела
+            result_part = re.search(r'Раздел\s*\d+', temp_part[0])  # Выделяем название раздела
             if result_part:
+                name_chapter = result_part.group(0) # название раздела
+                # Проверяем наличие такого ключа в словаре
+                if name_chapter not in dct_competence:
+                    dct_competence[name_chapter] = {} # если нет то создаем такой ключ где значением будет словарь
+
                 lst_result_themes = re.findall(r'\b\d+\.\d+\b', temp_part[1])
-                print(lst_result_themes)
-                dct_competence[result_part.group(0)] = lst_result_themes
+                if len(lst_result_themes) == 0:
+                    if name_chapter in dct_competence[name_chapter]:
+                        dct_competence[name_chapter][name_chapter].append(competence) # создаем внутренний ключ с названием раздела
+                    else:
+                        dct_competence[name_chapter] = {name_chapter:[competence]}
+                else:
+                    # перебираем найденные темы
+                    for theme in lst_result_themes:
+                        if theme in dct_competence[name_chapter]:
+                            # если тема есть внутри раздела то добавляем ОК и ПК
+                            dct_competence[name_chapter][theme].append(competence)
+                        else:
+                            dct_competence[name_chapter] = {theme:[competence]}
+
+
+
+def extract_data_part_themes(df:pd.DataFrame):
+    """
+    Функция для создания словаря содержащего в себе данные в каких разделах и темах используется та или иная ОК или ПК
+    :param df: датафрейм с данными с листа Планируемые результаты
+    :return: словарь формата {Наименование раздела (или Наименование раздела темы): используемые там ОК и ПК}
+    """
+    dct_competence = {} # словарь для хранения данных
+    for row in df.itertuples():
+        if row[1] not in ('ОК','ПК'): # отсекаем обозначения разделов
+            find_part_themes(row[4],dct_competence,row[1])
 
     print(dct_competence)
+    raise ZeroDivisionError
+
 
 
 
@@ -618,35 +658,35 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
         messagebox.showerror('Диана Создание рабочих программ',
                              f'При обработке листа с Планом УД не найдено слово семестр в первой колонке Курс/семестр\n'
                              f'Должны быть указаны семестры в формате: 2 курс 3 семестр')
-    except KeyError as e:
-        messagebox.showerror('Диана Создание рабочих программ',
-                             f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
-    except ValueError as e:
-        messagebox.showerror('Диана Создание рабочих программ',
-                             f'В таблице не найден лист,колонка или значение {e.args}!\nПроверьте написание названий')
-
-    except FileNotFoundError:
-        messagebox.showerror('Диана Создание рабочих программ',
-                             f'Перенесите файлы которые вы хотите обработать в корень диска. Проблема может быть\n '
-                             f'в слишком длинном пути к обрабатываемым файлам')
-
-    except exceptions.TemplateSyntaxError:
-        messagebox.showerror('Диана Создание рабочих программ',
-                             f'Ошибка в оформлении вставляемых значений в шаблоне\n'
-                             f'Проверьте свой шаблон на наличие следующих ошибок:\n'
-                             f'1) Вставляемые значения должны быть оформлены двойными фигурными скобками\n'
-                             f'{{{{Вставляемое_значение}}}}\n'
-                             f'2) В названии колонки в таблице откуда берутся данные - есть пробелы,цифры,знаки пунктуации и т.п.\n'
-                             f'в названии колонки должны быть только буквы и нижнее подчеркивание.\n'
-                             f'{{{{Дата_рождения}}}}')
-    else:
-        messagebox.showinfo('Диана Создание рабочих программ', 'Данные успешно обработаны')
+    # except KeyError as e:
+    #     messagebox.showerror('Диана Создание рабочих программ',
+    #                          f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
+    # except ValueError as e:
+    #     messagebox.showerror('Диана Создание рабочих программ',
+    #                          f'В таблице не найден лист,колонка или значение {e.args}!\nПроверьте написание названий')
+    #
+    # except FileNotFoundError:
+    #     messagebox.showerror('Диана Создание рабочих программ',
+    #                          f'Перенесите файлы которые вы хотите обработать в корень диска. Проблема может быть\n '
+    #                          f'в слишком длинном пути к обрабатываемым файлам')
+    #
+    # except exceptions.TemplateSyntaxError:
+    #     messagebox.showerror('Диана Создание рабочих программ',
+    #                          f'Ошибка в оформлении вставляемых значений в шаблоне\n'
+    #                          f'Проверьте свой шаблон на наличие следующих ошибок:\n'
+    #                          f'1) Вставляемые значения должны быть оформлены двойными фигурными скобками\n'
+    #                          f'{{{{Вставляемое_значение}}}}\n'
+    #                          f'2) В названии колонки в таблице откуда берутся данные - есть пробелы,цифры,знаки пунктуации и т.п.\n'
+    #                          f'в названии колонки должны быть только буквы и нижнее подчеркивание.\n'
+    #                          f'{{{{Дата_рождения}}}}')
+    # else:
+    #     messagebox.showinfo('Диана Создание рабочих программ', 'Данные успешно обработаны')
 
 if __name__ == '__main__':
 
     template_work_program = 'data/Шаблон автозаполнения ООД 10_09_24.docx'
     # data_work_program = 'data/ПРИМЕР заполнения таблицы  ООД 13_09.xlsx'
-    data_work_program = 'data/ПРИМЕР заполнения таблицы РП ООД 10_09_24.xlsx'
+    data_work_program = 'data/Физическая культура.xlsx'
     end_folder = 'data'
 
 
