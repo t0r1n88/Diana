@@ -33,6 +33,12 @@ class ControlSemestr(Exception):
     """
     pass
 
+class ControlChapter(Exception):
+    """
+    Исключение для обработки случае если на листе План УД отсутствуют записи со словом Раздел
+    """
+    pass
+
 class NotDataMdk(Exception):
     """
     Исключения для случаев когда пустой датафрейм в плане МДК
@@ -197,6 +203,48 @@ def create_check_error_df(dct:dict)->pd.DataFrame:
     df.at['Сумма', 'Семестр'] = 'Итого'
     return df
 
+def add_competence_column(df:pd.DataFrame,dct_competence:dict):
+    """
+    Функция для добавления колонки в которой для каждой темы будет указаны используемые ОК и ПК
+    :param df: датафрейм
+    :param dct_competence:  словарь с данными в каких разделах и темах используются ОК и ПК
+    :return: датафрейм с колонкой для ОК и ПК
+    """
+    check_chapter = None
+    print(dct_competence)
+
+    for row in df.itertuples():
+        row_content = row[2]
+        if 'Раздел' in row_content:
+            result_chapter = re.search(r'Раздел\s*\d+',row_content) # Ищем сочетание Раздел цифра
+            if result_chapter:
+                check_chapter = result_chapter.group(0) # указываем текущий раздел
+                if check_chapter in dct_competence:
+                    chapter_str_competence_lst = [] # список для ОК и ПК используемых в разделе
+                    for key,value in dct_competence[check_chapter].items():
+                        for comp in value:
+                            # Извлекаем номера ОК и ПК
+                            print(comp)
+                            comp_result = re.search(r'ОК\s*\d+|ПК\s+\d+\.?\d+',comp)
+                            if comp_result:
+                                chapter_str_competence_lst.append(comp_result.group(0))
+                    chapter_str_competence_lst.sort() # сортируем чтобы ОК были на первом месте
+                    df.iloc[row[0],6]=','.join(chapter_str_competence_lst) # записываем результат в колонку ОК_ПК
+
+
+
+                # df.iloc[row[0],6]=
+
+
+
+
+    raise ZeroDivisionError
+
+
+
+
+
+
 def extract_data_plan_ood(data_ud, sheet_name,dct_competence:dict):
     """
     Функция для получения датафрейма из листа файла
@@ -329,7 +377,9 @@ def extract_data_plan_ood(data_ud, sheet_name,dct_competence:dict):
     main_df['Содержание'] = main_df['Курс_семестр'] + main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
     main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
 
-    main_df.to_excel('data/tres.xlsx',index=False)
+    # Добавляем колонку с ОК и ПК
+    main_df['ОК_ПК'] = ''
+    add_competence_column(main_df,dct_competence)
 
     return (main_df,dct_all_sum_result,part_dct_sum) # возвращаем кортеж
 
@@ -343,6 +393,7 @@ def find_part_themes(value:str,dct_competence:dict,competence:str):
     """
 
     lst_part = value.split(',')
+    lst_part = [value for value in lst_part if value] # очищаем от последнего элемента на случай если в конце стоит запятая
     for part in lst_part:
         temp_part = part.split(':')  # извлекаем название раздела и часть с темами
         if len(temp_part) != 2:  # если отсутствует двоеточиее не обрабатываем
@@ -662,6 +713,10 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
         messagebox.showerror('Диана Создание рабочих программ',
                              f'При обработке листа с Планом УД не найдено слово семестр в первой колонке Курс/семестр\n'
                              f'Должны быть указаны семестры в формате: 2 курс 3 семестр')
+    except ControlChapter as e:
+        messagebox.showerror('Диана Создание рабочих программ',
+                             f'При обработке листа с Планом УД не найдено слово Раздел во второй колонке Раздел\n'
+                             f'Должны быть указаны разделы в формате: Раздел 1. Наименование раздела и т.п.')
     # except KeyError as e:
     #     messagebox.showerror('Диана Создание рабочих программ',
     #                          f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
