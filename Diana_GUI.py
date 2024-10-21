@@ -435,7 +435,7 @@ def processing_create_report_teacher():
 
 if __name__ == '__main__':
     window = Tk()
-    window.title('Диана Автоматизация работы методиста СПО ver 3.1')
+    window.title('Диана Автоматизация работы методиста СПО ver 3.2')
     # Устанавливаем размер и положение окна
     set_window_size(window)
     window.resizable(True, True)
