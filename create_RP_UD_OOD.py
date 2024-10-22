@@ -219,14 +219,16 @@ def add_competence_column(df:pd.DataFrame,dct_competence:dict):
             if result_chapter:
                 check_chapter = result_chapter.group(0) # указываем текущий раздел
                 if check_chapter in dct_competence:
-                    chapter_str_competence_lst = [] # список для ОК и ПК используемых в разделе
+                    chapter_str_competence_set = set() # множество для ОК и ПК используемых в разделе
                     for key,value in dct_competence[check_chapter].items():
                         for comp in value:
                             # Извлекаем номера ОК и ПК
                             comp_result = re.search(r'ОК\s*\d+|ПК\s+\d+\.?\d+',comp)
                             if comp_result:
-                                chapter_str_competence_lst.append(comp_result.group(0))
-                    chapter_str_competence_lst.sort() # сортируем чтобы ОК были на первом месте
+                                chapter_str_competence_set.add(comp_result.group(0))
+
+                    chapter_str_competence_lst = list(chapter_str_competence_set) # превращаем в список и сортируем чтобы ОК были на первом месте
+                    chapter_str_competence_lst.sort()
                     df.iloc[row[0],6]=','.join(chapter_str_competence_lst) # записываем результат в колонку ОК_ПК
         elif 'Тема' in row_content:
             if check_chapter: # делаем обработку только если какой-то раздел был уже найден
@@ -235,22 +237,24 @@ def add_competence_column(df:pd.DataFrame,dct_competence:dict):
                     theme = result_theme.group(0)
                     if theme in dct_competence[check_chapter]:
                         # Извлекаем ОК и ПК
-                        chapter_str_competence_lst = []  # список для ОК и ПК используемых в разделе
+                        chapter_str_competence_set = set()  # множество для ОК и ПК используемых в разделе
                         for value in dct_competence[check_chapter][theme]:
                             # Извлекаем номера ОК и ПК
                             comp_result = re.search(r'ОК\s*\d+|ПК\s+\d+\.?\d+', value)
                             if comp_result:
-                                chapter_str_competence_lst.append(comp_result.group(0))
+                                chapter_str_competence_set.add(comp_result.group(0))
+                        chapter_str_competence_lst = list(chapter_str_competence_set)
                         chapter_str_competence_lst.sort() # сортируем чтобы ОК были на первом месте
                         df.iloc[row[0],6]=','.join(chapter_str_competence_lst) # записываем результат в колонку ОК_ПК
                     else:
                         if check_chapter in dct_competence:
-                            chapter_str_competence_lst = []  # список для ОК и ПК используемых в разделе
+                            chapter_str_competence_set = set()  # множество для ОК и ПК используемых в разделе
                             for value in dct_competence[check_chapter][check_chapter]:
                                 # Извлекаем номера ОК и ПК
                                 comp_result = re.search(r'ОК\s*\d+|ПК\s+\d+\.?\d+', value)
                                 if comp_result:
-                                    chapter_str_competence_lst.append(comp_result.group(0))
+                                    chapter_str_competence_set.add(comp_result.group(0))
+                            chapter_str_competence_lst = list(chapter_str_competence_set)
                             chapter_str_competence_lst.sort()  # сортируем чтобы ОК были на первом месте
                             df.iloc[row[0], 6] = ','.join(
                                 chapter_str_competence_lst)  # записываем результат в колонку ОК_ПК
@@ -463,7 +467,6 @@ def extract_data_part_themes(df:pd.DataFrame):
     for row in df.itertuples():
         if row[1] not in ('ОК','ПК'): # отсекаем обозначения разделов
             find_part_themes(row[4],dct_competence,row[1]) # находим в каких разделах и темах используется данная ОК или ПК
-
     return dct_competence
 
 
