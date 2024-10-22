@@ -235,29 +235,31 @@ def add_competence_column(df:pd.DataFrame,dct_competence:dict):
                 result_theme = re.search(r'\b\d+\.\d+\b',row_content)
                 if result_theme:
                     theme = result_theme.group(0)
-                    if theme in dct_competence[check_chapter]:
-                        # Извлекаем ОК и ПК
-                        chapter_str_competence_set = set()  # множество для ОК и ПК используемых в разделе
-                        for value in dct_competence[check_chapter][theme]:
-                            # Извлекаем номера ОК и ПК
-                            comp_result = re.search(r'ОК\s*\d+|ПК\s+\d+\.?\d+', value)
-                            if comp_result:
-                                chapter_str_competence_set.add(comp_result.group(0))
-                        chapter_str_competence_lst = list(chapter_str_competence_set)
-                        chapter_str_competence_lst.sort() # сортируем чтобы ОК были на первом месте
-                        df.iloc[row[0],6]=','.join(chapter_str_competence_lst) # записываем результат в колонку ОК_ПК
-                    else:
-                        if check_chapter in dct_competence:
+                    if check_chapter in dct_competence:
+                        if theme in dct_competence[check_chapter]:
+                            # Извлекаем ОК и ПК
                             chapter_str_competence_set = set()  # множество для ОК и ПК используемых в разделе
-                            for value in dct_competence[check_chapter][check_chapter]:
+                            for value in dct_competence[check_chapter][theme]:
                                 # Извлекаем номера ОК и ПК
                                 comp_result = re.search(r'ОК\s*\d+|ПК\s+\d+\.?\d+', value)
                                 if comp_result:
                                     chapter_str_competence_set.add(comp_result.group(0))
                             chapter_str_competence_lst = list(chapter_str_competence_set)
-                            chapter_str_competence_lst.sort()  # сортируем чтобы ОК были на первом месте
-                            df.iloc[row[0], 6] = ','.join(
-                                chapter_str_competence_lst)  # записываем результат в колонку ОК_ПК
+                            chapter_str_competence_lst.sort() # сортируем чтобы ОК были на первом месте
+                            df.iloc[row[0],6]=','.join(chapter_str_competence_lst) # записываем результат в колонку ОК_ПК
+                        else:
+                            if check_chapter in dct_competence:
+                                chapter_str_competence_set = set()  # множество для ОК и ПК используемых в разделе
+                                if check_chapter in dct_competence[check_chapter]:
+                                    for value in dct_competence[check_chapter][check_chapter]:
+                                        # Извлекаем номера ОК и ПК
+                                        comp_result = re.search(r'ОК\s*\d+|ПК\s+\d+\.?\d+', value)
+                                        if comp_result:
+                                            chapter_str_competence_set.add(comp_result.group(0))
+                                    chapter_str_competence_lst = list(chapter_str_competence_set)
+                                    chapter_str_competence_lst.sort()  # сортируем чтобы ОК были на первом месте
+                                    df.iloc[row[0], 6] = ','.join(
+                                        chapter_str_competence_lst)  # записываем результат в колонку ОК_ПК
 
     return df
 
