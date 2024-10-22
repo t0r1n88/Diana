@@ -409,11 +409,11 @@ def find_part_themes(value:str,dct_competence:dict,competence:str):
     :return: словарь
     """
 
-    lst_part = value.split(',')
+    lst_part = value.split(';')
     lst_part = [value for value in lst_part if value] # очищаем от последнего элемента на случай если в конце стоит запятая
     for part in lst_part:
         temp_part = part.split(':')  # извлекаем название раздела и часть с темами
-        if len(temp_part) != 2:  # если отсутствует двоеточиее не обрабатываем
+        if len(temp_part) != 2:  # если отсутствует двоеточие считаем что ОК Пк указаны для всего раздела
             if len(temp_part) == 1:
                 result_part = re.search(r'Раздел\s*\d+', temp_part[0])  # Выделяем название раздела
                 if result_part:
@@ -424,6 +424,7 @@ def find_part_themes(value:str,dct_competence:dict,competence:str):
                     # Проверяем есть ключ с названием раздела внутри
                     if name_chapter not in dct_competence[name_chapter]:
                         dct_competence[name_chapter][name_chapter] = [competence]
+
                     else:
                         dct_competence[name_chapter][name_chapter].append(competence)
 
@@ -450,9 +451,7 @@ def find_part_themes(value:str,dct_competence:dict,competence:str):
                             # если тема есть внутри раздела то добавляем ОК и ПК
                             dct_competence[name_chapter][theme].append(competence)
                         else:
-                            dct_competence[name_chapter] = {theme:[competence]}
-
-
+                            dct_competence[name_chapter][theme]=[competence]
 
 def extract_data_part_themes(df:pd.DataFrame):
     """
@@ -735,17 +734,17 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
         messagebox.showerror('Диана Создание рабочих программ',
                              f'При обработке листа с Планом УД не найдено слово Раздел во второй колонке Раздел\n'
                              f'Должны быть указаны разделы в формате: Раздел 1. Наименование раздела и т.п.')
-    except KeyError as e:
-        messagebox.showerror('Диана Создание рабочих программ',
-                             f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
-    except ValueError as e:
-        messagebox.showerror('Диана Создание рабочих программ',
-                             f'В таблице не найден лист,колонка или значение {e.args}!\nПроверьте написание названий')
-
-    except FileNotFoundError:
-        messagebox.showerror('Диана Создание рабочих программ',
-                             f'Перенесите файлы которые вы хотите обработать в корень диска. Проблема может быть\n '
-                             f'в слишком длинном пути к обрабатываемым файлам')
+    # except KeyError as e:
+    #     messagebox.showerror('Диана Создание рабочих программ',
+    #                          f'В таблице не найдена колонка с названием {e.args}!\nПроверьте написание названия колонки')
+    # except ValueError as e:
+    #     messagebox.showerror('Диана Создание рабочих программ',
+    #                          f'В таблице не найден лист,колонка или значение {e.args}!\nПроверьте написание названий')
+    #
+    # except FileNotFoundError:
+    #     messagebox.showerror('Диана Создание рабочих программ',
+    #                          f'Перенесите файлы которые вы хотите обработать в корень диска. Проблема может быть\n '
+    #                          f'в слишком длинном пути к обрабатываемым файлам')
 
     except exceptions.TemplateSyntaxError:
         messagebox.showerror('Диана Создание рабочих программ',
