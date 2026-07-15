@@ -340,6 +340,10 @@ def extract_data_plan_ood(data_ud, sheet_name,dct_competence:dict):
                  'СРС'])  # создаем базовый датафрейм
     part_dct_sum = dict() # создаем словарь который будет хранить суммы по семестрам
 
+    check_other_type = df_plan_pm['Вид_занятия'].unique()
+    diff_type = list(set(check_other_type).difference(lst_type_lesson)) # виды занятий которые не прописаны
+    diff_hour = 0
+
     for idx,df in enumerate(part_df):
         dct_sum_result = {key: 0 for key in lst_type_lesson}  # создаем словарь для подсчета значений
         dct_sum_result['Прак_подготовка'] = 0
@@ -350,6 +354,20 @@ def extract_data_plan_ood(data_ud, sheet_name,dct_competence:dict):
             dct_sum_result['Прак_подготовка'] += int(sum_column_any_value(_df,'Прак_подготовка')) # считаем часы для практики
         part_dct_sum[name_borders[idx]] = dct_sum_result
 
+        # считаем часы для прописанных видов
+        for bad_type_lesson in diff_type:
+            print(diff_type)
+            _df = df[df['Вид_занятия'] == bad_type_lesson]  # фильтруем датафрейм
+            print(_df)
+            _df['Количество_часов'].fillna(0, inplace=True)
+            diff_hour += int(sum_column_any_value(_df,'Количество_часов')) # считаем часы для каждого типа
+
+
+
+        # проверяем все незаполненные строки
+
+
+        print(diff_hour)
         # создаем строку с описанием
         margint_text = 'Итого часов за семестр:\nиз них\nтеория\nпрактические занятия\nлабораторные занятия\nкурсовая работа (КП)'
 
@@ -399,6 +417,8 @@ def extract_data_plan_ood(data_ud, sheet_name,dct_competence:dict):
     main_df['СРС'] = main_df['СРС'].fillna(0)
     main_df['СРС'] = main_df['СРС'].astype(int, errors='ignore')
     main_df['СРС'] = main_df['СРС'].apply(lambda x: '' if x == 0 else x)
+
+    second_main_df = main_df.copy() # делаем копию для второго варианта отображения
     main_df['Содержание'] = main_df['Курс_семестр'] + main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
     main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
 
@@ -406,7 +426,44 @@ def extract_data_plan_ood(data_ud, sheet_name,dct_competence:dict):
     main_df['ОК_ПК'] = ''
     main_df = add_competence_column(main_df,dct_competence)
 
-    return (main_df,dct_all_sum_result,part_dct_sum) # возвращаем кортеж
+
+    # обрабатываем второй вариант
+    second_main_df['Раздел_Тема'] = second_main_df['Курс_семестр'] + second_main_df['Раздел'] + second_main_df['Тема']
+    second_main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
+    # Сдвинуть колонку на одну строку вверх
+    second_main_df['Содержание'] = second_main_df['Содержание'].shift(-1)
+    second_main_df['Номер'] =  second_main_df['Номер'].shift(-1)
+    second_main_df['Количество_часов'] =  second_main_df['Количество_часов'].shift(-1)
+    second_main_df['Прак_подготовка'] =  second_main_df['Прак_подготовка'].shift(-1)
+    second_main_df['Вид_занятия'] =  second_main_df['Вид_занятия'].shift(-1)
+    second_main_df['СРС'] =  second_main_df['СРС'].shift(-1)
+
+    # Чтобы последняя строка не была нан
+
+    second_main_df['Содержание'] = second_main_df['Содержание'].fillna('')
+    second_main_df['Номер'] = second_main_df['Номер'].fillna('')
+    second_main_df['Количество_часов'] = second_main_df['Количество_часов'].fillna('')
+    second_main_df['Прак_подготовка'] = second_main_df['Прак_подготовка'].fillna('')
+    second_main_df['Вид_занятия'] = second_main_df['Вид_занятия'].fillna('')
+    second_main_df['СРС'] = second_main_df['СРС'].fillna('')
+    # Добавляем колонку с ОК и ПК
+    second_main_df['ОК_ПК'] = ''
+    second_main_df = add_competence_column(second_main_df,dct_competence)
+    # находим строки с условияем
+    mask = second_main_df['Раздел_Тема'].str.contains('Итого часов за семестр:', na=False)
+    indices = second_main_df.index[mask].tolist()
+
+    # Сдвигаем и удаляем
+    for idx in indices:
+        if idx > 0:
+            second_main_df.loc[idx - 1, 'Раздел_Тема'] = second_main_df.loc[idx, 'Раздел_Тема']
+
+    second_main_df = second_main_df.drop(indices).reset_index(drop=True)
+    second_main_df = second_main_df[~(second_main_df == '').all(axis=1)]
+
+
+
+    return (main_df,second_main_df,dct_all_sum_result,part_dct_sum) # возвращаем кортеж
 
 def find_part_themes(value:str,dct_competence:dict,competence:str):
     """
@@ -572,7 +629,7 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
         """
             Обрабатываем лист План УД
             """
-        main_df, temp_all_result, temp_part_result = extract_data_plan_ood(data_work_program,
+        main_df,second_main_df, temp_all_result, temp_part_result = extract_data_plan_ood(data_work_program,
                                                                            plan,dct_part_themes)  # извлекаем данные из датафрейма
         #
         check_error_df = create_check_error_df(temp_part_result)
@@ -679,6 +736,7 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
         data_program = df_desc_rp.to_dict('records')
         context = data_program[0]
         context['План_УД'] = main_df.to_dict('records')  # содержание учебной дисциплины
+        context['План_УД_второй_вариант'] = second_main_df.to_dict('records')  # содержание учебной дисциплины с отображением содержания в отдельной колонке
         context['Учебная_работа'] = df_structure.to_dict('records')
         context['Контроль_оценка'] = df_control.to_dict('records')
         context['Знать'] = lst_knowledge
@@ -768,10 +826,10 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
 
 if __name__ == '__main__':
 
-    template_work_program = 'data/Шаблон автозаполнения ООД 19_10_24.docx'
+    template_work_program = 'data/Шаблон автозаполнения ООД 15_07_26.docx'
     # data_work_program = 'data/ПРИМЕР заполнения таблицы  ООД 13_09.xlsx'
-    data_work_program = 'data/Физическая культура.xlsx'
-    end_folder = 'data'
+    data_work_program = 'data/ООД.xlsx'
+    end_folder = 'data/Результат'
 
 
     create_RP_for_UD_OOD(template_work_program, data_work_program, end_folder)
