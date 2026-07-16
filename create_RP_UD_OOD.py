@@ -266,6 +266,66 @@ def add_competence_column(df:pd.DataFrame,dct_competence:dict):
     return df
 
 
+def add_competence_column_second_var(df:pd.DataFrame,dct_competence:dict):
+    """
+    Функция для добавления колонки в которой для каждой темы будет указаны используемые ОК и ПК
+    :param df: датафрейм
+    :param dct_competence:  словарь с данными в каких разделах и темах используются ОК и ПК
+    :return: датафрейм с колонкой для ОК и ПК
+    """
+    check_chapter = None
+
+    for row in df.itertuples():
+        row_content = row[7]
+
+        if 'Раздел' in row_content:
+            result_chapter = re.search(r'Раздел\s*\d+',row_content) # Ищем сочетание Раздел цифра
+            if result_chapter:
+                check_chapter = result_chapter.group(0) # указываем текущий раздел
+                if check_chapter in dct_competence:
+                    chapter_str_competence_set = set() # множество для ОК и ПК используемых в разделе
+                    for key,value in dct_competence[check_chapter].items():
+                        for comp in value:
+                            # Извлекаем номера ОК и ПК
+                            comp_result = re.search(r'ОК\s*\d+|ПК\s+\d+\.?\d+',comp)
+                            if comp_result:
+                                chapter_str_competence_set.add(comp_result.group(0))
+
+                    chapter_str_competence_lst = list(chapter_str_competence_set) # превращаем в список и сортируем чтобы ОК были на первом месте
+                    chapter_str_competence_lst.sort()
+                    df.iloc[row[0],7]=','.join(chapter_str_competence_lst) # записываем результат в колонку ОК_ПК
+        elif 'Тема' in row_content:
+            if check_chapter: # делаем обработку только если какой-то раздел был уже найден
+                result_theme = re.search(r'\b\d+\.\d+\b',row_content)
+                if result_theme:
+                    theme = result_theme.group(0)
+                    if check_chapter in dct_competence:
+                        if theme in dct_competence[check_chapter]:
+                            # Извлекаем ОК и ПК
+                            chapter_str_competence_set = set()  # множество для ОК и ПК используемых в разделе
+                            for value in dct_competence[check_chapter][theme]:
+                                # Извлекаем номера ОК и ПК
+                                comp_result = re.search(r'ОК\s*\d+|ПК\s+\d+\.?\d+', value)
+                                if comp_result:
+                                    chapter_str_competence_set.add(comp_result.group(0))
+                            chapter_str_competence_lst = list(chapter_str_competence_set)
+                            chapter_str_competence_lst.sort() # сортируем чтобы ОК были на первом месте
+                            df.iloc[row[0],7]=','.join(chapter_str_competence_lst) # записываем результат в колонку ОК_ПК
+                        else:
+                            if check_chapter in dct_competence:
+                                chapter_str_competence_set = set()  # множество для ОК и ПК используемых в разделе
+                                if check_chapter in dct_competence[check_chapter]:
+                                    for value in dct_competence[check_chapter][check_chapter]:
+                                        # Извлекаем номера ОК и ПК
+                                        comp_result = re.search(r'ОК\s*\d+|ПК\s+\d+\.?\d+', value)
+                                        if comp_result:
+                                            chapter_str_competence_set.add(comp_result.group(0))
+                                    chapter_str_competence_lst = list(chapter_str_competence_set)
+                                    chapter_str_competence_lst.sort()  # сортируем чтобы ОК были на первом месте
+                                    df.iloc[row[0], 7] = ','.join(
+                                        chapter_str_competence_lst)  # записываем результат в колонку ОК_ПК
+
+    return df
 
 
 
@@ -448,7 +508,7 @@ def extract_data_plan_ood(data_ud, sheet_name,dct_competence:dict):
     second_main_df['СРС'] = second_main_df['СРС'].fillna('')
     # Добавляем колонку с ОК и ПК
     second_main_df['ОК_ПК'] = ''
-    second_main_df = add_competence_column(second_main_df,dct_competence)
+    second_main_df = add_competence_column_second_var(second_main_df,dct_competence)
     # находим строки с условияем
     mask = second_main_df['Раздел_Тема'].str.contains('Итого часов за семестр:', na=False)
     indices = second_main_df.index[mask].tolist()
@@ -877,7 +937,7 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
 
 if __name__ == '__main__':
 
-    template_work_program = 'data/Шаблон автозаполнения ООД 15_07_26.docx'
+    template_work_program = 'data/Шаблон автозаполнения ООД 15_07_26 ver2.docx'
     # data_work_program = 'data/ПРИМЕР заполнения таблицы  ООД 13_09.xlsx'
     data_work_program = 'data/ООД.xlsx'
     end_folder = 'data/Результат'
