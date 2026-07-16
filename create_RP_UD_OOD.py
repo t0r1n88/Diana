@@ -340,9 +340,6 @@ def extract_data_plan_ood(data_ud, sheet_name,dct_competence:dict):
                  'СРС'])  # создаем базовый датафрейм
     part_dct_sum = dict() # создаем словарь который будет хранить суммы по семестрам
 
-    check_other_type = df_plan_pm['Вид_занятия'].unique()
-    diff_type = list(set(check_other_type).difference(lst_type_lesson)) # виды занятий которые не прописаны
-    diff_hour = 0
 
     for idx,df in enumerate(part_df):
         dct_sum_result = {key: 0 for key in lst_type_lesson}  # создаем словарь для подсчета значений
@@ -354,22 +351,21 @@ def extract_data_plan_ood(data_ud, sheet_name,dct_competence:dict):
             dct_sum_result['Прак_подготовка'] += int(sum_column_any_value(_df,'Прак_подготовка')) # считаем часы для практики
         part_dct_sum[name_borders[idx]] = dct_sum_result
 
-        # считаем часы для прописанных видов
-        for bad_type_lesson in diff_type:
-            print(diff_type)
-            _df = df[df['Вид_занятия'] == bad_type_lesson]  # фильтруем датафрейм
-            print(_df)
-            _df['Количество_часов'].fillna(0, inplace=True)
-            diff_hour += int(sum_column_any_value(_df,'Количество_часов')) # считаем часы для каждого типа
+        # считаем часы для непрописанных видов
+        bad_type_df = df[~df['Вид_занятия'].isin(lst_type_lesson)]
+        bad_type_df = bad_type_df[bad_type_df['Количество_часов'].notnull()] # оставляем те где есть часы
+        bad_type_df['Вид_занятия'] = bad_type_df['Вид_занятия'].fillna('Не заполнена колонка Вид_занятия')
+        bad_type_df['Вид_занятия'] = bad_type_df['Вид_занятия'].replace(r'^\s*$', 'Не заполнена колонка Вид_занятия', regex=True)
+        bad_hour = int(pd.to_numeric(bad_type_df['Количество_часов'], errors='coerce').fillna(0).sum()) # считаем количество часов
+        bad_type_str = ';'.join(bad_type_df['Вид_занятия'].unique())
+        bad_type_str = 'Виды занятий не относящиеся к обрабатываемым\n'+ bad_type_str
 
-
-
-        # проверяем все незаполненные строки
-
-
-        print(diff_hour)
         # создаем строку с описанием
-        margint_text = 'Итого часов за семестр:\nиз них\nтеория\nпрактические занятия\nлабораторные занятия\nкурсовая работа (КП)'
+        if len(bad_type_df) == 0:
+            margint_text = 'Итого часов за семестр:\nиз них\nтеория\nпрактические занятия\nлабораторные занятия\nкурсовая работа (КП)'
+        else:
+            margint_text = f'Итого часов за семестр:\nиз них\nтеория\nпрактические занятия\nлабораторные занятия\nкурсовая работа (КП)\n{bad_type_str} '
+
 
         not_prac_dct_sum_result = dct_sum_result.copy()  # получаем копию
         not_prac_dct_sum_result.pop('Прак_подготовка')  # удаляем ключ практическая подготовка
@@ -379,8 +375,12 @@ def extract_data_plan_ood(data_ud, sheet_name,dct_competence:dict):
         praktice_hours = dct_sum_result['практическое занятие']  # часы практики
         lab_hours = dct_sum_result['лабораторное занятие']  # часы лабораторных
         kurs_hours = dct_sum_result['курсовая работа (КП)']  # часы курсовых
+        if len(bad_type_df) == 0:
+            value_text = f'{all_hours}\n \n{theory_hours}\n{praktice_hours}\n{lab_hours}\n{kurs_hours}'  # строка со значениями
+        else:
+            value_text = f'{all_hours}\n \n{theory_hours}\n{praktice_hours}\n{lab_hours}\n{kurs_hours}\n{bad_hour}'  # строка со значениями
 
-        value_text = f'{all_hours}\n \n{theory_hours}\n{praktice_hours}\n{lab_hours}\n{kurs_hours}'  # строка со значениями
+
         temp_df = pd.DataFrame([{'Тема': margint_text, 'Количество_часов': value_text}])
         df = pd.concat([df, temp_df], ignore_index=True)  # добаляем итоговую строку
         main_df = pd.concat([main_df, df], ignore_index=True)  # добавляем в основной датафрейм
