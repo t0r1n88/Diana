@@ -319,8 +319,21 @@ def extract_data_plan(data_ud, sheet_name):
             dct_sum_result['Прак_подготовка'] += int(sum_column_any_value(_df,'Прак_подготовка')) # считаем часы для практики
         part_dct_sum[name_borders[idx]] = dct_sum_result
 
+        # считаем часы для непрописанных видов
+        bad_type_df = df[~df['Вид_занятия'].isin(lst_type_lesson)]
+        bad_type_df = bad_type_df[bad_type_df['Количество_часов'].notnull()] # оставляем те где есть часы
+        bad_type_df['Вид_занятия'] = bad_type_df['Вид_занятия'].fillna('Не заполнена колонка Вид_занятия')
+        bad_type_df['Вид_занятия'] = bad_type_df['Вид_занятия'].replace(r'^\s*$', 'Не заполнена колонка Вид_занятия', regex=True)
+        bad_hour = int(pd.to_numeric(bad_type_df['Количество_часов'], errors='coerce').fillna(0).sum()) # считаем количество часов
+        bad_type_str = ';'.join(bad_type_df['Вид_занятия'].unique())
+        bad_type_str = 'Виды занятий не относящиеся к обрабатываемым\n'+ bad_type_str
+
         # создаем строку с описанием
-        margint_text = 'Итого часов за семестр:\nиз них\nтеория\nпрактические занятия\nлабораторные занятия\nкурсовая работа (КП)'
+        if len(bad_type_df) == 0:
+            margint_text = 'Итого часов за семестр:\nиз них\nтеория\nпрактические занятия\nлабораторные занятия\nкурсовая работа (КП)'
+        else:
+            margint_text = f'Итого часов за семестр:\nиз них\nтеория\nпрактические занятия\nлабораторные занятия\nкурсовая работа (КП)\n{bad_type_str} '
+
 
         not_prac_dct_sum_result = dct_sum_result.copy()  # получаем копию
         not_prac_dct_sum_result.pop('Прак_подготовка')  # удаляем ключ практическая подготовка
@@ -330,8 +343,11 @@ def extract_data_plan(data_ud, sheet_name):
         praktice_hours = dct_sum_result['практическое занятие']  # часы практики
         lab_hours = dct_sum_result['лабораторное занятие']  # часы лабораторных
         kurs_hours = dct_sum_result['курсовая работа (КП)']  # часы курсовых
+        if len(bad_type_df) == 0:
+            value_text = f'{all_hours}\n \n{theory_hours}\n{praktice_hours}\n{lab_hours}\n{kurs_hours}'  # строка со значениями
+        else:
+            value_text = f'{all_hours}\n \n{theory_hours}\n{praktice_hours}\n{lab_hours}\n{kurs_hours}\n{bad_hour}'  # строка со значениями
 
-        value_text = f'{all_hours}\n \n{theory_hours}\n{praktice_hours}\n{lab_hours}\n{kurs_hours}'  # строка со значениями
         temp_df = pd.DataFrame([{'Тема': margint_text, 'Количество_часов': value_text}])
         df = pd.concat([df, temp_df], ignore_index=True)  # добаляем итоговую строку
         main_df = pd.concat([main_df, df], ignore_index=True)  # добавляем в основной датафрейм
@@ -342,7 +358,7 @@ def extract_data_plan(data_ud, sheet_name):
 
     count = 0  # счетчик
     for idx, row in enumerate(main_df.itertuples()):
-        if (row[5] == 'Пусто') | ('Итого часов' in row[5]):
+        if (row[4] == 'Пусто') | ('Итого часов' in row[4]):
             main_df.iloc[idx, 0] = ''
         else:
             count += 1
@@ -368,10 +384,44 @@ def extract_data_plan(data_ud, sheet_name):
     main_df['СРС'] = main_df['СРС'].fillna(0)
     main_df['СРС'] = main_df['СРС'].astype(int, errors='ignore')
     main_df['СРС'] = main_df['СРС'].apply(lambda x: '' if x == 0 else x)
+    second_main_df = main_df.copy() # делаем копию для второго варианта отображения
+
     main_df['Содержание'] = main_df['Курс_семестр'] + main_df['Раздел'] + main_df['Тема'] + main_df['Содержание']
     main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
 
-    return (main_df,dct_all_sum_result,part_dct_sum) # возвращаем кортеж
+    # обрабатываем второй вариант
+    second_main_df['Раздел_Тема'] = second_main_df['Курс_семестр'] + second_main_df['Раздел'] + second_main_df['Тема']
+    second_main_df.drop(columns=['Курс_семестр', 'Раздел', 'Тема'], inplace=True)
+    # Сдвинуть колонку на одну строку вверх
+
+    second_main_df['Содержание'] = second_main_df['Содержание'].shift(-1)
+    # second_main_df['Номер'] = second_main_df['Номер'].shift(-1)
+    second_main_df['Количество_часов'] = second_main_df['Количество_часов'].shift(-1)
+    second_main_df['Прак_подготовка'] = second_main_df['Прак_подготовка'].shift(-1)
+    second_main_df['Вид_занятия'] = second_main_df['Вид_занятия'].shift(-1)
+    second_main_df['СРС'] = second_main_df['СРС'].shift(-1)
+
+    # Чтобы последняя строка не была нан
+
+    second_main_df['Содержание'] = second_main_df['Содержание'].fillna('')
+    # second_main_df['Номер'] = second_main_df['Номер'].fillna('')
+    second_main_df['Количество_часов'] = second_main_df['Количество_часов'].fillna('')
+    second_main_df['Прак_подготовка'] = second_main_df['Прак_подготовка'].fillna('')
+    second_main_df['Вид_занятия'] = second_main_df['Вид_занятия'].fillna('')
+    second_main_df['СРС'] = second_main_df['СРС'].fillna('')
+    # находим строки с условияем
+    mask = second_main_df['Раздел_Тема'].str.contains('Итого часов за семестр:', na=False)
+    indices = second_main_df.index[mask].tolist()
+
+    # Сдвигаем и удаляем
+    for idx in indices:
+        if idx > 0:
+            second_main_df.loc[idx - 1, 'Раздел_Тема'] = second_main_df.loc[idx, 'Раздел_Тема']
+
+    second_main_df = second_main_df.drop(indices).reset_index(drop=True)
+    second_main_df = second_main_df[~(second_main_df == '').all(axis=1)]
+
+    return (main_df,second_main_df,dct_all_sum_result,part_dct_sum) # возвращаем кортеж
 
 
 def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:str):
@@ -458,7 +508,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
         """
             Обрабатываем лист План УД
             """
-        main_df, temp_all_result, temp_part_result = extract_data_plan(data_work_program,
+        main_df,second_main_df, temp_all_result, temp_part_result = extract_data_plan(data_work_program,
                                                                            plan)  # извлекаем данные из датафрейма
         #
         check_error_df = create_check_error_df(temp_part_result)
@@ -586,6 +636,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
         context = data_program[0]
         context['Лич_результаты'] = df_pers_result.to_dict('records')  # добаввляем лист личностных результатов
         context['План_УД'] = main_df.to_dict('records')  # содержание учебной дисциплины
+        context['План_УД_второй_вариант'] = second_main_df.to_dict('records')  # содержание учебной дисциплины с отображением содержания в отдельной колонке
         context['Учебная_работа'] = df_structure.to_dict('records')
         context['Контроль_оценка'] = df_control.to_dict('records')
         context['Знать'] = lst_knowledge
@@ -668,10 +719,10 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
 
 
 if __name__=='__main__':
-    template_work_program = 'data/Шаблон автозаполнения РП 08_09_23.docx'
+    template_work_program = 'data/Шаблон автозаполнения РП 16_07_26 ver2.docx'
     # data_work_program = 'data/Автозаполнение РП.xlsx'
     # data_work_program = 'data/ПРИМЕР заполнения таблицы  РП 13_09.xlsx'
-    data_work_program = 'data/ПРИМЕР заполнения таблицы  РП УД 16_11.xlsx'
+    data_work_program = 'data/ПРИМЕР заполнения таблицы  РП УД 20_12.xlsx'
     # data_work_program = 'data/Копия 17_основы техн Черчение.xlsx'
     end_folder = 'data'
 

@@ -456,6 +456,7 @@ def extract_data_plan_ood(data_ud, sheet_name,dct_competence:dict):
         else:
             count += 1
             main_df.iloc[idx, 0] = count
+    main_df.to_excel('data/res.xlsx')
 
     # очищаем от пустых символов и строки Пусто
     main_df['Курс_семестр'] = main_df['Курс_семестр'].fillna('Пусто')
@@ -520,7 +521,6 @@ def extract_data_plan_ood(data_ud, sheet_name,dct_competence:dict):
 
     second_main_df = second_main_df.drop(indices).reset_index(drop=True)
     second_main_df = second_main_df[~(second_main_df == '').all(axis=1)]
-
 
 
     return (main_df,second_main_df,dct_all_sum_result,part_dct_sum) # возвращаем кортеж
