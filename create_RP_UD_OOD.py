@@ -553,6 +553,7 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
     target = 'Цели'
     result = 'Результаты'
     uupd = 'УУПД'
+    mto = 'МТО'
     main_publ = 'ОИ'
     second_publ = 'ДИ'
     ii_publ = 'ИИ'
@@ -633,6 +634,48 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
                                                                            plan,dct_part_themes)  # извлекаем данные из датафрейма
         #
         check_error_df = create_check_error_df(temp_part_result)
+
+
+        """
+            Обрабатываем лист МТО если он есть
+            """
+        if 'МТО' in file_cols:
+            df_mto = pd.read_excel(data_work_program, sheet_name=mto, usecols='A:E')
+            df_mto.dropna(inplace=True, thresh=1)  # удаляем пустые строки
+            name_kab = df_mto['Наименование_учебного_кабинета'].dropna().tolist()  #
+            name_kab = ','.join(name_kab)  # получаем все названия которые есть в колонке Наименование учебного кабинета
+
+            name_lab = df_mto['Наименование_лаборатории'].dropna().tolist()
+            if len(name_lab) == 0:
+                name_lab = []
+            else:
+                name_lab = ','.join(name_lab)
+
+            # Списки кабинета и средств обучения
+            lst_obor_cab = df_mto[
+                'Оборудование_учебного_кабинета'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
+            if len(lst_obor_cab) == 0:
+                lst_obor_cab = ['На листе МТО НЕ заполнено оборудование учебного кабинета !!!']
+            obor_cab = processing_punctuation_end_string(lst_obor_cab, ';\n', '- ',
+                                                         '.')  # обрабатываем знаки пунктуации для каждой строки
+
+            lst_tecn_educ = df_mto[
+                'Технические_средства_обучения'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
+            if len(lst_tecn_educ) == 0:
+                lst_tecn_educ = ['На листе МТО НЕ заполнены технические средства обучения !!!']
+            tecn_educ = processing_punctuation_end_string(lst_tecn_educ, ';\n', '- ', '.')
+
+            # Оборудование лаборатории
+            lst_obor_labor = df_mto[
+                'Оборудование_лаборатории'].dropna().tolist()  # создаем список удаляя все незаполненные ячейки
+            if len(lst_obor_labor) == 0 and name_lab:
+                obor_labor = ['На листе МТО НЕ заполнено оборудование лаборатории !!!']
+            elif len(lst_obor_labor) != 0 and not name_lab:
+                obor_labor = [
+                    'На листе МТО заполнено оборудование лаборатории но не заполнено наименование лаборатории !!!']
+            else:
+                obor_labor = processing_punctuation_end_string(lst_obor_labor, ';\n', '- ',
+                                                               '.')  # обрабатываем знаки пунктуации для каждой строки
 
         """
             Обрабатываем лист Содержание
@@ -756,6 +799,14 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
         context['Метапредметные_результаты'] =lst_meta_result
         context['Предметные_результаты'] =lst_predmet_result
         context['УУПД'] =lst_uupd
+
+        if 'МТО' in file_cols:
+            # лист МТО
+            context['Учебный_кабинет'] = name_kab
+            context['Лаборатория'] = name_lab
+            context['Список_оборудования'] = obor_cab
+            context['Средства_обучения'] = tecn_educ
+            context['Оборудование_лаборатории'] = obor_labor
 
         # Лист Содержание
         context['Содержание_дисциплины'] = df_content.iloc[0,0]
