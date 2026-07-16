@@ -461,6 +461,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
 
         df_pers_result = pd.read_excel(data_work_program, sheet_name=pers_result, usecols='A')
         df_pers_result.dropna(inplace=True)  # удаляем пустые строки
+        df_pers_result.dropna(inplace=True)  # удаляем пустые строки
         df_pers_result.columns = ['Описание']
         df_pers_result['Код'] = df_pers_result['Описание'].apply(extract_lr)
         df_pers_result['Результат'] = df_pers_result['Описание'].apply(extract_descr_lr)

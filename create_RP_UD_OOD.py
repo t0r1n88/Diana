@@ -456,7 +456,6 @@ def extract_data_plan_ood(data_ud, sheet_name,dct_competence:dict):
         else:
             count += 1
             main_df.iloc[idx, 0] = count
-    main_df.to_excel('data/res.xlsx')
 
     # очищаем от пустых символов и строки Пусто
     main_df['Курс_семестр'] = main_df['Курс_семестр'].fillna('Пусто')
