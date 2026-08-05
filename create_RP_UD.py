@@ -436,6 +436,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
     pers_result = 'Лич_результаты'
     structure = 'Объем УД'
     plan = 'План УД'
+    target = 'Цели'
     mto = 'МТО'
     main_publ = 'ОИ'
     second_publ = 'ДИ'
@@ -513,6 +514,15 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
                                                                            plan)  # извлекаем данные из датафрейма
         #
         check_error_df = create_check_error_df(temp_part_result)
+
+
+        """
+            Обрабатываем лист Цели если он есть
+            """
+        if 'Цели' in file_cols:
+            df_target = pd.read_excel(data_work_program, sheet_name=target, usecols='A')
+            lst_target = df_target['Цели'].dropna().tolist()
+            lst_target = processing_punctuation_end_string(lst_target, ';\n', '- ', '.')
 
 
         """
@@ -643,6 +653,9 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
         context['Знать'] = lst_knowledge
         context['Уметь'] = lst_skill
 
+        if 'Цели' in file_cols:
+            context['Цели'] = lst_target
+
         # добавляем единичные переменные
         context['Макс_нагрузка'] = max_load
         context['Обяз_нагрузка'] = mand_load
@@ -720,12 +733,13 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
 
 
 if __name__=='__main__':
-    template_work_program = 'data/Шаблон автозаполнения РП 16_07_26 ver2.docx'
+    template_work_program = 'data/Шаблон автозаполнения РП УД 16_07_26  Вариант №2.docx'
     # data_work_program = 'data/Автозаполнение РП.xlsx'
     # data_work_program = 'data/ПРИМЕР заполнения таблицы  РП 13_09.xlsx'
-    data_work_program = 'data/ПРИМЕР заполнения таблицы  РП УД 20_12.xlsx'
+    data_work_program = 'data/ПРИМЕР заполнения таблицы  РП УД 05_08_26 Вариант №2.xlsx'
+    data_work_program = 'data/ПРИМЕР заполнения таблицы  РП УД 08_12_23 Вариант №1.xlsx'
     # data_work_program = 'data/Копия 17_основы техн Черчение.xlsx'
-    end_folder = 'data'
+    end_folder = 'data/Результат'
 
     create_RP_for_UD(template_work_program, data_work_program, end_folder)
 
