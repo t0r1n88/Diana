@@ -61,12 +61,13 @@ def extract_lr(cell):
     :param df: датафрем из одной колонки
     :return:
     """
-    value = str(cell)  # делаем строковй
-    result = re.split(r'(\d+\.\s*?)', value)
-    result = [value for value in result if value]  # убираем пустые значения
-    if len(result) >= 3:
+    value = str(cell) # делаем строковй
+    pattern = r'(?<=\d)\.(?=\s|[А-Яа-яA-Za-z])'
+    result = re.split(pattern,value)
+    result = [value for value in result if value] # убираем пустые значения
+    if len(result) >=3:
         end_lr = result[1].strip()
-        end_lr = end_lr.rstrip(string.punctuation)  # очищаем от точки в конце
+        end_lr = end_lr.rstrip(string.punctuation) # очищаем от точки в конце
         return f'{result[0]}{end_lr}'
     elif len(result) == 0:
         return ''
@@ -74,7 +75,6 @@ def extract_lr(cell):
         lr = result[0].strip()
         lr = lr.rstrip(string.punctuation)
         return lr
-
 
 def extract_descr_lr(cell):
     """
@@ -84,12 +84,14 @@ def extract_descr_lr(cell):
     :param df: датафрем из одной колонки
     :return:
     """
-    value = str(cell)  # делаем строковй
-    result = re.split(r'(\d+\.\s*?)', value)
+    value = str(cell) # делаем строковй
+    pattern = r'(?<=\d)\.(?=\s|[А-Яа-яA-Za-z])'
+    result = re.split(pattern, value)
     result = [value for value in result if value]
-    if len(result) >= 3:
-        descr_lr = result[2].strip()
-        descr_lr = descr_lr.rstrip(string.punctuation)  # очищаем от точки в конце
+
+    if len(result) == 2:
+        descr_lr = result[1].strip()
+        descr_lr = descr_lr.rstrip(string.punctuation) # очищаем от точки в конце
         return f'{descr_lr}.'
     else:
         return ''

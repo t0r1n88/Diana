@@ -63,7 +63,8 @@ def extract_lr(cell):
     :return:
     """
     value = str(cell) # делаем строковй
-    result = re.split(r'(\d+\.\s*?)',value)
+    pattern = r'(?<=\d)\.(?=\s|[А-Яа-яA-Za-z])'
+    result = re.split(pattern,value)
     result = [value for value in result if value] # убираем пустые значения
     if len(result) >=3:
         end_lr = result[1].strip()
@@ -85,10 +86,12 @@ def extract_descr_lr(cell):
     :return:
     """
     value = str(cell) # делаем строковй
-    result = re.split(r'(\d+\.\s*?)',value)
+    pattern = r'(?<=\d)\.(?=\s|[А-Яа-яA-Za-z])'
+    result = re.split(pattern, value)
     result = [value for value in result if value]
-    if len(result) >=3:
-        descr_lr = result[2].strip()
+
+    if len(result) == 2:
+        descr_lr = result[1].strip()
         descr_lr = descr_lr.rstrip(string.punctuation) # очищаем от точки в конце
         return f'{descr_lr}.'
     else:
@@ -733,11 +736,12 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
 
 
 if __name__=='__main__':
-    template_work_program = 'data/Шаблон автозаполнения РП УД 16_07_26  Вариант №2.docx'
+    template_work_program = 'data/Шаблон автозаполнения РП УД 05_08_26  Вариант №2.docx'
     # data_work_program = 'data/Автозаполнение РП.xlsx'
     # data_work_program = 'data/ПРИМЕР заполнения таблицы  РП 13_09.xlsx'
     data_work_program = 'data/ПРИМЕР заполнения таблицы  РП УД 05_08_26 Вариант №2.xlsx'
-    data_work_program = 'data/ПРИМЕР заполнения таблицы  РП УД 08_12_23 Вариант №1.xlsx'
+    data_work_program = 'data/РП УД ФКиС.xlsx'
+    # data_work_program = 'data/ПРИМЕР заполнения таблицы  РП УД 08_12_23 Вариант №1.xlsx'
     # data_work_program = 'data/Копия 17_основы техн Черчение.xlsx'
     end_folder = 'data/Результат'
 
