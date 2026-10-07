@@ -739,8 +739,13 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
         """
             Обрабатываем лист Содержание
             """
-        df_content = pd.read_excel(data_work_program, sheet_name=content, usecols='A',nrows=1,dtype=str)
+        df_content = pd.read_excel(data_work_program, sheet_name=content, usecols='A',dtype=str)
+        df_content.columns = ['Наименование']
+        df_content.dropna(subset=['Наименование'],inplace=True)
         df_content = df_content.applymap(str.strip) # очищаем от пробелов
+
+
+
 
         """
             Обрабатываем листы Цели,Результаты, УУПД
@@ -868,7 +873,7 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
             context['Оборудование_лаборатории'] = obor_labor
 
         # Лист Содержание
-        context['Содержание_дисциплины'] = df_content.iloc[0,0]
+        context['Содержание_дисциплины'] = df_content.to_dict('records')
         # лист Учебные издания
         context['Основные_источники'] = lst_main_source
         context['Дополнительные_источники'] = lst_slave_source
@@ -936,9 +941,10 @@ def create_RP_for_UD_OOD(template_work_program:str,data_work_program:str,end_fol
 
 if __name__ == '__main__':
 
-    template_work_program = 'data/Шаблон автозаполнения ООД 15_07_26 ver2.docx'
+    template_work_program = 'data/Шаблон автозаполнения РП ООД 16_07_26 Вариант №2.docx'
     # data_work_program = 'data/ПРИМЕР заполнения таблицы  ООД 13_09.xlsx'
     data_work_program = 'data/ООД.xlsx'
+    data_work_program = 'data/ООЮ ПУД.06 ИН.яз. 163 гр.xlsx'
     end_folder = 'data/Результат'
 
 
