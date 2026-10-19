@@ -569,8 +569,8 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
         """
             Обрабатываем лист УП (Учебная практика)
             """
-        df_up = pd.read_excel(data_pm, sheet_name=up, usecols='A:C')
-        df_up.columns = ['Вид','Содержание','Объем']
+        df_up = pd.read_excel(data_pm, sheet_name=up, usecols='A:D')
+        df_up.columns = ['Вид','Содержание','Объем','Прак_подготовка']
         df_up.fillna(0,inplace=True)
         df_up = df_up.applymap(lambda x:int(x) if isinstance(x,float) else x)
         df_up = df_up.applymap(lambda x: '' if x ==0 else x)
@@ -582,8 +582,8 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
         """
             Обрабатываем лист ПП (Производственная практика)
             """
-        df_pp = pd.read_excel(data_pm, sheet_name=pp, usecols='A:C')
-        df_pp.columns = ['Вид','Содержание','Объем']
+        df_pp = pd.read_excel(data_pm, sheet_name=pp, usecols='A:D')
+        df_pp.columns = ['Вид','Содержание','Объем','Прак_подготовка']
         df_pp.fillna(0,inplace=True)
         df_pp = df_pp.applymap(lambda x:int(x) if isinstance(x,float) else x)
         df_pp = df_pp.applymap(lambda x: '' if x ==0 else x)
@@ -739,7 +739,10 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
         # context['КР'] = dct_mdk_data['курсовая работа (КП)']
 
         context['Темы_КР'] = lst_kp # список тем курсовых работ
-        #
+        # Учебная и производственная практика
+        context['Уч_практика'] = df_up.to_dict('records')
+        context['П_практика'] = df_pp.to_dict('records')
+
         context['Темы_УП'] = lst_theme_up
         context['Темы_ПП'] = lst_theme_pp
 
@@ -842,10 +845,12 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
 
 
 if __name__ == '__main__':
-    template_pm_main = 'data/Шаблон автозаполнения ПМ.docx'
+    template_pm_main = 'data/Шаблон автозаполнения ПМ Вариант №2 19_10_26.docx'
+    # template_pm_main = 'data/Шаблон автозаполнения ПМ.docx'
     data_pm_main = 'data/Пример заполнения таблицы для ПМ,УП,ПП.xlsx'
+    data_pm_main = 'data/36_ПМ_01_Эксплуатация.xlsx'
     # data_pm_main = 'data/Копия СТ ПМ 03 2.xlsx'
-    end_folder_main = 'data'
+    end_folder_main = 'data/Результат'
 
     create_pm(template_pm_main, data_pm_main, end_folder_main)
     print('Lindy Booth')
