@@ -527,7 +527,7 @@ def create_pred_dip_prac(template_pm: str, data_pred_prac: str, end_folder: str)
         context['Прог_з_номер'] = df_fgos.at[2,'Номер документа']
 
         # Создаем документ
-        doc.render(context)
+        doc.render(context, autoescape=True)
         # сохраняем документ
         # название программы
         name_rp = df_desc_rp['Код_специальность_профессия'].tolist()[0]

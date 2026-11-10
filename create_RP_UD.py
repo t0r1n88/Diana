@@ -684,7 +684,7 @@ def create_RP_for_UD(template_work_program:str,data_work_program:str,end_folder:
         set_of_variables = doc.get_undeclared_template_variables()
 
         # Создаем документ
-        doc.render(context)
+        doc.render(context, autoescape=True)
         # сохраняем документ
         # название программы
         name_rp = df_desc_rp['Название_дисциплины'].tolist()[0]
