@@ -3,6 +3,7 @@
 """
 import pandas as pd
 import numpy as np
+import datetime
 import openpyxl
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.utils import get_column_letter
@@ -410,6 +411,22 @@ def create_check_error_df(dct:dict)->pd.DataFrame:
 
 
 
+def create_doc_convert_date(cell):
+    """
+    Функция для конвертации даты при создании документов
+    :param cell:
+    :return:
+    """
+    try:
+        string_date = datetime.datetime.strftime(cell, '%d.%m.%Y')
+        return string_date
+    except ValueError:
+        return ''
+    except TypeError:
+        return ''
+
+
+
 
 
 def create_pm(template_pm: str, data_pm: str, end_folder: str):
@@ -696,6 +713,13 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
         df_fgos.dropna(inplace=True, thresh=1)  # удаляем пустые строки
         df_fgos.fillna('Не заполнено',inplace=True)
 
+        if 'Дата' in df_fgos.columns:
+            df_fgos['Дата'] = df_fgos['Дата'].apply(create_doc_convert_date)
+
+
+
+
+
         doc = DocxTemplate(template_pm)
 
         # Конвертируем датафрейм с описанием программы в список словарей и добавляем туда нужные элементы
@@ -786,7 +810,7 @@ def create_pm(template_pm: str, data_pm: str, end_folder: str):
             name_mdk_table = f'План_МДК_{idx}'
             context[name_mdk_table] = value.to_dict('records')
         # Создаем документ
-        doc.render(context)
+        doc.render(context, autoescape=True)
         # сохраняем документ
         # название программы
         name_rp = df_desc_rp['Название_модуля'].tolist()[0]
@@ -849,6 +873,7 @@ if __name__ == '__main__':
     # template_pm_main = 'data/Шаблон автозаполнения ПМ.docx'
     data_pm_main = 'data/Пример заполнения таблицы для ПМ,УП,ПП.xlsx'
     data_pm_main = 'data/36_ПМ_01_Эксплуатация.xlsx'
+    data_pm_main = 'data/РМ ПМ 04 Создание и адаптация мультимедийного графического контента 861_862 группа.xlsx'
     # data_pm_main = 'data/Копия СТ ПМ 03 2.xlsx'
     end_folder_main = 'data/Результат'
 

@@ -4,6 +4,7 @@
 import pandas as pd
 import numpy as np
 import openpyxl
+import datetime
 from docxtpl import DocxTemplate
 import string
 import time
@@ -183,6 +184,23 @@ def sum_column_any_value(df:pd.DataFrame,name_column:str):
     lst_value = df[name_column].dropna().tolist()
     sum_value = [value for value in lst_value if isinstance(value,(int,float))] # отбираем только числа
     return sum(sum_value) # возвращаем сумму
+
+def create_doc_convert_date(cell):
+    """
+    Функция для конвертации даты при создании документов
+    :param cell:
+    :return:
+    """
+    try:
+        string_date = datetime.datetime.strftime(cell, '%d.%m.%Y')
+        return string_date
+    except ValueError:
+        return ''
+    except TypeError:
+        return ''
+
+
+
 
 def create_rp_up(template_pm: str, data_pm: str, end_folder: str):
     """
@@ -464,6 +482,8 @@ def create_rp_up(template_pm: str, data_pm: str, end_folder: str):
         df_fgos = pd.read_excel(data_pm,sheet_name=fgos,usecols='A:C')
         df_fgos.dropna(inplace=True, thresh=1)  # удаляем пустые строки
         df_fgos.fillna('Не заполнено',inplace=True)
+        if 'Дата' in df_fgos.columns:
+            df_fgos['Дата'] = df_fgos['Дата'].apply(create_doc_convert_date)
 
         doc = DocxTemplate(template_pm)
 
@@ -538,7 +558,7 @@ def create_rp_up(template_pm: str, data_pm: str, end_folder: str):
         context['Прог_з_номер'] = df_fgos.at[2,'Номер документа']
 
         # Создаем документ
-        doc.render(context)
+        doc.render(context, autoescape=True)
         # название программы
         name_rp = df_desc_rp['Название_модуля'].tolist()[0]
         name_rp = re.sub(r'[\r\b\n\t<> :"?*|\\/]', '_', name_rp)  # очищаем от некорректных символов
